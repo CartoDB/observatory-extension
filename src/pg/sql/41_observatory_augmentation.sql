@@ -478,7 +478,11 @@ BEGIN
   if column_id is null then
     RAISE EXCEPTION 'Column % does not exist ', dimension_name;
   end if;
-  RETURN QUERY SELECT unnest(names), unnest(vals) FROM OBS_GET(geom, ARRAY[column_id], time_span, geometry_level);
+  RETURN QUERY SELECT unnest(names), unnest(vals)
+                 FROM OBS_Get(geom,
+                              ARRAY[column_id],
+                              time_span,
+                              geometry_level);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -491,7 +495,7 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".block_group'
 )
-RETURNS TABLE( colnames text[], colvalues numeric[])
+RETURNS TABLE(dimension text, dimension_value numeric)
 AS $$
 DECLARE
   ids text[];
@@ -499,18 +503,20 @@ BEGIN
 
   ids  = OBS_LookupCensusHuman(dimension_names);
 
-  RETURN query(SELECT unnest(names), unnest(vals)
-               FROM OBS_Get(geom, ids, time_span, geometry_level));
+  RETURN QUERY SELECT unnest(names), unnest(vals)
+               FROM OBS_Get(geom, ids, time_span, geometry_level);
 END;
 $$ LANGUAGE plpgsql;
 
+
+--TODO: work on this
 --Augments the target table with the desired census variable.
-CREATE OR REPLACE FUNCTION OBS_Get_TABLE_WITH_CENSUS(
+-- OLD: OBS_Get_TABLE_WITH_CENSUS
+CREATE OR REPLACE FUNCTION OBS_GetTableWithCensus(
   table_name text,
   dimension_name text
 ) RETURNS VOID AS $$
 BEGIN
-  BEGIN
 
     EXECUTE format('ALTER TABLE %I add column %I NUMERIC', table_name,dimension_name);
   EXCEPTION
@@ -518,63 +524,83 @@ BEGIN
       RAISE NOTICE 'Column does not exist';
     END;
 
-  EXECUTE format('UPDATE %I
+  EXECUTE format('
+    UPDATE %I
     SET %I = v.%I
     FROM (
-      select cartodb_id, OBS_GetCensus(the_geom, %L) as %I
-      from %I
-    ) v
-    WHERE v.cartodb_id= %I.cartodb_id;
-  ', table_name, dimension_name,dimension_name,dimension_name,dimension_name,table_name,table_name);
-
+      SELECT cartodb_id,
+             OBS_GetCensus(the_geom, %L) As %I
+      FROM %I
+    ) As v
+    WHERE v.cartodb_id = %I.cartodb_id
+  ', table_name,
+     dimension_name,
+     dimension_name,
+     dimension_name,
+     dimension_name,
+     table_name,
+     table_name);
 END;
-$$ LANGUAGE plpgsql ;
+$$ LANGUAGE plpgsql;
 
 
 -- Base augmentation fucntion.
-CREATE OR REPLACE FUNCTION OBS_GET(
+CREATE OR REPLACE FUNCTION OBS_Get(
   geom geometry,
   column_ids text[],
   time_span text,
   geometry_level text
 )
-RETURNS TABLE(names text[], vals NUMERIC[] )
+RETURNS TABLE(names text[], vals NUMERIC[])
 AS $$
 DECLARE
 	results numeric[];
   geom_table_name text;
-  names         text[];
-  q             text;
+  names text[];
+  query text;
   data_table_info OBS_ColumnData[];
 BEGIN
 
-  geom_table_name := OBS_GeomTable(geom,geometry_level);
+  geom_table_name := OBS_GeomTable(geom, geometry_level);
 
-  if geom_table_name is null then
-     RAISE EXCEPTION 'Point % is outside of the data region.', geom;
-  end if;
+  IF geom_table_name IS NULL
+  THEN
+     RAISE EXCEPTION 'Point % is outside of the data region', geom;
+  END IF;
 
-  data_table_info = OBS_GetColumnData(geometry_level, column_ids, time_span);
-  names  = (select array_agg((d).colname) from unnest(data_table_info) as  d );
+  data_table_info := OBS_GetColumnData(geometry_level,
+                                       column_ids,
+                                       time_span);
 
-  IF ST_GeometryType(geom) = 'ST_Point' then
-    results  = OBS_Get_POINTS(geom, geom_table_name, data_table_info);
-  ELSIF ST_GeometryType(geom) in ('ST_Polygon', 'ST_MultiPolygon') then
-    results  = OBS_Get_POLYGONS(geom,geom_table_name, data_table_info);
-  end if;
+  names := (SELECT array_agg((d).colname)
+            FROM unnest(data_table_info) As d);
 
-  if results is null then
-    results= Array[];
-  end if;
+  IF ST_GeometryType(geom) = 'ST_Point'
+  THEN
+    results := OBS_GetPoints(geom,
+                             geom_table_name,
+                             data_table_info);
 
-  return query (select  names, results) ;
+  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
+  THEN
+    results := OBS_GetPolygons(geom,
+                               geom_table_name,
+                               data_table_info);
+  END IF;
+
+  IF results IS NULL
+  THEN
+    results := Array[];
+  END IF;
+
+  RETURN QUERY (SELECT names, results);
 END;
-$$  LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 
--- IF the variable of interest is just a rate return it as such, othewise normalize
--- it to the census block area and return that
-CREATE OR REPLACE FUNCTION OBS_Get_Points(
+-- If the variable of interest is just a rate return it as such,
+--  otherwise normalize it to the census block area and return that
+CREATE OR REPLACE FUNCTION OBS_GetPoints(
   geom geometry,
   geom_table_name text,
   data_table_info OBS_ColumnData[]
@@ -583,55 +609,66 @@ CREATE OR REPLACE FUNCTION OBS_Get_Points(
 DECLARE
   result NUMERIC[];
   query  text;
-  i NUMERIC;
+  i int;
   geoid text;
   area  numeric;
 BEGIN
 
   EXECUTE
-    format('select geoid from observatory.%I where  the_geom && $1',  geom_table_name)
-    using
-    geom
-    INTO geoid;
+    format('SELECT geoid
+            FROM observatory.%I
+            WHERE the_geom && $1',
+            geom_table_name)
+  USING geom
+  INTO geoid;
 
   EXECUTE
-    format('select ST_AREA(the_geom::geography) from observatory.%I  where geoid = %L', geom_table_name, geoid)
-    INTO
-    area ;
+    format('SELECT ST_Area(the_geom::geography)
+            FROM observatory.%I
+            WHERE geoid = %L',
+            geom_table_name,
+            geoid)
+  INTO area;
 
 
-  query = 'select Array[';
-  FOR i in 1..array_upper(data_table_info,1)
-  loop
-    IF ((data_table_info)[i]).aggregate != 'sum' THEN
-      query = query || format('%I ',((data_table_info)[i]).colname);
-    else
+  query := 'SELECT ARRAY[';
+  FOR i IN 1..array_upper(data_table_info, 1)
+  LOOP
+    IF ((data_table_info)[i]).aggregate != 'sum'
+    THEN
+      query = query || format('%I ', ((data_table_info)[i]).colname);
+    ELSE
       query = query || format('%I/%s ',
         ((data_table_info)[i]).colname,
         area);
-    end if;
-    IF i <  array_upper(data_table_info,1) THEN
+    END IF;
+
+    IF i <  array_upper(data_table_info, 1)
+    THEN
       query = query || ',';
-    end if;
-  end loop;
+    END IF;
+  END LOOP;
 
   query = query || format(' ]
-    from observatory.%I
-    where %I.geoid  = %L
+    FROM observatory.%I
+    WHERE %I.geoid  = %L
   ',
   ((data_table_info)[1]).tablename,
   ((data_table_info)[1]).tablename,
   geoid
   );
 
+  EXECUTE
+    query
+  INTO result
+  USING geom;
 
-  EXECUTE  query  INTO result USING geom ;
-  return result;
+  RETURN result;
 
-END
+END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION OBS_Get_Polygons (
+CREATE OR REPLACE FUNCTION OBS_GetPolygons (
   geom geometry,
   geom_table_name text,
   data_table_info OBS_ColumnData[]
@@ -644,41 +681,49 @@ DECLARE
   i numeric;
 BEGIN
 
+  q_select := 'select geoid, ';
+  q_sum    := 'select Array[';
 
-  q_select = 'select geoid, ';
-  q_sum    = 'select Array[';
-
-  FOR i IN 1..array_upper(data_table_info, 1) LOOP
+  FOR i IN 1..array_upper(data_table_info, 1)
+  LOOP
     q_select = q_select || format( '%I ', ((data_table_info)[i]).colname);
 
-    IF ((data_table_info)[i]).aggregate ='sum' then
-      q_sum    = q_sum || format('sum(overlap_fraction * COALESCE(%I,0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
-    else
+    IF ((data_table_info)[i]).aggregate ='sum'
+    THEN
+      q_sum    = q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
+    ELSE
       q_sum    = q_sum || ' null ';
-    end if;
+    END IF;
 
-    IF i < array_upper(data_table_info,1) THEN
+    IF i < array_upper(data_table_info,1)
+    THEN
       q_select = q_select || format(',');
       q_sum     = q_sum || format(',');
-	  end IF;
-   end LOOP;
+    END IF;
+ END LOOP;
 
   q = format('
-    WITH _overlaps AS(
-      select  ST_AREA(ST_INTERSECTION($1, a.the_geom))/ST_AREA(a.the_geom) overlap_fraction, geoid
-      from observatory.%I as a
-      where $1 && a.the_geom
+    WITH _overlaps As (
+      SELECT ST_Area(
+        ST_Intersection($1, a.the_geom)
+      ) / ST_Area(a.the_geom) As overlap_fraction,
+      geoid
+      FROM observatory.%I As a
+      WHERE $1 && a.the_geom
     ),
-    values AS(
-    ',geom_table_name );
+    values As (
+    ', geom_table_name);
 
-  q = q || q_select || format('from observatory.%I ', ((data_table_info)[1].tablename)) ;
+  q = q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
 
-  q = q || ' ) ' || q_sum || ' ] from _overlaps, values
-  where values.geoid  = _overlaps.geoid';
+  q = q || ' ) ' || q_sum || ' ] FROM _overlaps, values
+  WHERE values.geoid = _overlaps.geoid';
 
-  execute q into result using geom;
+  EXECUTE
+    q
+  INTO result
+  USING geom;
+
   RETURN result;
-
 END;
 $$ LANGUAGE plpgsql;

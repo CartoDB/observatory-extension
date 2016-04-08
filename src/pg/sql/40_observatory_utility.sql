@@ -155,6 +155,27 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+-- get human-readable census column name
+
+CREATE OR REPLACE FUNCTION OBS_LookupCensusColumnId(
+  column_name text,
+  table_name text DEFAULT '"us.census.acs".extract_year_2013_sample_5yr_geography_block_group'
+)
+RETURNS text
+AS $$
+DECLARE
+  column_id text;
+  result text;
+BEGIN
+    EXECUTE format('SELECT colname
+                    FROM observatory.OBS_column_table
+                    WHERE column_id = %L AND table_id = %L
+                    LIMIT 1', column_name, table_name)
+    INTO result;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
 --Test point cause Stuart always seems to make random points in the water
 -- Old: _TEST_POINT
 CREATE OR REPLACE FUNCTION _TestPoint()

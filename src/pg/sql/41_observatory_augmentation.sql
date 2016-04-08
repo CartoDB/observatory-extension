@@ -216,20 +216,128 @@ DECLARE
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION OBS_GET_SEGMENT(geom geometry)
+RETURNS TABLE(
+  segment_name TEXT,
+  total_pop_quantile NUMERIC,
+  female_pop_quantile NUMERIC,
+  male_pop_quantile NUMERIC,
+  median_age_quantile NUMERIC,
+  white_pop_quantile NUMERIC,
+  black_pop_quantile NUMERIC,
+  asian_pop_quantile NUMERIC,
+  hispanic_pop_quantile NUMERIC,
+  not_us_citizen_pop_quantile NUMERIC,
+  workers_16_and_over_quantile NUMERIC,
+  commuters_by_car_truck_van_quantile NUMERIC,
+  commuters_by_public_transportation_quantile NUMERIC,
+  commuters_by_bus_quantile NUMERIC,
+  commuters_by_subway_or_elevated_quantile NUMERIC,
+  walked_to_work_quantile NUMERIC,
+  worked_at_home_quantile NUMERIC,
+  children_quantile NUMERIC,
+  households_quantile NUMERIC,
+  population_3_years_over_quantile NUMERIC,
+  in_school_quantile NUMERIC,
+  in_grades_1_to_4_quantile NUMERIC,
+  in_grades_5_to_8_quantile NUMERIC,
+  in_grades_9_to_12_quantile NUMERIC,
+  in_undergrad_college_quantile NUMERIC,
+  pop_25_years_over_quantile NUMERIC,
+  high_school_diploma_quantile NUMERIC,
+  bachelors_degree_quantile NUMERIC,
+  masters_degree_quantile NUMERIC,
+  pop_5_years_over_quantile NUMERIC,
+  speak_only_english_at_home_quantile NUMERIC,
+  speak_spanish_at_home_quantile NUMERIC,
+  pop_determined_poverty_status_quantile NUMERIC,
+  poverty_quantile NUMERIC,
+  median_income_quantile NUMERIC,
+  gini_index_quantile NUMERIC,
+  income_per_capita_quantile NUMERIC,
+  housing_units_quantile NUMERIC,
+  vacant_housing_units_quantile NUMERIC,
+  vacant_housing_units_for_rent_quantile NUMERIC,
+  vacant_housing_units_for_sale_quantile NUMERIC,
+  median_rent_quantile NUMERIC,
+  percent_income_spent_on_rent_quantile NUMERIC,
+  owner_occupied_housing_units_quantile NUMERIC,
+  million_dollar_housing_units_quantile NUMERIC,
+  mortgaged_housing_unit_quantile NUMERIC
+
+) AS $$
+DECLARE
+  target_cols Numeric[];
+BEGIN
+target_cols := Array[
+                'total_pop_quantile',
+                'female_pop_quantile',
+                'male_pop_quantile',
+                'median_age_quantile',
+                'white_pop_quantile',
+                'black_pop_quantile',
+                'asian_pop_quantile',
+                'hispanic_pop_quantile',
+                'not_us_citizen_pop_quantile',
+                'workers_16_and_over_quantile',
+                'commuters_by_car_truck_van_quantile',
+                'commuters_by_public_transportation_quantile',
+                'commuters_by_bus_quantile',
+                'commuters_by_subway_or_elevated_quantile',
+                'walked_to_work_quantile',
+                'worked_at_home_quantile',
+                'children_quantile',
+                'households_quantile',
+                'population_3_years_over_quantile',
+                'in_school_quantile',
+                'in_grades_1_to_4_quantile',
+                'in_grades_5_to_8_quantile',
+                'in_grades_9_to_12_quantile',
+                'in_undergrad_college_quantile',
+                'pop_25_years_over_quantile',
+                'high_school_diploma_quantile',
+                'bachelors_degree_quantile',
+                'masters_degree_quantile',
+                'pop_5_years_over_quantile',
+                'speak_only_english_at_home_quantile',
+                'speak_spanish_at_home_quantile',
+                'pop_determined_poverty_status_quantile',
+                'poverty_quantile',
+                'median_income_quantile',
+                'gini_index_quantile',
+                'income_per_capita_quantile',
+                'housing_units_quantile',
+                'vacant_housing_units_quantile',
+                'vacant_housing_units_for_rent_quantile',
+                'vacant_housing_units_for_sale_quantile',
+                'median_rent_quantile',
+                'percent_income_spent_on_rent_quantile',
+                'owner_occupied_housing_units_quantile',
+                'million_dollar_housing_units_quantile',
+                'mortgaged_housing_unit_quantile'
+               ];
+
+END $$ LANGUAGE plpgsql  ;
 
 CREATE OR REPLACE FUNCTION OBS_GetDemographicSnapshot(geom geometry)
 RETURNS TABLE(
   total_pop NUMERIC,
-  female_pop NUMERIC,
   male_pop NUMERIC,
+  female_pop NUMERIC,
   median_age NUMERIC,
   white_pop NUMERIC,
   black_pop NUMERIC,
   asian_pop NUMERIC,
   hispanic_pop NUMERIC,
+  amerindian_pop NUMERIC,
+  other_race_pop NUMERIC,
+  two_or_more_races_pop NUMERIC,
+  not_hispanic_pop NUMERIC,
   not_us_citizen_pop NUMERIC,
   workers_16_and_over NUMERIC,
   commuters_by_car_truck_van NUMERIC,
+  commuters_drove_alone NUMERIC,
+  commuters_by_carpool NUMERIC,
   commuters_by_public_transportation NUMERIC,
   commuters_by_bus NUMERIC,
   commuters_by_subway_or_elevated NUMERIC,
@@ -245,6 +353,9 @@ RETURNS TABLE(
   in_undergrad_college NUMERIC,
   pop_25_years_over NUMERIC,
   high_school_diploma NUMERIC,
+  less_one_year_college NUMERIC,
+  one_year_more_college NUMERIC,
+  associates_degree NUMERIC,
   bachelors_degree NUMERIC,
   masters_degree NUMERIC,
   pop_5_years_over NUMERIC,
@@ -263,7 +374,40 @@ RETURNS TABLE(
   percent_income_spent_on_rent NUMERIC,
   owner_occupied_housing_units NUMERIC,
   million_dollar_housing_units NUMERIC,
-  mortgaged_housing_unit NUMERIC)
+  mortgaged_housing_units NUMERIC,
+  pop_15_and_over NUMERIC,
+  pop_never_married NUMERIC,
+  pop_now_married NUMERIC,
+  pop_separated NUMERIC,
+  pop_widowed NUMERIC,
+  pop_divorced NUMERIC,
+  commuters_16_over NUMERIC,
+  commute_less_10_mins NUMERIC,
+  commute_10_14_mins NUMERIC,
+  commute_15_19_mins NUMERIC,
+  commute_20_24_mins NUMERIC,
+  commute_25_29_mins NUMERIC,
+  commute_30_34_mins NUMERIC,
+  commute_35_44_mins NUMERIC,
+  commute_45_59_mins NUMERIC,
+  commute_60_more_mins NUMERIC,
+  aggregate_travel_time_to_work NUMERIC,
+  income_less_10000 NUMERIC,
+  income_10000_14999 NUMERIC,
+  income_15000_19999 NUMERIC,
+  income_20000_24999 NUMERIC,
+  income_25000_29999 NUMERIC,
+  income_30000_34999 NUMERIC,
+  income_35000_39999 NUMERIC,
+  income_40000_44999 NUMERIC,
+  income_45000_49999 NUMERIC,
+  income_50000_59999 NUMERIC,
+  income_60000_74999 NUMERIC,
+  income_75000_99999 NUMERIC,
+  income_100000_124999 NUMERIC,
+  income_125000_149999 NUMERIC,
+  income_150000_199999 NUMERIC
+)
 AS $$
 DECLARE
  target_cols text[];
@@ -271,18 +415,23 @@ DECLARE
  vals numeric[];
  q text;
  BEGIN
- target_cols := Array[
-                 'total_pop',
-                 'female_pop',
+ target_cols := Array['total_pop',
                  'male_pop',
+                 'female_pop',
                  'median_age',
                  'white_pop',
                  'black_pop',
                  'asian_pop',
                  'hispanic_pop',
+                 'amerindian_pop',
+                 'other_race_pop',
+                 'two_or_more_races_pop',
+                 'not_hispanic_pop',
                  'not_us_citizen_pop',
                  'workers_16_and_over',
                  'commuters_by_car_truck_van',
+                 'commuters_drove_alone',
+                 'commuters_by_carpool',
                  'commuters_by_public_transportation',
                  'commuters_by_bus',
                  'commuters_by_subway_or_elevated',
@@ -298,6 +447,9 @@ DECLARE
                  'in_undergrad_college',
                  'pop_25_years_over',
                  'high_school_diploma',
+                 'less_one_year_college',
+                 'one_year_more_college',
+                 'associates_degree',
                  'bachelors_degree',
                  'masters_degree',
                  'pop_5_years_over',
@@ -316,13 +468,45 @@ DECLARE
                  'percent_income_spent_on_rent',
                  'owner_occupied_housing_units',
                  'million_dollar_housing_units',
-                 'mortgaged_housing_unit'
-                ];
+                 'mortgaged_housing_units',
+                 'pop_15_and_over',
+                 'pop_never_married',
+                 'pop_now_married',
+                 'pop_separated',
+                 'pop_widowed',
+                 'pop_divorced',
+                 'commuters_16_over',
+                 'commute_less_10_mins',
+                 'commute_10_14_mins',
+                 'commute_15_19_mins',
+                 'commute_20_24_mins',
+                 'commute_25_29_mins',
+                 'commute_30_34_mins',
+                 'commute_35_44_mins',
+                 'commute_45_59_mins',
+                 'commute_60_more_mins',
+                 'aggregate_travel_time_to_work',
+                 'income_less_10000',
+                 'income_10000_14999',
+                 'income_15000_19999',
+                 'income_20000_24999',
+                 'income_25000_29999',
+                 'income_30000_34999',
+                 'income_35000_39999',
+                 'income_40000_44999',
+                 'income_45000_49999',
+                 'income_50000_59999',
+                 'income_60000_74999',
+                 'income_75000_99999',
+                 'income_100000_124999',
+                 'income_125000_149999',
+                 'income_150000_199999'
+  ];
 
   q = 'WITH a As (
          SELECT
-           colnames As names,
-           colvalues As vals
+           dimension As names,
+           dimension_value As vals
         FROM OBS_GetCensus($1,$2)
       )' ||
       OBS_BuildSnapshotQuery(target_cols) ||
@@ -412,8 +596,6 @@ BEGIN
     ) ' ||
     OBS_BuildSnapshotQuery(column_ids) ||
     ' FROM a';
-
-  RAISE NOTICE 'q: %', q;
 
   RETURN QUERY
   EXECUTE
@@ -527,7 +709,7 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".block_group'
   )
-RETURNS TABLE( colnames text[], colvalues numeric[]) as $$
+RETURNS TABLE( dimension text[], dimension_value numeric[]) as $$
 
 BEGIN
   RETURN QUERY
@@ -577,16 +759,18 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".block_group'
 )
-RETURNS TABLE(dimension text, dimension_value numeric)
+RETURNS TABLE(dimension text[], dimension_value numeric[])
 AS $$
 DECLARE
   ids text[];
+
 BEGIN
 
   ids  = OBS_LookupCensusHuman(dimension_names);
 
-  RETURN QUERY SELECT unnest(names), unnest(vals)
-               FROM OBS_Get(geom, ids, time_span, geometry_level);
+  RETURN QUERY
+   SELECT * from OBS_Get(geom, ids, time_span, geometry_level);
+
 END;
 $$ LANGUAGE plpgsql;
 

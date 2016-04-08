@@ -74,7 +74,6 @@ BEGIN
  '
  USING geometry_id, column_id, timespan
  INTO result;
-
  RETURN result;
 
 END;
@@ -93,6 +92,7 @@ AS $$
 DECLARE
   result OBS_ColumnData[];
 BEGIN
+
   EXECUTE '
   WITH geomref AS (
     SELECT t.table_id id
@@ -100,15 +100,17 @@ BEGIN
     WHERE c2c.reltype = ''geom_ref''
       AND c2c.target_id = $1
       AND c2c.source_id = t.column_id
-    )
- SELECT array_agg(ROW(colname, tablename, aggregate)::OBS_ColumnData  order by column_id)
- FROM observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
- WHERE c.id = ct.column_id
+    ),
+  column_ids as (
+    select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a
+  )
+ SELECT array_agg(ROW(colname, tablename, aggregate)::OBS_ColumnData order by column_ids.no)
+ FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
+ WHERE column_ids.column_id  = c.id
+   AND c.id = ct.column_id
    AND t.id = ct.table_id
-   AND Array[c.id] <@ $2
    AND t.timespan = $3
    AND t.id in (SELECT id FROM geomref)
-
  '
  USING geometry_id, column_ids, timespan
  INTO result;
@@ -148,7 +150,17 @@ DECLARE
   column_id text;
   result text;
 BEGIN
-    EXECUTE format('select array_agg(column_id) from observatory.OBS_column_table where Array[colname] <@ $1  and table_id = %L limit 1', table_name)
+    EXECUTE format('
+      WITH col_names AS (
+        select row_number() over() as no, a.column_name as column_name from(
+          select unnest($1) as column_name
+        ) a
+      )
+      select array_agg(column_id order by col_names.no)
+      FROM observatory.OBS_column_table,col_names
+      where colname = col_names.column_name
+      and table_id = %L limit 1
+    ', table_name)
     INTO result
     using column_names;
     RETURN result;

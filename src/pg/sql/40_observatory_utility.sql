@@ -121,7 +121,7 @@ $$ LANGUAGE plpgsql;
 -- Old: OBS_LOOKUP_CENSUS_HUMAN
 CREATE OR REPLACE FUNCTION OBS_LookupCensusHuman(
   column_name text,
-  table_name text DEFAULT '"us.census.acs".extract_year_2013_sample_5yr_geography_block_group'
+  table_name text DEFAULT '"us.census.acs".extract_block_group_5yr_2013_69b156927c'
 )
 RETURNS text
 AS $$
@@ -141,7 +141,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION OBS_LookupCensusHuman(
   column_names text[],
   -- TODO: change variable name table_name to table_id
-  table_name text DEFAULT '"us.census.acs".extract_year_2013_sample_5yr_geography_block_group'
+  table_name text DEFAULT '"us.census.acs".extract_block_group_5yr_2013_69b156927c'
 )
 RETURNS text[] as $$
 DECLARE

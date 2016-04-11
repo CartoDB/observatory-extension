@@ -154,7 +154,7 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   geom geometry,
   dimension_names text[],
   time_span text DEFAULT '2009 - 2013',
-  geometry_level text DEFAULT '"us.census.tiger".block_group'
+  geometry_level text DEFAULT '"us.census.tiger".census_tract'
 )
 RETURNS TABLE(dimension text, dimension_value numeric)
 AS $$

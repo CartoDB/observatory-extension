@@ -54,8 +54,9 @@ OBS_GetDemographicSnapshot(CDB_LatLng(40.810201, -73.956601))
 
 The Demographic Snapshot contains a broad subset of demographic measures in the Data Observatory. Over 80 measurements are returned by a single API request.
 
-__todo__
+__todo: turn this spreadsheet into a markdown table__
 
+https://docs.google.com/spreadsheets/d/1U3Uajw_PsIy3_YgeujnJ7AiL2VREdT-ozdaulx07q2g/edit#gid=430723120
 
 ## OBS_GetSegmentationSnapshot
 

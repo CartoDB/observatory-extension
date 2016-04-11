@@ -69,17 +69,17 @@ OBS_GetSegmentationSnapshot({{point geometry}})
 
 ### API Examples
 
-__Get the Segmentation Snapshot at Camp David__
+__Get the Segmentation Snapshot around the MGM Grand__
 
 ```text
 https://example_account.cartodb.com/api/v2/sql?q=SELECT * FROM
-OBS_GetSegmentationSnapshot(CDB_LatLng(39.648333, -77.465))
+OBS_GetSegmentationSnapshot(CDB_LatLng(36.10222, -115.169516))
 ```
-__Get the Segmentation Snapshot at Morning Side Heights__
+__Get the Segmentation Snapshot at CartoDB's NYC HQ__
 
 ```text
 https://example_account.cartodb.com/api/v2/sql?q=SELECT * FROM
-OBS_GetSegmentationSnapshot(CDB_LatLng(40.810201, -73.956601))
+OBS_GetSegmentationSnapshot(CDB_LatLng(40.704512, -73.936669))
 ```
 
 ### API Response

@@ -51,8 +51,44 @@ __todo__
 
 ### OBS_GetSegmentationSnapshot
 
-API Example:
+The Demographic Snapshot API call enables you to collect demographic details around a point location. For example, you can take the coordinates of a bus stop and find the average population characteristics in that location. If you need help creating coordinates from your addresses, [see our geocoding documentation].
+
+Fields returned include information about income, education, transportation, race, and more. Not all fields will have information for every coordinate queried.
+
+
+### API Syntax
+
+```html
+https://{{account name}}.cartodb.com/api/v2/sql?q=SELECT * FROM
+OBS_GetSegmentationSnapshot({{point geometry}})
+```
+
+#### Parameters
+
+| Parameter  | Description  |  Example  |
+|---|:-:|:-:|
+| account name  | The name of your CartoDB account where the Data Observatory has been enabled  | example_account  |
+| point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(40.760410,-73.964242)  |
+
+### API Examples
+
+__Get the Segmentation Snapshot at Camp David__
 
 ```text
-https://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetSegmentationSnapshot(CDB_LatLng(40.760410,-73.964242))
+https://example_account.cartodb.com/api/v2/sql?q=SELECT * FROM
+OBS_GetSegmentationSnapshot(CDB_LatLng(39.648333, -77.465))
 ```
+__Get the Segmentation Snapshot at Morning Side Heights__
+
+```text
+https://example_account.cartodb.com/api/v2/sql?q=SELECT * FROM
+OBS_GetSegmentationSnapshot(CDB_LatLng(40.810201, -73.956601))
+```
+
+### API Response
+
+__todo__
+
+### Available fields
+
+__todo__

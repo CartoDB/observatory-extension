@@ -89,3 +89,7 @@ __todo__
 ### Available fields
 
 __todo__
+
+### Methodology
+
+Segmentation is a method that divides a target market into subgroups based on shared common traits. While we plan to make many different segmentation methods available, our first release includes a segmentation profile first defined in a paper, _Understanding America's Neighborhoods Using Uncertain Data from the American Community Survey: Output Data: US_tract_clusters_new._. [See here](http://www.tandfonline.com/doi/pdf/10.1080/00045608.2015.1052335) for further information on the work in that paper.  

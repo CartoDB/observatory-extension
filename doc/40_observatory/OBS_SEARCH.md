@@ -6,8 +6,8 @@ Returns a list of matched variables with descriptions and meta data for each.
 ## Synopsis
 
 ```postgresql
-OBS_SEARCH (search_term text);
-````
+OBS_Search(text search_term);
+```
 
 ## Description
 ***
@@ -33,7 +33,7 @@ A table with the following columns
 ## Examples
 
 ```postgresql
-SELECT * from OBS_SEARCH('salary')
+SELECT * from OBS_Search('salary')
 ```
 
 Result
@@ -46,13 +46,13 @@ Result
 
 Example:
 
-```curl
-http://observatory.cartodb.com/api/v2/sql?q=select * from OBS_SEARCH('salary')
+```text
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_Search('salary')
 ```
 
 Result:
 
-```javascript
+```json
 {
   time: 0.120,
   total_rows: 1,

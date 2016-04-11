@@ -1,30 +1,30 @@
-
+# OUT OF DATE
 ## Name
 
-OBS_AUGMENT_TABLE_WITH_CENSUS - adds the requested dimension to the input table aggregating appropriately depending on the tables
+OBS_AugmentTableWithCensus - adds the requested dimension to the input table aggregating appropriately depending on the tables
 geometry type.
 
 ## Synopsis
 
 ```postgresql
-OBS_AUGMENT_TABLE_WITH_CENSUS (
+OBS_AugmentTableWithCensus (
   target_table_name text,
   column_name text
 );
 
-OBS_AUGMENT_TABLE_WITH_CENSUS (
+OBS_AugmentTableWithCensus (
   target_table_name text,
   column_name text
 );
 
-OBS_AUGMENT_TABLE_WITH_CENSUS (
+OBS_AugmentTableWithCensus (
   target_table_name text,
   column_name text,
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".block_group'
 );
 
-OBS_AUGMENT_TABLE_WITH_CENSUS (
+OBS_AugmentTableWithCensus (
   target_table_name text,
   column_name text,
   time_span text DEFAULT '2009 - 2013',

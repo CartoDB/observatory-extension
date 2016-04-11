@@ -47,7 +47,7 @@ Result
 Example:
 
 ```text
-http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM OBS_ListGeomColumns()
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_ListGeomColumns()
 ```
 
 Result:
@@ -57,10 +57,10 @@ Result:
   time: 0.120,
   total_rows: 9,
   rows: [{
-    Name: '"us.census.tiger".county'
+    name: '"us.census.tiger".county'
   },
   {
-    Name:  '"us.census.tiger".state'
+    name:  '"us.census.tiger".state'
   },
   ...
   ]

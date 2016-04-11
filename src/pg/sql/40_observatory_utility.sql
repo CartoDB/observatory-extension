@@ -23,7 +23,6 @@ BEGIN
         AND coltable.column_id = col.id
         AND coltable.table_id = tab.id
         AND col.id = $1
-        AND ST_Intersects($2, ST_SetSRID(bounds::box2d::geometry, 4326))
     )
     '
   USING geometry_id, geom

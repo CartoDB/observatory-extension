@@ -156,7 +156,7 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".census_tract'
 )
-RETURNS TABLE(dimension text, dimension_value numeric)
+RETURNS TABLE(dimension text[], dimension_value numeric[])
 AS $$
 DECLARE
   ids text[];
@@ -250,7 +250,7 @@ BEGIN
   INTO geoid;
 
   EXECUTE
-    format('SELECT ST_Area(the_geom::geography)
+    format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
             FROM observatory.%I
             WHERE geoid = %L',
             geom_table_name,
@@ -353,4 +353,216 @@ BEGIN
 
   RETURN result;
 END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION OBS_GetSegmentSnapshot(
+  geom geometry,
+  geometry_level text DEFAULT '"us.census.tiger".census_tract'
+ )
+RETURNS TABLE(
+  segment_name TEXT,
+  total_pop_quantile Numeric,
+  male_pop_quantile Numeric,
+  female_pop_quantile Numeric,
+  median_age_quantile Numeric,
+  white_pop_quantile Numeric,
+  black_pop_quantile Numeric,
+  asian_pop_quantile Numeric,
+  hispanic_pop_quantile Numeric,
+  not_us_citizen_pop_quantile Numeric,
+  workers_16_and_over_quantile Numeric,
+  commuters_by_car_truck_van_quantile Numeric,
+  commuters_by_public_transportation_quantile Numeric,
+  commuters_by_bus_quantile Numeric,
+  commuters_by_subway_or_elevated_quantile Numeric,
+  walked_to_work_quantile Numeric,
+  worked_at_home_quantile Numeric,
+  children_quantile Numeric,
+  households_quantile Numeric,
+  population_3_years_over_quantile Numeric,
+  in_school_quantile Numeric,
+  in_grades_1_to_4_quantile Numeric,
+  in_grades_5_to_8_quantile Numeric,
+  in_grades_9_to_12_quantile Numeric,
+  in_undergrad_college_quantile Numeric,
+  pop_25_years_over_quantile Numeric,
+  high_school_diploma_quantile Numeric,
+  bachelors_degree_quantile Numeric,
+  masters_degree_quantile Numeric,
+  pop_5_years_over_quantile Numeric,
+  speak_only_english_at_home_quantile Numeric,
+  speak_spanish_at_home_quantile Numeric,
+  pop_determined_poverty_status_quantile Numeric,
+  poverty_quantile Numeric,
+  median_income_quantile Numeric,
+  gini_index_quantile Numeric,
+  income_per_capita_quantile Numeric,
+  housing_units_quantile Numeric,
+  vacant_housing_units_quantile Numeric,
+  vacant_housing_units_for_rent_quantile Numeric,
+  vacant_housing_units_for_sale_quantile Numeric,
+  median_rent_quantile Numeric,
+  percent_income_spent_on_rent_quantile Numeric,
+  owner_occupied_housing_units_quantile Numeric,
+  million_dollar_housing_units_quantile Numeric
+
+) AS $$
+DECLARE
+  target_cols text[];
+  seg_name    Text;
+  geom_id     Text;
+  q           Text;
+BEGIN
+target_cols := Array[
+          '"us.census.acs"."us.census.acs".B01001001_quantile',
+          '"us.census.acs"."us.census.acs".B01001002_quantile',
+          '"us.census.acs"."us.census.acs".B01001026_quantile',
+          '"us.census.acs"."us.census.acs".B01002001_quantile',
+          '"us.census.acs"."us.census.acs".B03002003_quantile',
+          '"us.census.acs"."us.census.acs".B03002004_quantile',
+          '"us.census.acs"."us.census.acs".B03002006_quantile',
+          '"us.census.acs"."us.census.acs".B03002012_quantile',
+          '"us.census.acs"."us.census.acs".B05001006_quantile',
+          '"us.census.acs"."us.census.acs".B08006001_quantile',
+          '"us.census.acs"."us.census.acs".B08006002_quantile',
+          '"us.census.acs"."us.census.acs".B08006008_quantile',
+          '"us.census.acs"."us.census.acs".B08006009_quantile',
+          '"us.census.acs"."us.census.acs".B08006011_quantile',
+          '"us.census.acs"."us.census.acs".B08006015_quantile',
+          '"us.census.acs"."us.census.acs".B08006017_quantile',
+          '"us.census.acs"."us.census.acs".B09001001_quantile',
+          '"us.census.acs"."us.census.acs".B11001001_quantile',
+          '"us.census.acs"."us.census.acs".B14001001_quantile',
+          '"us.census.acs"."us.census.acs".B14001002_quantile',
+          '"us.census.acs"."us.census.acs".B14001005_quantile',
+          '"us.census.acs"."us.census.acs".B14001006_quantile',
+          '"us.census.acs"."us.census.acs".B14001007_quantile',
+          '"us.census.acs"."us.census.acs".B14001008_quantile',
+          '"us.census.acs"."us.census.acs".B15003001_quantile',
+          '"us.census.acs"."us.census.acs".B15003017_quantile',
+          '"us.census.acs"."us.census.acs".B15003022_quantile',
+          '"us.census.acs"."us.census.acs".B15003023_quantile',
+          '"us.census.acs"."us.census.acs".B16001001_quantile',
+          '"us.census.acs"."us.census.acs".B16001002_quantile',
+          '"us.census.acs"."us.census.acs".B16001003_quantile',
+          '"us.census.acs"."us.census.acs".B17001001_quantile',
+          '"us.census.acs"."us.census.acs".B17001002_quantile',
+          '"us.census.acs"."us.census.acs".B19013001_quantile',
+          '"us.census.acs"."us.census.acs".B19083001_quantile',
+          '"us.census.acs"."us.census.acs".B19301001_quantile',
+          '"us.census.acs"."us.census.acs".B25001001_quantile',
+          '"us.census.acs"."us.census.acs".B25002003_quantile',
+          '"us.census.acs"."us.census.acs".B25004002_quantile',
+          '"us.census.acs"."us.census.acs".B25004004_quantile',
+          '"us.census.acs"."us.census.acs".B25058001_quantile',
+          '"us.census.acs"."us.census.acs".B25071001_quantile',
+          '"us.census.acs"."us.census.acs".B25075001_quantile',
+          '"us.census.acs"."us.census.acs".B25075025_quantile'
+               ];
+
+    EXECUTE
+      $query$
+      select (categories)[1]
+                      from OBS_GetCategories($1,Array['"us.census.spielman_singleton_segments".X10'])
+                      limit 1
+      $query$
+    INTO segment_name
+
+    USING geom;
+
+    q =
+      format( $query$
+      WITH a As (
+           SELECT
+             names As names,
+             vals As vals
+          FROM OBS_Get($1,
+                       $2,
+                       '2009 - 2013',
+                       $3)
+
+        ), percentiles as (
+           %s
+         FROM  a)
+        select $4, percentiles.*
+          from percentiles
+       $query$, OBS_BuildSnapshotQuery(target_cols) );
+
+    RETURN QUERY
+    EXECUTE
+      q
+    USING geom, target_cols, geometry_level, segment_name ;
+
+END $$ LANGUAGE plpgsql  ;
+
+--Get categorical variables from point
+
+CREATE OR REPLACE FUNCTION OBS_GetCategories(
+  geom geometry,
+  dimension_names text[],
+  geometry_level text DEFAULT '"us.census.tiger".census_tract',
+  time_span text DEFAULT '2009 - 2013'
+)
+returns TABLE(names text[], categories text[]) as $$
+DECLARE
+  geom_table_name text;
+  geoid text;
+  names text[];
+  results text[];
+  query text;
+  data_table_info OBS_ColumnData[];
+BEGIN
+
+  geom_table_name := OBS_GeomTable(geom, geometry_level);
+  IF geom_table_name IS NULL
+  THEN
+     RAISE EXCEPTION 'Point % is outside of the data region', geom;
+  END IF;
+
+  data_table_info := OBS_GetColumnData(geometry_level,
+                                       dimension_names,
+                                       time_span);
+
+
+  names := (SELECT array_agg((d).colname)
+            FROM unnest(data_table_info) As d);
+
+
+  EXECUTE
+    format('SELECT geoid
+            FROM observatory.%I
+            WHERE the_geom && $1',
+            geom_table_name)
+  USING geom
+  INTO geoid;
+
+  query := 'SELECT ARRAY[';
+  FOR i IN 1..array_upper(data_table_info, 1)
+  LOOP
+    query = query || format('%I ', lower(((data_table_info)[i]).colname));
+    IF i <  array_upper(data_table_info, 1)
+    THEN
+      query = query || ',';
+    END IF;
+  END LOOP;
+
+  query = query || format(' ]
+    FROM observatory.%I
+    WHERE %I.geoid  = %L
+  ',
+  ((data_table_info)[1]).tablename,
+  ((data_table_info)[1]).tablename,
+  geoid
+  );
+
+  EXECUTE
+    query
+  INTO results
+  USING geom;
+
+  RETURN QUERY
+    select names,results
+  RETURN;
+
+END
 $$ LANGUAGE plpgsql;

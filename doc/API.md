@@ -46,12 +46,14 @@ OBS_GetDemographicSnapshot(CDB_LatLng(40.810201, -73.956601))
 
 ### Available fields
 
+The Demographic Snapshot contains a broad subset of demographic measures in the Data Observatory. Over 80 measurements are returned by a single API request.
+
 __todo__
 
 
-### OBS_GetSegmentationSnapshot
+## OBS_GetSegmentationSnapshot
 
-The Segmentation Snapshot API call enables you to determine the pre calculated population segment for a location. For example, you can take the location of a store location and determine what classification of population exists around that location. If you need help creating coordinates from addresses, [see our geocoding documentation].
+The Segmentation Snapshot API call enables you to determine the pre-calculated population segment for a location. For example, you can take the location of a store location and determine what classification of population exists around that location. If you need help creating coordinates from addresses, [see our geocoding documentation].
 
 ### API Syntax
 
@@ -86,7 +88,7 @@ OBS_GetSegmentationSnapshot(CDB_LatLng(40.704512, -73.936669))
 
 __todo__
 
-### Available fields
+### Available segments 
 
 __todo__
 

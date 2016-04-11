@@ -25,6 +25,12 @@ OBS_GetDemographicSnapshot({{point geometry}})
 | account name  | The name of your CartoDB account where the Data Observatory has been enabled  | example_account  |
 | point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(40.760410,-73.964242)  |
 
+#### Geographic Scope
+
+The Demographic Snapshot API is available for the following countries:
+
+* United States
+
 ### API Examples
 
 __Get the Demographic Snapshot at Camp David__
@@ -69,6 +75,12 @@ OBS_GetSegmentationSnapshot({{point geometry}})
 | account name  | The name of your CartoDB account where the Data Observatory has been enabled  | example_account  |
 | point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(40.760410,-73.964242)  |
 
+#### Geographic Scope
+
+The Segmentation Snapshot API is available for the following countries:
+
+* United States
+
 ### API Examples
 
 __Get the Segmentation Snapshot around the MGM Grand__
@@ -88,7 +100,7 @@ OBS_GetSegmentationSnapshot(CDB_LatLng(40.704512, -73.936669))
 
 __todo__
 
-### Available segments 
+### Available segments
 
 __todo__
 

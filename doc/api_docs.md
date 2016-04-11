@@ -36,6 +36,11 @@ OBS_GetDemographicSnapshot(CDB_LatLng(40.760410,-73.964242))
 
 [Click to expand](https://gist.github.com/ohasselblad/c9e59a6e8da35728d0d81dfed131ed17)
 
+### Available fields
+
+__todo__
+
+
 ### OBS_GetSegmentationSnapshot
 
 API Example:

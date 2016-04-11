@@ -127,8 +127,8 @@ DECLARE
 
   q = 'WITH a As (
          SELECT
-           colnames As names,
-           colvalues As vals
+           dimension As names,
+           dimension_value As vals
         FROM OBS_GetCensus($1,$2)
       )' ||
       OBS_BuildSnapshotQuery(target_cols) ||
@@ -181,7 +181,7 @@ CREATE OR REPLACE FUNCTION OBS_Get(
 RETURNS TABLE(names text[], vals NUMERIC[])
 AS $$
 DECLARE
-	results numeric[];
+  results numeric[];
   geom_table_name text;
   names text[];
   query text;

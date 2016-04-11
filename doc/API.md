@@ -25,6 +25,12 @@ OBS_GetDemographicSnapshot({{point geometry}})
 | account name  | The name of your CartoDB account where the Data Observatory has been enabled  | example_account  |
 | point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(40.760410,-73.964242)  |
 
+#### Geographic Scope
+
+The Demographic Snapshot API is available for the following countries:
+
+* United States
+
 ### API Examples
 
 __Get the Demographic Snapshot at Camp David__
@@ -46,12 +52,14 @@ OBS_GetDemographicSnapshot(CDB_LatLng(40.810201, -73.956601))
 
 ### Available fields
 
+The Demographic Snapshot contains a broad subset of demographic measures in the Data Observatory. Over 80 measurements are returned by a single API request.
+
 __todo__
 
 
-### OBS_GetSegmentationSnapshot
+## OBS_GetSegmentationSnapshot
 
-The Segmentation Snapshot API call enables you to determine the pre calculated population segment for a location. For example, you can take the location of a store location and determine what classification of population exists around that location. If you need help creating coordinates from addresses, [see our geocoding documentation].
+The Segmentation Snapshot API call enables you to determine the pre-calculated population segment for a location. For example, you can take the location of a store location and determine what classification of population exists around that location. If you need help creating coordinates from addresses, [see our geocoding documentation].
 
 ### API Syntax
 
@@ -66,6 +74,12 @@ OBS_GetSegmentationSnapshot({{point geometry}})
 |---|:-:|:-:|
 | account name  | The name of your CartoDB account where the Data Observatory has been enabled  | example_account  |
 | point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(40.760410,-73.964242)  |
+
+#### Geographic Scope
+
+The Segmentation Snapshot API is available for the following countries:
+
+* United States
 
 ### API Examples
 
@@ -86,10 +100,10 @@ OBS_GetSegmentationSnapshot(CDB_LatLng(40.704512, -73.936669))
 
 __todo__
 
-### Available fields
+### Available segments
 
 __todo__
 
 ### Methodology
 
-Segmentation is a method that divides a target market into subgroups based on shared common traits. While we plan to make many different segmentation methods available, our first release includes a segmentation profile first defined in a paper, _Understanding America's Neighborhoods Using Uncertain Data from the American Community Survey: Output Data: US_tract_clusters_new._. [See here](http://www.tandfonline.com/doi/pdf/10.1080/00045608.2015.1052335) for further information on the work in that paper.  
+Segmentation is a method that divides a target market into subgroups based on shared common traits. While we plan to make many different segmentation methods available, our first release includes a segmentation profile first defined in a paper, _Understanding America's Neighborhoods Using Uncertain Data from the American Community Survey: Output Data: US_tract_clusters_new_. [See here](http://www.tandfonline.com/doi/pdf/10.1080/00045608.2015.1052335) for further information on the work in that paper.  

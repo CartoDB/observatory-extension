@@ -15,19 +15,35 @@ _Coming soon_
 
 ## OBS_GetDemographicSnapshot
 
-SQL Example:
-```sql
-SELECT *
-FROM OBS_GetDemographicSnapshot(CDB_LatLng(40.760410,-73.964242));
+The Demographic Snapshot API call enables you to collect demographic details around a point location. For example, you can take the coordinates of a bus stop and find the average population characteristics in that location. If you need help creating coordinates from your addresses, [see our geocoding documentation].
+
+Fields returned include information about income, education, transportation, race, and more. Not all fields will have information for every coordinate queried.
+
+
+### API Syntax
+
+```html
+https://{{account name}}.cartodb.com/api/v2/sql?q=SELECT * FROM
+OBS_GetDemographicSnapshot({{point geometry}})
 ```
 
+#### Parameters
+
+**q**: API Query Request
+| Parameter  | Description  |  Example  |
+|---|:-:|:-:|
+| account name  | The name of your CartoDB account where the Data Observatory has been enabled  | example_account  |
+| point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(CDB_LatLng(40.760410,-73.964242))  |
 
 
+### API Example
 
-API Example:
-https://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM OBS_GetDemographicSnapshot(CDB_LatLng(40.760410,-73.964242))
+```html
+https://example_account.cartodb.com/api/v2/sql?q=SELECT * FROM
+OBS_GetDemographicSnapshot(CDB_LatLng(40.760410,-73.964242))
+```
 
-Response:
+### API Response
 
 [Click to expand](https://gist.github.com/ohasselblad/c9e59a6e8da35728d0d81dfed131ed17)
 

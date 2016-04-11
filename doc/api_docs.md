@@ -31,7 +31,7 @@ OBS_GetDemographicSnapshot({{point geometry}})
 | Parameter  | Description  |  Example  |
 |---|:-:|:-:|
 | account name  | The name of your CartoDB account where the Data Observatory has been enabled  | example_account  |
-| point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(CDB_LatLng(40.760410,-73.964242))  |
+| point geometry  |  A WKB point geometry. You can use the helper function, CDB_LatLng to quickly generate one from latitude and longitude | CDB_LatLng(40.760410,-73.964242)  |
 
 ### API Example
 

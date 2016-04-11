@@ -6,7 +6,7 @@ This file is for reference purposes only. It is intended for tracking the Data O
 
 ## OBS_GetDemographicSnapshot
 
-The Demographic Snapshot API call enables you to collect demographic details around a point location. For example, you can take the coordinates of a bus stop and find the average population characteristics in that location. If you need help creating coordinates from your addresses, [see our geocoding documentation].
+The Demographic Snapshot API call enables you to collect demographic details around a point location. For example, you can take the coordinates of a bus stop and find the average population characteristics in that location. If you need help creating coordinates from addresses, [see our geocoding documentation].
 
 Fields returned include information about income, education, transportation, race, and more. Not all fields will have information for every coordinate queried.
 
@@ -51,10 +51,7 @@ __todo__
 
 ### OBS_GetSegmentationSnapshot
 
-The Demographic Snapshot API call enables you to collect demographic details around a point location. For example, you can take the coordinates of a bus stop and find the average population characteristics in that location. If you need help creating coordinates from your addresses, [see our geocoding documentation].
-
-Fields returned include information about income, education, transportation, race, and more. Not all fields will have information for every coordinate queried.
-
+The Segmentation Snapshot API call enables you to determine the pre calculated population segment for a location. For example, you can take the location of a store location and determine what classification of population exists around that location. If you need help creating coordinates from addresses, [see our geocoding documentation].
 
 ### API Syntax
 

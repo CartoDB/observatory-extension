@@ -4,14 +4,6 @@ This file is for reference purposes only. It is intended for tracking the Data O
 
 ## Documentation
 
-### OBS_GetSegmentationSnapshot
-
-API Example:
-
-```text
-https://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetSegmentationSnapshot(CDB_LatLng(40.760410,-73.964242))
-```
-
 ## OBS_GetDemographicSnapshot
 
 The Demographic Snapshot API call enables you to collect demographic details around a point location. For example, you can take the coordinates of a bus stop and find the average population characteristics in that location. If you need help creating coordinates from your addresses, [see our geocoding documentation].
@@ -43,3 +35,11 @@ OBS_GetDemographicSnapshot(CDB_LatLng(40.760410,-73.964242))
 ### API Response
 
 [Click to expand](https://gist.github.com/ohasselblad/c9e59a6e8da35728d0d81dfed131ed17)
+
+### OBS_GetSegmentationSnapshot
+
+API Example:
+
+```text
+https://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetSegmentationSnapshot(CDB_LatLng(40.760410,-73.964242))
+```

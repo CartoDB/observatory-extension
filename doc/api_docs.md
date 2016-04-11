@@ -33,6 +33,12 @@ __Get the Demographic Snapshot at Camp David__
 https://example_account.cartodb.com/api/v2/sql?q=SELECT * FROM
 OBS_GetDemographicSnapshot(CDB_LatLng(39.648333, -77.465))
 ```
+__Get the Demographic Snapshot at Morning Side Heights__
+
+```text
+https://example_account.cartodb.com/api/v2/sql?q=SELECT * FROM
+OBS_GetDemographicSnapshot(CDB_LatLng(40.810201, -73.956601))
+```
 
 ### API Response
 

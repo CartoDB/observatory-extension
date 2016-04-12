@@ -2,18 +2,7 @@
 -- PostgreSQL database dump
 --
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-
-SET search_path = observatory, pg_catalog;
-
---
--- Data for Name: obs_table; Type: TABLE DATA; Schema: observatory; Owner: cartodb_user_d377e55d-4326-4faf-97c7-503535e81667
---
+CREATE TABLE obs_table(cartodb_id bigint, the_geom geometry, the_geom_webmercator geometry, id text, tablename text, timespan text, bounds text, description text, version text);
 
 INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (1, NULL, NULL, '"us.census.spielman_singleton_segments".spielman_singleton_table_99914b932b', 'obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d', '2009 - 2013', 'BOX(0 0,0 0)', NULL, '5');
 INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (2, NULL, NULL, '"us.census.acs".extract_block_group_5yr_2013_69b156927c', 'obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb', '2009 - 2013', 'BOX(-179.231086 -14.601813,179.859681 71.441059)', NULL, '1');
@@ -47,14 +36,5 @@ INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename
 INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (30, NULL, NULL, '"us.census.acs".quantiles_zcta5_5yr_2013_dc39ebe0d5', 'obs_a31255ed256a27d69a9ea777621ad218f6f1f030', '2009 - 2013', 'BOX(0 0,0 0)', NULL, '0');
 INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (31, NULL, NULL, '"us.census.acs".quantiles_block_group_5yr_2013_69b156927c', 'obs_0932dc0392ca14a6b43e6e131943de9af2ee46b2', '2009 - 2013', 'BOX(0 0,0 0)', NULL, '2');
 
-
---
--- Name: obs_table_cartodb_id_seq; Type: SEQUENCE SET; Schema: observatory; Owner: cartodb_user_d377e55d-4326-4faf-97c7-503535e81667
---
-
-SELECT pg_catalog.setval('obs_table_cartodb_id_seq', 31, true);
-
-
---
--- PostgreSQL database dump complete
---
+CREATE SCHEMA IF NOT EXISTS observatory;
+ALTER TABLE obs_table SET SCHEMA observatory;

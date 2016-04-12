@@ -2,18 +2,7 @@
 -- PostgreSQL database dump
 --
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-
-SET search_path = observatory, pg_catalog;
-
---
--- Data for Name: obs_column; Type: TABLE DATA; Schema: observatory; Owner: cartodb_user_d377e55d-4326-4faf-97c7-503535e81667
---
+CREATE TABLE obs_column (cartodb_id bigint, the_geom geometry, the_geom_webmercator geometry, id text, type text, name text, description text, weight numeric, aggregate text, version text, extra json);
 
 INSERT INTO obs_column (cartodb_id, the_geom, the_geom_webmercator, id, type, name, description, weight, aggregate, version, extra) VALUES (594, NULL, NULL, '"us.census.tiger".geom', 'Geometry', NULL, NULL, 0, NULL, '0', NULL);
 INSERT INTO obs_column (cartodb_id, the_geom, the_geom_webmercator, id, type, name, description, weight, aggregate, version, extra) VALUES (796, NULL, NULL, '"us.ny.nyc.opendata".crfn', 'Text', 'City Reel File Number', NULL, 0, NULL, '3', NULL);
@@ -968,14 +957,5 @@ INSERT INTO obs_column (cartodb_id, the_geom, the_geom_webmercator, id, type, na
 INSERT INTO obs_column (cartodb_id, the_geom, the_geom_webmercator, id, type, name, description, weight, aggregate, version, extra) VALUES (933, NULL, NULL, '"us.census.acs"."us.census.acs".B19001017_quantile', 'Numeric', 'Quantile:Households with income of $200,000 Or More', 'The number of households in a geographic area whose annual income was more than $200,000.', 0, 'quantile', '0', NULL);
 
 
---
--- Name: obs_column_cartodb_id_seq; Type: SEQUENCE SET; Schema: observatory; Owner: cartodb_user_d377e55d-4326-4faf-97c7-503535e81667
---
-
-SELECT pg_catalog.setval('obs_column_cartodb_id_seq', 933, true);
-
-
---
--- PostgreSQL database dump complete
---
-
+CREATE SCHEMA IF NOT EXISTS observatory;
+ALTER TABLE obs_column SET SCHEMA observatory;

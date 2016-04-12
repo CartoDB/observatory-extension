@@ -26,16 +26,22 @@
 CREATE OR REPLACE FUNCTION OBS_GetDemographicSnapshot(geom geometry)
 RETURNS TABLE(
   total_pop NUMERIC,
-  female_pop NUMERIC,
   male_pop NUMERIC,
+  female_pop NUMERIC,
   median_age NUMERIC,
   white_pop NUMERIC,
   black_pop NUMERIC,
   asian_pop NUMERIC,
   hispanic_pop NUMERIC,
+  amerindian_pop NUMERIC,
+  other_race_pop NUMERIC,
+  two_or_more_races_pop NUMERIC,
+  not_hispanic_pop NUMERIC,
   not_us_citizen_pop NUMERIC,
   workers_16_and_over NUMERIC,
   commuters_by_car_truck_van NUMERIC,
+  commuters_drove_alone NUMERIC,
+  commuters_by_carpool NUMERIC,
   commuters_by_public_transportation NUMERIC,
   commuters_by_bus NUMERIC,
   commuters_by_subway_or_elevated NUMERIC,
@@ -51,6 +57,9 @@ RETURNS TABLE(
   in_undergrad_college NUMERIC,
   pop_25_years_over NUMERIC,
   high_school_diploma NUMERIC,
+  less_one_year_college NUMERIC,
+  one_year_more_college NUMERIC,
+  associates_degree NUMERIC,
   bachelors_degree NUMERIC,
   masters_degree NUMERIC,
   pop_5_years_over NUMERIC,
@@ -69,7 +78,39 @@ RETURNS TABLE(
   percent_income_spent_on_rent NUMERIC,
   owner_occupied_housing_units NUMERIC,
   million_dollar_housing_units NUMERIC,
-  mortgaged_housing_unit NUMERIC)
+  mortgaged_housing_units NUMERIC,
+  pop_15_and_over NUMERIC,
+  pop_never_married NUMERIC,
+  pop_now_married NUMERIC,
+  pop_separated NUMERIC,
+  pop_widowed NUMERIC,
+  pop_divorced NUMERIC,
+  commuters_16_over NUMERIC,
+  commute_less_10_mins NUMERIC,
+  commute_10_14_mins NUMERIC,
+  commute_15_19_mins NUMERIC,
+  commute_20_24_mins NUMERIC,
+  commute_25_29_mins NUMERIC,
+  commute_30_34_mins NUMERIC,
+  commute_35_44_mins NUMERIC,
+  commute_45_59_mins NUMERIC,
+  commute_60_more_mins NUMERIC,
+  aggregate_travel_time_to_work NUMERIC,
+  income_less_10000 NUMERIC,
+  income_10000_14999 NUMERIC,
+  income_15000_19999 NUMERIC,
+  income_20000_24999 NUMERIC,
+  income_25000_29999 NUMERIC,
+  income_30000_34999 NUMERIC,
+  income_35000_39999 NUMERIC,
+  income_40000_44999 NUMERIC,
+  income_45000_49999 NUMERIC,
+  income_50000_59999 NUMERIC,
+  income_60000_74999 NUMERIC,
+  income_75000_99999 NUMERIC,
+  income_100000_124999 NUMERIC,
+  income_125000_149999 NUMERIC,
+  income_150000_199999 NUMERIC)
 AS $$
 DECLARE
  target_cols text[];
@@ -77,18 +118,23 @@ DECLARE
  vals numeric[];
  q text;
  BEGIN
- target_cols := Array[
-                 'total_pop',
-                 'female_pop',
+ target_cols := Array['total_pop',
                  'male_pop',
+                 'female_pop',
                  'median_age',
                  'white_pop',
                  'black_pop',
                  'asian_pop',
                  'hispanic_pop',
+                 'amerindian_pop',
+                 'other_race_pop',
+                 'two_or_more_races_pop',
+                 'not_hispanic_pop',
                  'not_us_citizen_pop',
                  'workers_16_and_over',
                  'commuters_by_car_truck_van',
+                 'commuters_drove_alone',
+                 'commuters_by_carpool',
                  'commuters_by_public_transportation',
                  'commuters_by_bus',
                  'commuters_by_subway_or_elevated',
@@ -104,6 +150,9 @@ DECLARE
                  'in_undergrad_college',
                  'pop_25_years_over',
                  'high_school_diploma',
+                 'less_one_year_college',
+                 'one_year_more_college',
+                 'associates_degree',
                  'bachelors_degree',
                  'masters_degree',
                  'pop_5_years_over',
@@ -122,8 +171,40 @@ DECLARE
                  'percent_income_spent_on_rent',
                  'owner_occupied_housing_units',
                  'million_dollar_housing_units',
-                 'mortgaged_housing_unit'
-                ];
+                 'mortgaged_housing_units',
+                 'pop_15_and_over',
+                 'pop_never_married',
+                 'pop_now_married',
+                 'pop_separated',
+                 'pop_widowed',
+                 'pop_divorced',
+                 'commuters_16_over',
+                 'commute_less_10_mins',
+                 'commute_10_14_mins',
+                 'commute_15_19_mins',
+                 'commute_20_24_mins',
+                 'commute_25_29_mins',
+                 'commute_30_34_mins',
+                 'commute_35_44_mins',
+                 'commute_45_59_mins',
+                 'commute_60_more_mins',
+                 'aggregate_travel_time_to_work',
+                 'income_less_10000',
+                 'income_10000_14999',
+                 'income_15000_19999',
+                 'income_20000_24999',
+                 'income_25000_29999',
+                 'income_30000_34999',
+                 'income_35000_39999',
+                 'income_40000_44999',
+                 'income_45000_49999',
+                 'income_50000_59999',
+                 'income_60000_74999',
+                 'income_75000_99999',
+                 'income_100000_124999',
+                 'income_125000_149999',
+                 'income_150000_199999'
+];
 
   q = 'WITH a As (
          SELECT
@@ -164,7 +245,7 @@ BEGIN
 
   ids  = OBS_LookupCensusHuman(dimension_names);
 
-  RETURN QUERY SELECT unnest(names), unnest(vals)
+  RETURN QUERY SELECT names, vals
                FROM OBS_Get(geom, ids, time_span, geometry_level);
 END;
 $$ LANGUAGE plpgsql;
@@ -248,6 +329,8 @@ BEGIN
             geom_table_name)
   USING geom
   INTO geoid;
+
+  RAISE NOTICE 'geoid is % geometry table is % ', geoid, geom_table_name;
 
   EXECUTE
     format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)

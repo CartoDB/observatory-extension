@@ -23,7 +23,7 @@
 -- Creates a table of demographic snapshot
 -- TODO: Remove since it does address geocoding?
 
-CREATE OR REPLACE FUNCTION OBS_GetDemographicSnapshot(geom geometry)
+CREATE OR REPLACE FUNCTION OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
 RETURNS TABLE(
   total_pop NUMERIC,
   male_pop NUMERIC,
@@ -210,7 +210,7 @@ DECLARE
          SELECT
            dimension As names,
            dimension_value As vals
-        FROM OBS_GetCensus($1,$2)
+        FROM OBS_GetCensus($1,$2,$3,$4)
       )' ||
       OBS_BuildSnapshotQuery(target_cols) ||
       ' FROM  a';
@@ -218,7 +218,7 @@ DECLARE
   RETURN QUERY
   EXECUTE
     q
-  USING geom, target_cols;
+  USING geom, target_cols, time_span, geometry_level;
 
   RETURN;
 END;

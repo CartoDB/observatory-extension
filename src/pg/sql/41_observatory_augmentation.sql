@@ -192,7 +192,8 @@ BEGIN
 
   IF geom_table_name IS NULL
   THEN
-     RAISE EXCEPTION 'Point % is outside of the data region', geom;
+     RAISE NOTICE 'Point % is outside of the data region', geom;
+     RETURN QUERY SELECT '{}'::text[], '{}'::numeric[];
   END IF;
 
   data_table_info := OBS_GetColumnData(geometry_level,
@@ -503,7 +504,7 @@ CREATE OR REPLACE FUNCTION OBS_GetCategories(
   geometry_level text DEFAULT '"us.census.tiger".census_tract',
   time_span text DEFAULT '2009 - 2013'
 )
-returns TABLE(names text[], categories text[]) as $$
+RETURNS TABLE(names text[], categories text[]) as $$
 DECLARE
   geom_table_name text;
   geoid text;
@@ -516,7 +517,8 @@ BEGIN
   geom_table_name := OBS_GeomTable(geom, geometry_level);
   IF geom_table_name IS NULL
   THEN
-     RAISE EXCEPTION 'Point % is outside of the data region', geom;
+     RAISE NOTICE 'Point % is outside of the data region', geom;
+     RETURNS QUERY SELECT '{}'::text[], '{}'::text[];
   END IF;
 
   data_table_info := OBS_GetColumnData(geometry_level,

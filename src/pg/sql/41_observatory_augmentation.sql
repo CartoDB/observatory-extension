@@ -329,7 +329,7 @@ BEGIN
   EXECUTE
     format('SELECT geoid
             FROM observatory.%I
-            WHERE the_geom && $1',
+            WHERE ST_WITHIN($1, the_geom)',
             geom_table_name)
   USING geom
   INTO geoid;

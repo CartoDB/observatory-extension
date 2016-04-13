@@ -44,9 +44,7 @@ shall always be done in a topic branch created from the `develop` branch.
 Tests, documentation and peer code reviews are required for all
 modifications.
 
-The tests (both for SQL and Python) are executed by running,
-from the top directory:
-
+The tests are executed by running this from the top directory:
 ```
 sudo make install
 make test

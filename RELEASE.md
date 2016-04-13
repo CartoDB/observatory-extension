@@ -15,9 +15,7 @@ To do so [Semantic Versioning 2.0](http://semver.org/) is in order.
 Thew `NEWS.md` will be updated.
 
 The next command must be executed to produce the main installation
-script for the new release, `release/observatory--X.Y.Z.sql` and
-also to copy the python package to `release/python/X.Y.Z/observatory`.
-
+script for the new release, `release/observatory--X.Y.Z.sql`:
 ```
 make release
 ```
@@ -58,12 +56,11 @@ sudo make deploy RELEASE_VERSION=X.Y.Z
   Intended for use by the release manager.
 
 * `sudo make deploy` will install the current release X.Y.Z from the
-  `release/` files into PostgreSQL and a Python virtual environment
-  `envs/X.Y.Z`.
+  `release/` files into PostgreSQL.
   Intended for use by the release manager and deployment jobs.
 
 * `sudo make deploy RELEASE_VERSION=X.Y.Z` will install specified version
   previously generated in `release/`
-  into PostgreSQL and a Python virtual environment `envs/X.Y.Z`.
-  Intended for use by the release manager and deployment jobs.
+  into PostgreSQL.
+  Intended to be used by the release manager and deployment jobs.
 ```

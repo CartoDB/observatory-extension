@@ -245,8 +245,8 @@ BEGIN
 
   ids := OBS_LookupCensusHuman(dimension_names);
 
-  RETURN QUERY SELECT names, vals
-               FROM OBS_Get(geom, ids, time_span, geometry_level);
+  RETURN QUERY
+    SELECT names, vals FROM OBS_Get(geom, ids, time_span, geometry_level);
 END;
 $$ LANGUAGE plpgsql;
 

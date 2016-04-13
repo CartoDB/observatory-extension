@@ -1,5 +1,5 @@
 
-CREATE TABLE obs_column_table (cartodb_id bigint, the_geom geometry, the_geom_webmercator geometry, id text, type text, name text, description text, weight numeric, aggregate text, version text, extra json);
+CREATE TABLE obs_column_table (cartodb_id bigint, the_geom geometry, the_geom_webmercator geometry, column_id text, table_id text, colname text, extra json);
 
 
 INSERT INTO obs_column_table (cartodb_id, the_geom, the_geom_webmercator, column_id, table_id, colname, extra) VALUES (2, NULL, NULL, '"us.bls".own_code', '"us.bls".raw_qcew_2013_dd20d99063', 'own_code', NULL);

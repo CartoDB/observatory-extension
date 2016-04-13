@@ -61,7 +61,7 @@ RETURNS TABLE(
   associates_degree NUMERIC,
   bachelors_degree NUMERIC,
   masters_degree NUMERIC,
-  pop_5_years_over NUMERIC,
+  --pop_5_years_over NUMERIC,
   --speak_only_english_at_home NUMERIC,
   --speak_spanish_at_home NUMERIC,
   --pop_determined_poverty_status NUMERIC,
@@ -110,7 +110,8 @@ RETURNS TABLE(
   income_100000_124999 NUMERIC,
   income_125000_149999 NUMERIC,
   income_150000_199999 NUMERIC,
-  income_200000_or_more NUMERIC)
+  income_200000_or_more NUMERIC,
+  land_area NUMERIC)
 AS $$
 DECLARE
  target_cols text[];
@@ -155,7 +156,7 @@ BEGIN
                  'associates_degree',
                  'bachelors_degree',
                  'masters_degree',
-                 'pop_5_years_over',
+                 --'pop_5_years_over',
                  --'speak_only_english_at_home',
                  --'speak_spanish_at_home',
                  --'pop_determined_poverty_status',
@@ -204,7 +205,8 @@ BEGIN
                  'income_100000_124999',
                  'income_125000_149999',
                  'income_150000_199999',
-                 'income_200000_or_more'];
+                 'income_200000_or_more',
+                 'land_area'];
 
   q := 'WITH a As (
          SELECT

@@ -554,11 +554,13 @@ target_cols := Array[
       $query$
       SELECT (categories)[1]
                       FROM OBS_GetCategories($1,
-                        Array['"us.census.spielman_singleton_segments".X10'])
+                        Array['"us.census.spielman_singleton_segments".X10'],
+                        $2
+                      )
                       LIMIT 1
       $query$
     INTO segment_name
-    USING geom;
+    USING geom, geometry_level;
 
     q :=
       format( $query$

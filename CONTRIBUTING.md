@@ -1,6 +1,6 @@
 # Development process
 
-Please read the Working Process/Quickstart Guide in [[README.md]] first.
+Please read the Working Process/Quickstart Guide in [README.md](README.md) first.
 
 For any modification of the observatory-extension, such as adding new features,
 refactoring or bug-fixing, a topic branch must be created out of the `develop`

@@ -44,7 +44,7 @@ and developers must not commit or merge into it.
 ## Development Guidelines
 
 For a detailed description of the development process please see
-the [[CONTRIBUTING.md]] guide.
+the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
 
 Any modification to the source code
 shall always be done in a topic branch created from the `develop` branch.
@@ -60,5 +60,5 @@ make test
 ## Release
 
 The release and deployment process is described in the
-[[RELEASE.md]] guide and it is the responsibility of the designated
+[RELEASE.md](RELEASE.md) guide and it is the responsibility of the designated
 release manager.

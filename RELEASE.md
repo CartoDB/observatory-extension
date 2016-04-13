@@ -1,7 +1,7 @@
 # Release & Deployment Process
 
-Please read the Working Process/Quickstart Guide in [README.md]]
-and the Development guidelines in [[CONTRIBUTING.md]].
+Please read the Working Process/Quickstart Guide in [README.md](README.md)
+and the Development guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The release process of a new version of the extension
 shall be performed by the designated *Release Manager*.

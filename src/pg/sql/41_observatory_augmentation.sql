@@ -22,7 +22,7 @@
 
 -- Creates a table of demographic snapshot
 
-CREATE OR REPLACE FUNCTION OBS_GetDemographicSnapshot(geom geometry)
+CREATE OR REPLACE FUNCTION OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
 RETURNS TABLE(
   total_pop NUMERIC,
   male_pop NUMERIC,
@@ -109,7 +109,8 @@ RETURNS TABLE(
   income_75000_99999 NUMERIC,
   income_100000_124999 NUMERIC,
   income_125000_149999 NUMERIC,
-  income_150000_199999 NUMERIC)
+  income_150000_199999 NUMERIC,
+  income_200000_or_more NUMERIC)
 AS $$
 DECLARE
  target_cols text[];
@@ -202,13 +203,14 @@ BEGIN
                  'income_75000_99999',
                  'income_100000_124999',
                  'income_125000_149999',
-                 'income_150000_199999'];
+                 'income_150000_199999',
+                 'income_200000_or_more'];
 
   q := 'WITH a As (
          SELECT
            dimension As names,
            dimension_value As vals
-        FROM OBS_GetCensus($1, $2)
+        FROM OBS_GetCensus($1,$2,$3,$4)
       )' ||
       OBS_BuildSnapshotQuery(target_cols) ||
       ' FROM a';
@@ -216,7 +218,7 @@ BEGIN
   RETURN QUERY
   EXECUTE
     q
-  USING geom, target_cols;
+  USING geom, target_cols, time_span, geometry_level;
 
   RETURN;
 END;
@@ -233,7 +235,7 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   geom geometry,
   dimension_names text[],
   time_span text DEFAULT '2009 - 2013',
-  geometry_level text DEFAULT '"us.census.tiger".census_tract'
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
 )
 RETURNS TABLE(dimension text[], dimension_value NUMERIC[])
 AS $$
@@ -312,8 +314,8 @@ CREATE OR REPLACE FUNCTION OBS_GetPoints(
   geom_table_name text,
   data_table_info OBS_ColumnData[]
 
-) 
-RETURNS NUMERIC[] 
+)
+RETURNS NUMERIC[]
 AS $$
 DECLARE
   result NUMERIC[];
@@ -383,8 +385,8 @@ CREATE OR REPLACE FUNCTION OBS_GetPolygons(
   geom geometry,
   geom_table_name text,
   data_table_info OBS_ColumnData[]
-) 
-RETURNS NUMERIC[] 
+)
+RETURNS NUMERIC[]
 AS $$
 DECLARE
   result NUMERIC[];
@@ -508,31 +510,31 @@ target_cols := Array[
           '"us.census.acs".B03002004_quantile',
           '"us.census.acs".B03002006_quantile',
           '"us.census.acs".B03002012_quantile',
-          '"us.census.acs".B05001006_quantile',
-          '"us.census.acs".B08006001_quantile',
-          '"us.census.acs".B08006002_quantile',
-          '"us.census.acs".B08006008_quantile',
-          '"us.census.acs".B08006009_quantile',
-          '"us.census.acs".B08006011_quantile',
-          '"us.census.acs".B08006015_quantile',
-          '"us.census.acs".B08006017_quantile',
-          '"us.census.acs".B09001001_quantile',
+          '"us.census.acs".B05001006_quantile',--
+          '"us.census.acs".B08006001_quantile',--
+          '"us.census.acs".B08006002_quantile',--
+          '"us.census.acs".B08006008_quantile',--
+          '"us.census.acs".B08006009_quantile',--
+          '"us.census.acs".B08006011_quantile',--
+          '"us.census.acs".B08006015_quantile',--
+          '"us.census.acs".B08006017_quantile',--
+          '"us.census.acs".B09001001_quantile',--
           '"us.census.acs".B11001001_quantile',
-          '"us.census.acs".B14001001_quantile',
-          '"us.census.acs".B14001002_quantile',
-          '"us.census.acs".B14001005_quantile',
-          '"us.census.acs".B14001006_quantile',
-          '"us.census.acs".B14001007_quantile',
-          '"us.census.acs".B14001008_quantile',
+          '"us.census.acs".B14001001_quantile',--
+          '"us.census.acs".B14001002_quantile',--
+          '"us.census.acs".B14001005_quantile',--
+          '"us.census.acs".B14001006_quantile',--
+          '"us.census.acs".B14001007_quantile',--
+          '"us.census.acs".B14001008_quantile',--
           '"us.census.acs".B15003001_quantile',
           '"us.census.acs".B15003017_quantile',
           '"us.census.acs".B15003022_quantile',
           '"us.census.acs".B15003023_quantile',
-          '"us.census.acs".B16001001_quantile',
-          '"us.census.acs".B16001002_quantile',
-          '"us.census.acs".B16001003_quantile',
-          '"us.census.acs".B17001001_quantile',
-          '"us.census.acs".B17001002_quantile',
+          '"us.census.acs".B16001001_quantile',--
+          '"us.census.acs".B16001002_quantile',--
+          '"us.census.acs".B16001003_quantile',--
+          '"us.census.acs".B17001001_quantile',--
+          '"us.census.acs".B17001002_quantile',--
           '"us.census.acs".B19013001_quantile',
           '"us.census.acs".B19083001_quantile',
           '"us.census.acs".B19301001_quantile',
@@ -549,7 +551,7 @@ target_cols := Array[
     EXECUTE
       $query$
       SELECT (categories)[1]
-                      FROM OBS_GetCategories($1, 
+                      FROM OBS_GetCategories($1,
                         Array['"us.census.spielman_singleton_segments".X10'])
                       LIMIT 1
       $query$
@@ -579,7 +581,7 @@ target_cols := Array[
       q
     USING geom, target_cols, geometry_level, segment_name;
 
-END; 
+END;
 $$ LANGUAGE plpgsql;
 
 --Get categorical variables from point
@@ -587,7 +589,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION OBS_GetCategories(
   geom geometry,
   dimension_names text[],
-  geometry_level text DEFAULT '"us.census.tiger".census_tract',
+  geometry_level text DEFAULT '"us.census.tiger".block_group',
   time_span text DEFAULT '2009 - 2013'
 )
 RETURNS TABLE(names text[], categories text[]) as $$

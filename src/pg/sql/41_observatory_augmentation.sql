@@ -109,7 +109,8 @@ RETURNS TABLE(
   income_75000_99999 NUMERIC,
   income_100000_124999 NUMERIC,
   income_125000_149999 NUMERIC,
-  income_150000_199999 NUMERIC)
+  income_150000_199999 NUMERIC,
+  income_200000_or_more NUMERIC)
 AS $$
 DECLARE
  target_cols text[];
@@ -202,7 +203,8 @@ BEGIN
                  'income_75000_99999',
                  'income_100000_124999',
                  'income_125000_149999',
-                 'income_150000_199999'];
+                 'income_150000_199999',
+                 'income_200000_or_more'];
 
   q := 'WITH a As (
          SELECT

@@ -1,13 +1,21 @@
 # Observatory extension
 
-CartoDB extension that implements the functions needed by the Observatory Service.
+CartoDB extension that implements the row-level functions needed by the Observatory Service.
 
 ## Code organization
 
-* *doc* documentation
-* *src* source code
-* - *src/pg* contains the PostgreSQL extension source code
-* *release* reseleased versions
+```
+.
+├── doc     # documentation
+├── release # released versions
+└── src     # source code
+    └── pg
+        ├── sql
+        └── test
+            ├── expected
+            ├── fixtures
+            └── sql
+```
 
 # Development workflow
 

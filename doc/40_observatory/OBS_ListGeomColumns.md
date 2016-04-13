@@ -5,7 +5,7 @@ OBS_ListGeomColumns - List all available geometers in the data observatory
 
 ## Synopsis
 
-```postgresql
+```sql
 setof text OBS_ListGeomColumns();
 ```
 

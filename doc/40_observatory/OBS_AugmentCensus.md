@@ -1,29 +1,29 @@
 
 ## Name
 
-OBS_Augment_Census - returns the census variable appropriately aggregated appropriately to the input geometry.
+OBS_AugmentCensus - returns the census variable appropriately aggregated appropriately to the input geometry.
 
 ## Synopsis
 
-```postgresql
+```sql
 OBS_Augment_Census (
   geom geometry (ST_Point),
   column_name text
 );
 
-OBS_Augment_Census (
+OBS_AugmentCensus (
   geom geometry (ST_Polygon),
   column_name text
 );
 
-OBS_Augment_Census (
+OBS_AugmentCensus (
   geom geometry (ST_Point),
   column_name text,
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".block_group'
 );
 
-OBS_Augment_Census (
+OBS_AugmentCensus (
   geom geometry (ST_Polygon),
   column_name text,
   time_span text DEFAULT '2009 - 2013',
@@ -59,36 +59,36 @@ If the input geometry is a polygon and the target dimension is a count, then the
 
 With point input data:
 
-```postgresql
-SELECT OBS_Augment_Census(
-  CDB_LATLNG(40.704512, -73.936669),
+```sql
+SELECT OBS_AugmentCensus(
+  CDB_LatLng(40.704512, -73.936669),
    'total_pop'
-) as population per square meter
+) As population_per_square_kilometer
 ```
 
 Result:
 
-|   | population per square meter |
-|---|------|
-| 1 | 0.00951 |
+| population_per_square_kilometer |
+|------|
+| 0.00951 |
 
 With Polygon data:
 
-```postgresql
-SELECT OBS_Augment_Census(
-  ST_BUFFER(
-    CDB_LATLNG(40.704512, -73.936669)::geography
+```sql
+SELECT OBS_AugmentCensus(
+  ST_Buffer(
+    CDB_LatLng(40.704512, -73.936669)::geography
     , 5000
   )::geometry,
    'total_pop'
-) as 'population'
+) As 'population'
 ```
 
 Result
 
-|   | population  |
-|---|------|
-| 1 | 1165820.828 |
+| population  |
+|------|
+| 1165820.828 |
 
 
 ## API Usage
@@ -96,12 +96,12 @@ Result
 Example:
 
 ```curl
-http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM SELECT OBS_Augment_Census(CDB_LATLNG(40.704512, -73.936669),'total_pop') as population_per_square_meter
+http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM SELECT OBS_AugmentCensus(CDB_LatLng(40.704512, -73.936669),'total_pop') as population_per_square_meter
 ```
 
 Result:
 
-```javascript
+```js
 {
   time: 0.120,
   total_rows: 9,

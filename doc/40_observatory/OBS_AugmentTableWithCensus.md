@@ -6,7 +6,7 @@ geometry type.
 
 ## Synopsis
 
-```postgresql
+```sql
 OBS_AugmentTableWithCensus (
   target_table_name text,
   column_name text
@@ -60,36 +60,34 @@ If the input table geometry is polygons and the target dimension is a count, the
 
 With a target table that looks like
 
-|   | the_geom | some_value |
-|---|----------|------------|
-| 1 | ST_POINT(40.704512, -73.936669) | 2 |
+| the_geom | some_value |
+|----------|------------|
+| ST_Point(40.704512, -73.936669) | 2 |
 
 
-```postgresql
-SELECT OBS_AUGMENT_TABLE_WITH_CENSUS(
+```sql
+SELECT OBS_AugmentTableWithCensus(
   'target_table',
    'total_pop'
-)
+);
 ```
 
 Then the resultant table looks like:
 
-|   | the_geom | some_value |
-|---|----------|------------|
-| 1 | ST_POINT(40.704512, -73.936669) | 2 |
-
-
+| the_geom | some_value |
+|----------|------------|
+| ST_Point(40.704512, -73.936669) | 2 |
 
 With Polygon data:
 
-|   | the_geom | some_value | population per square meter |
-|---|----------|------------|-----------------------------|
-| 1 |   ST_BUFFER(CDB_LATLNG(40.704512, -73.936669)::geography, 5000)::geometry,| 2 | 0.00951 |
+| the_geom | some_value | population per square meter |
+|----------|------------|-----------------------------|
+|   ST_Buffer(CDB_LatLng(40.704512, -73.936669)::geography, 5000)::geometry,| 2 | 0.00951 |
 
-```postgresql
-SELECT OBS_Augment_Census(
-  ST_BUFFER(
-    CDB_LATLNG(40.704512, -73.936669)::geography
+```sql
+SELECT OBS_AugmentCensus(
+  ST_Buffer(
+    CDB_LatLng(40.704512, -73.936669)::geography
     , 5000
   )::geometry,
    'total_pop'
@@ -98,9 +96,9 @@ SELECT OBS_Augment_Census(
 
 Result
 
-|   | the_geom | some_value | population |
-|---|----------|------------|-----------------------------|
-| 1 |   ST_BUFFER(CDB_LATLNG(40.704512, -73.936669)::geography, 5000)::geometry,| 2 | 1165820.828 |
+| the_geom | some_value | population |
+|----------|------------|-----------------------------|
+|   ST_Buffer(CDB_LatLng(40.704512, -73.936669)::geography, 5000)::geometry,| 2 | 1165820.828 |
 
 
 ## API Usage
@@ -108,12 +106,12 @@ Result
 Example:
 
 ```curl
-http://observatory.cartodb.com/api/v2/sql?q=SELECT OBS_AUGMENT_TABLE_WITH_CENSUS('target_table','total_pop')
+http://observatory.cartodb.com/api/v2/sql?q=SELECT OBS_AugmentTableWithCensus('target_table','total_pop')
 ```
 
 Result:
 
-```javascript
+```json
 {
   time: 0.120,
   total_rows: 0,

@@ -10,7 +10,7 @@ your data with data in the Data Observatory seamless.
 
 ## Augmentation functions
 
-- [OBS_Augment_Census](40_observatory/OBS_AugmentCensus.md) - For a given input geometry get the request census dimension aggregated in a sensible way.
+- [OBS_AugmentCensus](40_observatory/OBS_AugmentCensus.md) - For a given input geometry get the request census dimension aggregated in a sensible way.
 
 
 ## Geometry functions

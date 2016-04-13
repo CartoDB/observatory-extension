@@ -7,14 +7,14 @@ OBS_Get_Geometry - Gets the geometric boundary that a point falls in or matches 
 ### Accepts a geometry
 
 ```sql
-OBS_Get_Geometry(geometry the_geom);
-OBS_Get_Geometry(geometry the_geom, text geometry_level);
+OBS_GetGeometry(geometry the_geom);
+OBS_GetGeometry(geometry the_geom, text geometry_level);
 ```
 
 ### Accepts a geometry identifier
 
 ```sql
-OBS_Get_Geometry_By_Address(text geom_ref, text geometry_level);
+OBS_Get_GeometryByAddress(text geom_ref, text geometry_level);
 ```
 
 
@@ -40,30 +40,30 @@ Returns the polygon from the `geometry_level` which matches the `geom_ref` ident
 
 ## Examples
 
-```postgresql
+```sql
 SELECT
-  OBS_Get_Geometry(the_geom, '"us.census.tiger".county')
+  OBS_GetGeometry(the_geom, '"us.census.tiger".county')
 FROM
   mobile_ad_data
 ```
 
 Result
 
-|   | Name                                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Aggregate | Source        |
-|---|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|---------------|
-| 1 | Median Household Income in the past 12 Months | Within a geographic area, the median income received by every household on a regular basis before payments for personal income taxes, social security, union dues, medicare deductions, etc.,It includes income received from wages, salary, commissions, bonuses, and tips; self-employment income from own nonfarm or farm businesses, including proprietorships and partnerships; interest, dividends, net rental income, royalty income, or income from estates and trusts; Social Security or Railroad Retirement income; Supplemental Security Income (SSI); any cash public assistance or welfare payments from the state or local welfare office; retirement, survivor, or disability benefits; and any other sources of income received regularly such as Veterans' (VA) payments, unemployment and/or worker's compensation, child support, and alimony. | median    | us.census.acs |
+| Name                                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Aggregate | Source        |
+|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|---------------|
+| Median Household Income in the past 12 Months | Within a geographic area, the median income received by every household on a regular basis before payments for personal income taxes, social security, union dues, medicare deductions, etc.,It includes income received from wages, salary, commissions, bonuses, and tips; self-employment income from own nonfarm or farm businesses, including proprietorships and partnerships; interest, dividends, net rental income, royalty income, or income from estates and trusts; Social Security or Railroad Retirement income; Supplemental Security Income (SSI); any cash public assistance or welfare payments from the state or local welfare office; retirement, survivor, or disability benefits; and any other sources of income received regularly such as Veterans' (VA) payments, unemployment and/or worker's compensation, child support, and alimony. | median    | us.census.acs |
 
 ## API Usage
 
 Example:
 
 ```curl
-http://observatory.cartodb.com/api/v2/sql?q=select * from OBS_SEARCH('salary')
+http://observatory.cartodb.com/api/v2/sql?q=select * from OBS_Search('salary')
 ```
 
 Result:
 
-```javascript
+```json
 {
   time: 0.120,
   total_rows: 1,

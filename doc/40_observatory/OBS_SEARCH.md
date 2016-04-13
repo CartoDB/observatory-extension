@@ -11,7 +11,6 @@ table OBS_Search(text search_term);
 See [output schema below](#Examples).
 
 ## Description
-***
 
 The Data Observatory contains a lot of information from a lot of sources. This
 method allows you to search for a given dimension. It does a fuzzy search on

@@ -2,3 +2,4 @@
 src/pg/observatory--current--dev.sql
 src/pg/observatory--dev--current.sql
 src/pg/observatory--dev.sql
+src/pg/test/results

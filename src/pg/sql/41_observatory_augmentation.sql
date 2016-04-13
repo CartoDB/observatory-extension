@@ -607,7 +607,7 @@ BEGIN
   IF geom_table_name IS NULL
   THEN
      RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
-     RETURNS QUERY SELECT '{}'::text[], '{}'::text[];
+     RETURN QUERY SELECT '{}'::text[], '{}'::text[];
   END IF;
 
   data_table_info := OBS_GetColumnData(geometry_level,

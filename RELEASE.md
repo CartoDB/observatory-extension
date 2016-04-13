@@ -1,7 +1,7 @@
 # Release & Deployment Process
 
-Please read the Working Process/Quickstart Guide in [README.md]]
-and the Development guidelines in [[CONTRIBUTING.md]].
+Please read the Working Process/Quickstart Guide in [README.md](README.md)
+and the Development guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The release process of a new version of the extension
 shall be performed by the designated *Release Manager*.
@@ -15,9 +15,7 @@ To do so [Semantic Versioning 2.0](http://semver.org/) is in order.
 Thew `NEWS.md` will be updated.
 
 The next command must be executed to produce the main installation
-script for the new release, `release/observatory--X.Y.Z.sql` and
-also to copy the python package to `release/python/X.Y.Z/observatory`.
-
+script for the new release, `release/observatory--X.Y.Z.sql`:
 ```
 make release
 ```
@@ -50,7 +48,6 @@ sudo make deploy RELEASE_VERSION=X.Y.Z
 
 ## Relevant release & deployment tasks available in the Makefile
 
-```
 * `make help` show a short description of the available targets
 
 * `make release` will generate a new release (version number defined in
@@ -58,12 +55,10 @@ sudo make deploy RELEASE_VERSION=X.Y.Z
   Intended for use by the release manager.
 
 * `sudo make deploy` will install the current release X.Y.Z from the
-  `release/` files into PostgreSQL and a Python virtual environment
-  `envs/X.Y.Z`.
+  `release/` files into PostgreSQL.
   Intended for use by the release manager and deployment jobs.
 
 * `sudo make deploy RELEASE_VERSION=X.Y.Z` will install specified version
   previously generated in `release/`
-  into PostgreSQL and a Python virtual environment `envs/X.Y.Z`.
-  Intended for use by the release manager and deployment jobs.
-```
+  into PostgreSQL.
+  Intended to be used by the release manager and deployment jobs.

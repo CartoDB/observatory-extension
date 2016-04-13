@@ -48,7 +48,6 @@ sudo make deploy RELEASE_VERSION=X.Y.Z
 
 ## Relevant release & deployment tasks available in the Makefile
 
-```
 * `make help` show a short description of the available targets
 
 * `make release` will generate a new release (version number defined in
@@ -63,4 +62,3 @@ sudo make deploy RELEASE_VERSION=X.Y.Z
   previously generated in `release/`
   into PostgreSQL.
   Intended to be used by the release manager and deployment jobs.
-```

@@ -235,7 +235,7 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   geom geometry,
   dimension_names text[],
   time_span text DEFAULT '2009 - 2013',
-  geometry_level text DEFAULT '"us.census.tiger".census_tract'
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
 )
 RETURNS TABLE(dimension text[], dimension_value NUMERIC[])
 AS $$
@@ -445,7 +445,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION OBS_GetSegmentSnapshot(
   geom geometry,
-  geometry_level text DEFAULT '"us.census.tiger".census_tract'
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
  )
 RETURNS TABLE(
   segment_name TEXT,
@@ -589,7 +589,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION OBS_GetCategories(
   geom geometry,
   dimension_names text[],
-  geometry_level text DEFAULT '"us.census.tiger".census_tract',
+  geometry_level text DEFAULT '"us.census.tiger".block_group',
   time_span text DEFAULT '2009 - 2013'
 )
 RETURNS TABLE(names text[], categories text[]) as $$

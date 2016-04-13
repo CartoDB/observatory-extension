@@ -95,7 +95,6 @@ $$ LANGUAGE plpgsql;
 
 
 --Test point cause Stuart always seems to make random points in the water
--- Old: _TEST_POINT
 CREATE OR REPLACE FUNCTION _TestPoint()
   RETURNS geometry
 AS $$
@@ -119,7 +118,6 @@ $$ LANGUAGE plpgsql;
 
 --Used to expand a column based response to a table based one. Give it the desired
 --columns and it will return a partial query for rolling them out to a table.
--- Old: OBS_BUILD_SNAPSHOT_QUERY
 CREATE OR REPLACE FUNCTION OBS_BuildSnapshotQuery(names text[])
 RETURNS TEXT
 AS $$

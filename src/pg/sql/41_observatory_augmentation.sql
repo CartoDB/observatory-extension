@@ -11,7 +11,7 @@
 ----DECLARE
 ----target_cols text[];
 ----names text[];
-----vals numeric[];-
+----vals NUMERIC[];-
 ----q text;
 ----BEGIN
 ----target_cols := Array[<%=get_dimensions_for_tag(tag_name)%>],
@@ -21,7 +21,6 @@
 --------------------------------------------------------------------------------
 
 -- Creates a table of demographic snapshot
--- TODO: Remove since it does address geocoding?
 
 CREATE OR REPLACE FUNCTION OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
 RETURNS TABLE(
@@ -37,24 +36,24 @@ RETURNS TABLE(
   other_race_pop NUMERIC,
   two_or_more_races_pop NUMERIC,
   not_hispanic_pop NUMERIC,
-  not_us_citizen_pop NUMERIC,
-  workers_16_and_over NUMERIC,
-  commuters_by_car_truck_van NUMERIC,
-  commuters_drove_alone NUMERIC,
-  commuters_by_carpool NUMERIC,
-  commuters_by_public_transportation NUMERIC,
-  commuters_by_bus NUMERIC,
-  commuters_by_subway_or_elevated NUMERIC,
-  walked_to_work NUMERIC,
-  worked_at_home NUMERIC,
-  children NUMERIC,
+  --not_us_citizen_pop NUMERIC,
+  --workers_16_and_over NUMERIC,
+  --commuters_by_car_truck_van NUMERIC,
+  --commuters_drove_alone NUMERIC,
+  --commuters_by_carpool NUMERIC,
+  --commuters_by_public_transportation NUMERIC,
+  --commuters_by_bus NUMERIC,
+  --commuters_by_subway_or_elevated NUMERIC,
+  --walked_to_work NUMERIC,
+  --worked_at_home NUMERIC,
+  --children NUMERIC, -- TODO we should be able to get this at BG
   households NUMERIC,
-  population_3_years_over NUMERIC,
-  in_school NUMERIC,
-  in_grades_1_to_4 NUMERIC,
-  in_grades_5_to_8 NUMERIC,
-  in_grades_9_to_12 NUMERIC,
-  in_undergrad_college NUMERIC,
+  --population_3_years_over NUMERIC,
+  --in_school NUMERIC,
+  --in_grades_1_to_4 NUMERIC,
+  --in_grades_5_to_8 NUMERIC,
+  --in_grades_9_to_12 NUMERIC,
+  --in_undergrad_college NUMERIC,
   pop_25_years_over NUMERIC,
   high_school_diploma NUMERIC,
   less_one_year_college NUMERIC,
@@ -63,10 +62,10 @@ RETURNS TABLE(
   bachelors_degree NUMERIC,
   masters_degree NUMERIC,
   pop_5_years_over NUMERIC,
-  speak_only_english_at_home NUMERIC,
-  speak_spanish_at_home NUMERIC,
-  pop_determined_poverty_status NUMERIC,
-  poverty NUMERIC,
+  --speak_only_english_at_home NUMERIC,
+  --speak_spanish_at_home NUMERIC,
+  --pop_determined_poverty_status NUMERIC,
+  --poverty NUMERIC,
   median_income NUMERIC,
   gini_index NUMERIC,
   income_per_capita NUMERIC,
@@ -79,12 +78,12 @@ RETURNS TABLE(
   owner_occupied_housing_units NUMERIC,
   million_dollar_housing_units NUMERIC,
   mortgaged_housing_units NUMERIC,
-  pop_15_and_over NUMERIC,
-  pop_never_married NUMERIC,
-  pop_now_married NUMERIC,
-  pop_separated NUMERIC,
-  pop_widowed NUMERIC,
-  pop_divorced NUMERIC,
+  --pop_15_and_over NUMERIC,
+  --pop_never_married NUMERIC,
+  --pop_now_married NUMERIC,
+  --pop_separated NUMERIC,
+  --pop_widowed NUMERIC,
+  --pop_divorced NUMERIC,
   commuters_16_over NUMERIC,
   commute_less_10_mins NUMERIC,
   commute_10_14_mins NUMERIC,
@@ -110,14 +109,15 @@ RETURNS TABLE(
   income_75000_99999 NUMERIC,
   income_100000_124999 NUMERIC,
   income_125000_149999 NUMERIC,
-  income_150000_199999 NUMERIC)
+  income_150000_199999 NUMERIC,
+  income_200000_or_more NUMERIC)
 AS $$
 DECLARE
  target_cols text[];
  names text[];
- vals numeric[];
+ vals NUMERIC[];
  q text;
- BEGIN
+BEGIN
  target_cols := Array['total_pop',
                  'male_pop',
                  'female_pop',
@@ -130,24 +130,24 @@ DECLARE
                  'other_race_pop',
                  'two_or_more_races_pop',
                  'not_hispanic_pop',
-                 'not_us_citizen_pop',
-                 'workers_16_and_over',
-                 'commuters_by_car_truck_van',
-                 'commuters_drove_alone',
-                 'commuters_by_carpool',
-                 'commuters_by_public_transportation',
-                 'commuters_by_bus',
-                 'commuters_by_subway_or_elevated',
-                 'walked_to_work',
-                 'worked_at_home',
-                 'children',
+                 --'not_us_citizen_pop',
+                 --'workers_16_and_over',
+                 --'commuters_by_car_truck_van',
+                 --'commuters_drove_alone',
+                 --'commuters_by_carpool',
+                 --'commuters_by_public_transportation',
+                 --'commuters_by_bus',
+                 --'commuters_by_subway_or_elevated',
+                 --'walked_to_work',
+                 --'worked_at_home',
+                 --'children',
                  'households',
-                 'population_3_years_over',
-                 'in_school',
-                 'in_grades_1_to_4',
-                 'in_grades_5_to_8',
-                 'in_grades_9_to_12',
-                 'in_undergrad_college',
+                 --'population_3_years_over',
+                 --'in_school',
+                 --'in_grades_1_to_4',
+                 --'in_grades_5_to_8',
+                 --'in_grades_9_to_12',
+                 --'in_undergrad_college',
                  'pop_25_years_over',
                  'high_school_diploma',
                  'less_one_year_college',
@@ -156,10 +156,10 @@ DECLARE
                  'bachelors_degree',
                  'masters_degree',
                  'pop_5_years_over',
-                 'speak_only_english_at_home',
-                 'speak_spanish_at_home',
-                 'pop_determined_poverty_status',
-                 'poverty',
+                 --'speak_only_english_at_home',
+                 --'speak_spanish_at_home',
+                 --'pop_determined_poverty_status',
+                 --'poverty',
                  'median_income',
                  'gini_index',
                  'income_per_capita',
@@ -172,12 +172,12 @@ DECLARE
                  'owner_occupied_housing_units',
                  'million_dollar_housing_units',
                  'mortgaged_housing_units',
-                 'pop_15_and_over',
-                 'pop_never_married',
-                 'pop_now_married',
-                 'pop_separated',
-                 'pop_widowed',
-                 'pop_divorced',
+                 --'pop_15_and_over',
+                 --'pop_never_married',
+                 --'pop_now_married',
+                 --'pop_separated',
+                 --'pop_widowed',
+                 --'pop_divorced',
                  'commuters_16_over',
                  'commute_less_10_mins',
                  'commute_10_14_mins',
@@ -203,17 +203,17 @@ DECLARE
                  'income_75000_99999',
                  'income_100000_124999',
                  'income_125000_149999',
-                 'income_150000_199999'
-];
+                 'income_150000_199999',
+                 'income_200000_or_more'];
 
-  q = 'WITH a As (
+  q := 'WITH a As (
          SELECT
            dimension As names,
            dimension_value As vals
         FROM OBS_GetCensus($1,$2,$3,$4)
       )' ||
       OBS_BuildSnapshotQuery(target_cols) ||
-      ' FROM  a';
+      ' FROM a';
 
   RETURN QUERY
   EXECUTE
@@ -235,15 +235,15 @@ CREATE OR REPLACE FUNCTION OBS_GetCensus(
   geom geometry,
   dimension_names text[],
   time_span text DEFAULT '2009 - 2013',
-  geometry_level text DEFAULT '"us.census.tiger".census_tract'
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
 )
-RETURNS TABLE(dimension text[], dimension_value numeric[])
+RETURNS TABLE(dimension text[], dimension_value NUMERIC[])
 AS $$
 DECLARE
   ids text[];
 BEGIN
 
-  ids  = OBS_LookupCensusHuman(dimension_names);
+  ids := OBS_LookupCensusHuman(dimension_names);
 
   RETURN QUERY SELECT names, vals
                FROM OBS_Get(geom, ids, time_span, geometry_level);
@@ -262,7 +262,7 @@ CREATE OR REPLACE FUNCTION OBS_Get(
 RETURNS TABLE(names text[], vals NUMERIC[])
 AS $$
 DECLARE
-  results numeric[];
+  results NUMERIC[];
   geom_table_name text;
   names text[];
   query text;
@@ -273,7 +273,8 @@ BEGIN
 
   IF geom_table_name IS NULL
   THEN
-     RAISE EXCEPTION 'Point % is outside of the data region', geom;
+     RAISE NOTICE 'Point % is outside of the data region', geom;
+     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
   END IF;
 
   data_table_info := OBS_GetColumnData(geometry_level,
@@ -301,7 +302,7 @@ BEGIN
     results := Array[];
   END IF;
 
-  RETURN QUERY (SELECT names, results);
+  RETURN QUERY SELECT names, results;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -313,15 +314,18 @@ CREATE OR REPLACE FUNCTION OBS_GetPoints(
   geom_table_name text,
   data_table_info OBS_ColumnData[]
 
-) RETURNS NUMERIC[] AS $$
+)
+RETURNS NUMERIC[]
+AS $$
 DECLARE
   result NUMERIC[];
   query  text;
   i int;
   geoid text;
-  area  numeric;
+  area  NUMERIC;
 BEGIN
 
+  -- TODO: does 'geoid' need to be generalized to geom_ref??
   EXECUTE
     format('SELECT geoid
             FROM observatory.%I
@@ -330,7 +334,7 @@ BEGIN
   USING geom
   INTO geoid;
 
-  RAISE NOTICE 'geoid is % geometry table is % ', geoid, geom_table_name;
+  RAISE NOTICE 'geoid is %, geometry table is % ', geoid, geom_table_name;
 
   EXECUTE
     format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
@@ -353,13 +357,13 @@ BEGIN
         area);
     END IF;
 
-    IF i <  array_upper(data_table_info, 1)
+    IF i < array_upper(data_table_info, 1)
     THEN
-      query = query || ',';
+      query := query || ',';
     END IF;
   END LOOP;
 
-  query = query || format(' ]
+  query := query || format(' ]
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
@@ -374,21 +378,22 @@ BEGIN
   USING geom;
 
   RETURN result;
-
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION OBS_GetPolygons (
+CREATE OR REPLACE FUNCTION OBS_GetPolygons(
   geom geometry,
   geom_table_name text,
   data_table_info OBS_ColumnData[]
-) returns numeric[] AS $$
+)
+RETURNS NUMERIC[]
+AS $$
 DECLARE
-  result numeric[];
+  result NUMERIC[];
   q_select text;
   q_sum text;
   q text;
-  i numeric;
+  i NUMERIC;
 BEGIN
 
   q_select := 'select geoid, ';
@@ -396,19 +401,19 @@ BEGIN
 
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
-    q_select = q_select || format( '%I ', ((data_table_info)[i]).colname);
+    q_select := q_select || format( '%I ', ((data_table_info)[i]).colname);
 
     IF ((data_table_info)[i]).aggregate ='sum'
     THEN
-      q_sum    = q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
+      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
     ELSE
-      q_sum    = q_sum || ' null ';
+      q_sum := q_sum || ' null ';
     END IF;
 
     IF i < array_upper(data_table_info,1)
     THEN
-      q_select = q_select || format(',');
-      q_sum     = q_sum || format(',');
+      q_select := q_select || format(',');
+      q_sum := q_sum || format(',');
     END IF;
  END LOOP;
 
@@ -424,9 +429,9 @@ BEGIN
     values As (
     ', geom_table_name);
 
-  q = q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
+  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
 
-  q = q || ' ) ' || q_sum || ' ] FROM _overlaps, values
+  q := q || ' ) ' || q_sum || ' ] FROM _overlaps, values
   WHERE values.geoid = _overlaps.geoid';
 
   EXECUTE
@@ -440,54 +445,54 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION OBS_GetSegmentSnapshot(
   geom geometry,
-  geometry_level text DEFAULT '"us.census.tiger".census_tract'
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
  )
 RETURNS TABLE(
   segment_name TEXT,
-  total_pop_quantile Numeric,
-  male_pop_quantile Numeric,
-  female_pop_quantile Numeric,
-  median_age_quantile Numeric,
-  white_pop_quantile Numeric,
-  black_pop_quantile Numeric,
-  asian_pop_quantile Numeric,
-  hispanic_pop_quantile Numeric,
-  not_us_citizen_pop_quantile Numeric,
-  workers_16_and_over_quantile Numeric,
-  commuters_by_car_truck_van_quantile Numeric,
-  commuters_by_public_transportation_quantile Numeric,
-  commuters_by_bus_quantile Numeric,
-  commuters_by_subway_or_elevated_quantile Numeric,
-  walked_to_work_quantile Numeric,
-  worked_at_home_quantile Numeric,
-  children_quantile Numeric,
-  households_quantile Numeric,
-  population_3_years_over_quantile Numeric,
-  in_school_quantile Numeric,
-  in_grades_1_to_4_quantile Numeric,
-  in_grades_5_to_8_quantile Numeric,
-  in_grades_9_to_12_quantile Numeric,
-  in_undergrad_college_quantile Numeric,
-  pop_25_years_over_quantile Numeric,
-  high_school_diploma_quantile Numeric,
-  bachelors_degree_quantile Numeric,
-  masters_degree_quantile Numeric,
-  pop_5_years_over_quantile Numeric,
-  speak_only_english_at_home_quantile Numeric,
-  speak_spanish_at_home_quantile Numeric,
-  pop_determined_poverty_status_quantile Numeric,
-  poverty_quantile Numeric,
-  median_income_quantile Numeric,
-  gini_index_quantile Numeric,
-  income_per_capita_quantile Numeric,
-  housing_units_quantile Numeric,
-  vacant_housing_units_quantile Numeric,
-  vacant_housing_units_for_rent_quantile Numeric,
-  vacant_housing_units_for_sale_quantile Numeric,
-  median_rent_quantile Numeric,
-  percent_income_spent_on_rent_quantile Numeric,
-  owner_occupied_housing_units_quantile Numeric,
-  million_dollar_housing_units_quantile Numeric
+  total_pop_quantile NUMERIC,
+  male_pop_quantile NUMERIC,
+  female_pop_quantile NUMERIC,
+  median_age_quantile NUMERIC,
+  white_pop_quantile NUMERIC,
+  black_pop_quantile NUMERIC,
+  asian_pop_quantile NUMERIC,
+  hispanic_pop_quantile NUMERIC,
+  not_us_citizen_pop_quantile NUMERIC,
+  workers_16_and_over_quantile NUMERIC,
+  commuters_by_car_truck_van_quantile NUMERIC,
+  commuters_by_public_transportation_quantile NUMERIC,
+  commuters_by_bus_quantile NUMERIC,
+  commuters_by_subway_or_elevated_quantile NUMERIC,
+  walked_to_work_quantile NUMERIC,
+  worked_at_home_quantile NUMERIC,
+  children_quantile NUMERIC,
+  households_quantile NUMERIC,
+  population_3_years_over_quantile NUMERIC,
+  in_school_quantile NUMERIC,
+  in_grades_1_to_4_quantile NUMERIC,
+  in_grades_5_to_8_quantile NUMERIC,
+  in_grades_9_to_12_quantile NUMERIC,
+  in_undergrad_college_quantile NUMERIC,
+  pop_25_years_over_quantile NUMERIC,
+  high_school_diploma_quantile NUMERIC,
+  bachelors_degree_quantile NUMERIC,
+  masters_degree_quantile NUMERIC,
+  pop_5_years_over_quantile NUMERIC,
+  speak_only_english_at_home_quantile NUMERIC,
+  speak_spanish_at_home_quantile NUMERIC,
+  pop_determined_poverty_status_quantile NUMERIC,
+  poverty_quantile NUMERIC,
+  median_income_quantile NUMERIC,
+  gini_index_quantile NUMERIC,
+  income_per_capita_quantile NUMERIC,
+  housing_units_quantile NUMERIC,
+  vacant_housing_units_quantile NUMERIC,
+  vacant_housing_units_for_rent_quantile NUMERIC,
+  vacant_housing_units_for_sale_quantile NUMERIC,
+  median_rent_quantile NUMERIC,
+  percent_income_spent_on_rent_quantile NUMERIC,
+  owner_occupied_housing_units_quantile NUMERIC,
+  million_dollar_housing_units_quantile NUMERIC
 
 ) AS $$
 DECLARE
@@ -545,48 +550,49 @@ target_cols := Array[
 
     EXECUTE
       $query$
-      select (categories)[1]
-                      from OBS_GetCategories($1,Array['"us.census.spielman_singleton_segments".X10'])
-                      limit 1
+      SELECT (categories)[1]
+                      FROM OBS_GetCategories($1,
+                        Array['"us.census.spielman_singleton_segments".X10'])
+                      LIMIT 1
       $query$
     INTO segment_name
-
     USING geom;
 
-    q =
+    q :=
       format( $query$
       WITH a As (
            SELECT
              names As names,
              vals As vals
-          FROM OBS_Get($1,
-                       $2,
-                       '2009 - 2013',
-                       $3)
+           FROM OBS_Get($1,
+                        $2,
+                        '2009 - 2013',
+                        $3)
 
-        ), percentiles as (
+        ), percentiles As (
            %s
          FROM  a)
-        select $4, percentiles.*
-          from percentiles
-       $query$, OBS_BuildSnapshotQuery(target_cols) );
+        SELECT $4, percentiles.*
+          FROM percentiles
+       $query$, OBS_BuildSnapshotQuery(target_cols));
 
     RETURN QUERY
     EXECUTE
       q
-    USING geom, target_cols, geometry_level, segment_name ;
+    USING geom, target_cols, geometry_level, segment_name;
 
-END $$ LANGUAGE plpgsql  ;
+END;
+$$ LANGUAGE plpgsql;
 
 --Get categorical variables from point
 
 CREATE OR REPLACE FUNCTION OBS_GetCategories(
   geom geometry,
   dimension_names text[],
-  geometry_level text DEFAULT '"us.census.tiger".census_tract',
+  geometry_level text DEFAULT '"us.census.tiger".block_group',
   time_span text DEFAULT '2009 - 2013'
 )
-returns TABLE(names text[], categories text[]) as $$
+RETURNS TABLE(names text[], categories text[]) as $$
 DECLARE
   geom_table_name text;
   geoid text;
@@ -597,9 +603,11 @@ DECLARE
 BEGIN
 
   geom_table_name := OBS_GeomTable(geom, geometry_level);
+
   IF geom_table_name IS NULL
   THEN
-     RAISE EXCEPTION 'Point % is outside of the data region', geom;
+     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+     RETURN QUERY SELECT '{}'::text[], '{}'::text[];
   END IF;
 
   data_table_info := OBS_GetColumnData(geometry_level,
@@ -625,11 +633,11 @@ BEGIN
     query = query || format('%I ', lower(((data_table_info)[i]).colname));
     IF i <  array_upper(data_table_info, 1)
     THEN
-      query = query || ',';
+      query := query || ',';
     END IF;
   END LOOP;
 
-  query = query || format(' ]
+  query := query || format(' ]
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
@@ -644,8 +652,8 @@ BEGIN
   USING geom;
 
   RETURN QUERY
-    select names,results
+    SELECT names,results
   RETURN;
 
-END
+END;
 $$ LANGUAGE plpgsql;

@@ -1,13 +1,21 @@
 # Observatory extension
 
-CartoDB extension that implements the functions needed by the Observatory Service.
+CartoDB extension that implements the row-level functions needed by the Observatory Service.
 
 ## Code organization
 
-* *doc* documentation
-* *src* source code
-* - *src/pg* contains the PostgreSQL extension source code
-* *release* reseleased versions
+```
+.
+├── doc     # documentation
+├── release # released versions
+└── src     # source code
+    └── pg
+        ├── sql
+        └── test
+            ├── expected
+            ├── fixtures
+            └── sql
+```
 
 # Development workflow
 
@@ -36,7 +44,7 @@ and developers must not commit or merge into it.
 ## Development Guidelines
 
 For a detailed description of the development process please see
-the [[CONTRIBUTING.md]] guide.
+the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
 
 Any modification to the source code
 shall always be done in a topic branch created from the `develop` branch.
@@ -44,9 +52,7 @@ shall always be done in a topic branch created from the `develop` branch.
 Tests, documentation and peer code reviews are required for all
 modifications.
 
-The tests (both for SQL and Python) are executed by running,
-from the top directory:
-
+The tests are executed by running this from the top directory:
 ```
 sudo make install
 make test
@@ -54,5 +60,5 @@ make test
 ## Release
 
 The release and deployment process is described in the
-[[RELEASE.md]] guide and it is the responsibility of the designated
+[RELEASE.md](RELEASE.md) guide and it is the responsibility of the designated
 release manager.

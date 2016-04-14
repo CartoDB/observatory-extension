@@ -4,7 +4,7 @@ SELECT set_config(
     false
 ) WHERE current_setting('search_path') !~ '(^|,)(cdb_observatory|observatory)(,|$)';
 
-\i test/sql/02_load_fixtures.sql
+\i test/sql/load_fixtures.sql
 
 
 -- OBS_GeomTable
@@ -52,4 +52,4 @@ SELECT
     Array['total_pop','male_pop','female_pop','median_age']
   );
 
-\i test/sql/03_drop_fixtures.sql
+\i test/sql/drop_fixtures.sql

@@ -1,6 +1,6 @@
 # Development process
 
-Please read the Working Process/Quickstart Guide in [[README.md]] first.
+Please read the Working Process/Quickstart Guide in [README.md](README.md) first.
 
 For any modification of the observatory-extension, such as adding new features,
 refactoring or bug-fixing, a topic branch must be created out of the `develop`
@@ -27,9 +27,10 @@ make it available to PostgreSQL.
 Run the tests with `make test`.
 
 Update extension in a working database with:
-
-* `ALTER EXTENSION observatory VERSION TO 'current';`
-  `ALTER EXTENSION observatory VERSION TO 'dev';`
+```
+ALTER EXTENSION observatory VERSION TO 'current';
+ALTER EXTENSION observatory VERSION TO 'dev';
+```
 
 Note: we keep the current development version install as 'dev' always;
 we update through the 'current' alias to allow changing the extension
@@ -58,7 +59,6 @@ to the release process for a new revision of the extension.
 
 ## Relevant development tasks available in the Makefile
 
-```
 * `make help` show a short description of the available targets
 
 * `sudo make install` will generate the extension scripts for the development
@@ -67,4 +67,3 @@ to the release process for a new revision of the extension.
 
 * `make test` will run the tests for the installed development extension.
   Intended for use by developers.
-```

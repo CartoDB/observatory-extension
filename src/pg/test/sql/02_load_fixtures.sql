@@ -1,4 +1,4 @@
-SET client_min_messages TO NOTICE;
+SET client_min_messages TO WARNING;
 \set ECHO none
 
 -- metadata

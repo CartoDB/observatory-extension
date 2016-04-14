@@ -1,8 +1,11 @@
 SELECT set_config(
     'search_path',
-    current_setting('search_path') || ',cdb_observatory',
+    current_setting('search_path') || ',cdb_observatory,observatory',
     false
-) WHERE current_setting('search_path') !~ '(^|,)cdb_observatory(,|$)';
+) WHERE current_setting('search_path') !~ '(^|,)(cdb_observatory|observatory)(,|$)';
+
+\i test/sql/02_load_fixtures.sql
+
 
 -- OBS_GeomTable
 -- get table with known geometry_id
@@ -48,3 +51,5 @@ SELECT
   cdb_observatory.OBS_BuildSnapshotQuery(
     Array['total_pop','male_pop','female_pop','median_age']
   );
+
+\i test/sql/03_drop_fixtures.sql

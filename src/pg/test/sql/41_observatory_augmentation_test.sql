@@ -7,12 +7,12 @@ SELECT set_config(
 \i test/sql/load_fixtures.sql
 
 --
-SELECT
+SELECT * FROM
   cdb_observatory.OBS_GetDemographicSnapshot(
       cdb_observatory._TestPoint(),
       '2009 - 2013',
       '"us.census.tiger".block_group'
-  );
+  ) As snapshot;
 
 --
 -- dimension | dimension_value
@@ -25,6 +25,22 @@ FROM
   cdb_observatory.OBS_GetCensus(
     cdb_observatory._TestPoint(),
     Array['total_pop','male_pop']::text[]
+  );
+
+-- what happens on null island?
+-- expect nulls back: {female_pop, male_pop} | {NULL, NULL}
+SELECT *
+FROM
+  cdb_observatory.OBS_GetCensus(
+    ST_Buffer(CDB_LatLng(0, 0)::geography, 5000)::geometry,
+    Array['female_pop','male_pop']::text[]
+  );
+-- expect nulls back {female_pop, male_pop} | {NULL, NULL}
+SELECT *
+FROM
+  cdb_observatory.OBS_GetCensus(
+    CDB_LatLng(0, 0),
+    Array['female_pop', 'male_pop']::text[]
   );
 
 --
@@ -64,13 +80,13 @@ SELECT
     Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::OBS_ColumnData]
 );
 
-SELECT
+SELECT * FROM
   cdb_observatory.OBS_GetSegmentSnapshot(
     _TestPoint(),
     '"us.census.tiger".census_tract'
 );
 
-SELECT
+SELECT * FROM
   cdb_observatory.OBS_GetCategories(
     _TestPoint(),
     Array['"us.census.spielman_singleton_segments".X10'],

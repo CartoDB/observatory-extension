@@ -1,5 +1,5 @@
 
-CREATE TABLE obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb (
+CREATE TABLE IF NOT EXISTS obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb (
     cartodb_id integer,
     the_geom geometry(Geometry,4326),
     the_geom_webmercator geometry(Geometry,3857),

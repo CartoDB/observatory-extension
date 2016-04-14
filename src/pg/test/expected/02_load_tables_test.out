@@ -1,4 +1,4 @@
-SET client_min_messages TO NOTICE;
+SET client_min_messages TO WARNING;
 \set ECHO none
-Loading obs_table.sql fixture file...
+Loading fixtures...
 Done.

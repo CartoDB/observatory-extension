@@ -301,7 +301,7 @@ BEGIN
 
   IF results IS NULL
   THEN
-    results := Array[];
+    results := Array[]::numeric[];
   END IF;
 
   RETURN QUERY SELECT names, results;
@@ -315,7 +315,6 @@ CREATE OR REPLACE FUNCTION OBS_GetPoints(
   geom geometry,
   geom_table_name text,
   data_table_info OBS_ColumnData[]
-
 )
 RETURNS NUMERIC[]
 AS $$
@@ -346,15 +345,25 @@ BEGIN
             geoid)
   INTO area;
 
+  IF area IS NULL
+  THEN
+    RAISE NOTICE 'No geometry at %', ST_AsText(geom);
+  END IF;
 
-  query := 'SELECT ARRAY[';
+  query := 'SELECT Array[';
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
-    IF ((data_table_info)[i]).aggregate != 'sum'
+    IF area is NULL OR area = 0
     THEN
-      query = query || format('%I ', ((data_table_info)[i]).colname);
+      -- give back null values
+      query := query || format('NULL::numeric ');
+    ELSIF ((data_table_info)[i]).aggregate != 'sum'
+    THEN
+      -- give back full variable
+      query := query || format('%I ', ((data_table_info)[i]).colname);
     ELSE
-      query = query || format('%I/%s ',
+      -- give back variable normalized by area of geography
+      query := query || format('%I/%s ',
         ((data_table_info)[i]).colname,
         area);
     END IF;
@@ -365,7 +374,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  query := query || format(' ]
+  query := query || format(' ]::numeric[]
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
@@ -398,8 +407,8 @@ DECLARE
   i NUMERIC;
 BEGIN
 
-  q_select := 'select geoid, ';
-  q_sum    := 'select Array[';
+  q_select := 'SELECT geoid, ';
+  q_sum    := 'SELECT Array[';
 
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
@@ -409,7 +418,7 @@ BEGIN
     THEN
       q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
     ELSE
-      q_sum := q_sum || ' null ';
+      q_sum := q_sum || ' NULL::numeric ';
     END IF;
 
     IF i < array_upper(data_table_info,1)
@@ -433,7 +442,7 @@ BEGIN
 
   q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
 
-  q := q || ' ) ' || q_sum || ' ] FROM _overlaps, values
+  q := q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
   WHERE values.geoid = _overlaps.geoid';
 
   EXECUTE
@@ -495,8 +504,8 @@ RETURNS TABLE(
   percent_income_spent_on_rent_quantile NUMERIC,
   owner_occupied_housing_units_quantile NUMERIC,
   million_dollar_housing_units_quantile NUMERIC
-
-) AS $$
+) 
+AS $$
 DECLARE
   target_cols text[];
   seg_name    Text;
@@ -553,17 +562,17 @@ target_cols := Array[
     EXECUTE
       $query$
       SELECT (categories)[1]
-                      FROM OBS_GetCategories($1,
-                        Array['"us.census.spielman_singleton_segments".X10'],
-                        $2
-                      )
-                      LIMIT 1
+      FROM OBS_GetCategories(
+         $1,
+         Array['"us.census.spielman_singleton_segments".X10'],
+         $2)
+      LIMIT 1
       $query$
     INTO segment_name
     USING geom, geometry_level;
 
     q :=
-      format( $query$
+      format($query$
       WITH a As (
            SELECT
              names As names,
@@ -641,7 +650,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  query := query || format(' ]
+  query := query || format(' ]::text[]
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',

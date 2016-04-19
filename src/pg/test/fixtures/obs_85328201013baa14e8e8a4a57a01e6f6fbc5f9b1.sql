@@ -1,5 +1,5 @@
 
-CREATE TABLE obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1 (
+CREATE TABLE IF NOT EXISTS obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1 (
     cartodb_id integer,
     the_geom geometry(Geometry,4326),
     the_geom_webmercator geometry(Geometry,3857),
@@ -10,4 +10,3 @@ INSERT INTO obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1(cartodb_id, the_geom, t
 
 CREATE SCHEMA IF NOT EXISTS observatory;
 ALTER TABLE obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1 SET SCHEMA observatory;
-

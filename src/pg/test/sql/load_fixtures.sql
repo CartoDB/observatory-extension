@@ -27,4 +27,20 @@ SET client_min_messages TO WARNING;
 \i test/fixtures/obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb.sql
 \echo Done.
 
+\echo Loading obs_ab038198aaab3f3cb055758638ee4de28ad70146.sql fixture file...
+\i test/fixtures/obs_ab038198aaab3f3cb055758638ee4de28ad70146.sql
+\echo Done.
+
+\echo Loading obs_a92e1111ad3177676471d66bb8036e6d057f271b.sql fixture file...
+\i test/fixtures/obs_a92e1111ad3177676471d66bb8036e6d057f271b.sql
+\echo Done.
+
+\echo Loading obs_11ee8b82c877c073438bc935a91d3dfccef875d1.sql fixture file...
+\i test/fixtures/obs_11ee8b82c877c073438bc935a91d3dfccef875d1.sql
+\echo Done.
+
+\echo Loading obs_d34555209878e8c4b37cf0b2b3d072ff129ec470.sql fixture file...
+\i test/fixtures/obs_d34555209878e8c4b37cf0b2b3d072ff129ec470.sql
+\echo Done.
+
 \unset ECHO

@@ -22,7 +22,15 @@
 
 -- Creates a table of demographic snapshot
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group')
+RETURNS json
+AS $$
+  BEGIN
+    RETURN row_to_json(cdb_observatory._OBS_GetDemographicSnapshot(geom, time_span, geometry_level));
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
 RETURNS TABLE(
   total_pop NUMERIC,
   male_pop NUMERIC,
@@ -454,7 +462,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION OBS_GetSegmentSnapshot(
+CREATE OR REPLACE FUNCTION OBS_GetSegmentSnapshot(geom geometry, geometry_level text default '"us.census.tiger".census_tract')
+RETURNS json
+AS $$
+  BEGIN
+    RETURN row_to_json(cdb_observatory._OBS_GetSegmentSnapshot(geom, geometry_level));
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION _OBS_GetSegmentSnapshot(
   geom geometry,
   geometry_level text DEFAULT '"us.census.tiger".census_tract'
  )

@@ -1,7 +1,7 @@
 \i test/sql/load_fixtures.sql
 --
 SELECT * FROM
-  cdb_observatory.OBS_GetDemographicSnapshot(
+  cdb_observatory._OBS_GetDemographicSnapshot(
       cdb_observatory._TestPoint(),
       '2009 - 2013',
       '"us.census.tiger".block_group'
@@ -99,14 +99,14 @@ SELECT
 );
 
 SELECT * FROM
-  cdb_observatory.OBS_GetSegmentSnapshot(
+  cdb_observatory._OBS_GetSegmentSnapshot(
     cdb_observatory._TestPoint(),
     '"us.census.tiger".census_tract'
 );
 
 -- segmentation around null island
 SELECT * FROM
-  cdb_observatory.OBS_GetSegmentSnapshot(
+  cdb_observatory._OBS_GetSegmentSnapshot(
     CDB_LatLng(0, 0),
     '"us.census.tiger".census_tract'
 );

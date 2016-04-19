@@ -1,13 +1,18 @@
-SELECT set_config(
-    'search_path',
-    current_setting('search_path') || ',cdb_observatory',
-    false
-) WHERE current_setting('search_path') !~ '(^|,)cdb_observatory(,|$)';
-                set_config                
-------------------------------------------
- "$user", public, cartodb,cdb_observatory
-(1 row)
-
+\i test/sql/load_fixtures.sql
+SET client_min_messages TO WARNING;
+\set ECHO none
+Loading obs_table.sql fixture file...
+Done.
+Loading obs_column.sql fixture file...
+Done.
+Loading obs_column_table.sql fixture file...
+Done.
+Loading obs_column_to_column.sql fixture file...
+Done.
+Loading obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1.sql fixture file...
+Done.
+Loading obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb.sql fixture file...
+Done.
 -- OBS_GeomTable
 -- get table with known geometry_id
 -- should give back a table like obs_{hex hash}
@@ -45,7 +50,7 @@ SELECT
     Array['"us.census.tiger".census_tract_geoid', '"us.census.acs".B01001001'],
     '2009 - 2013'
   ))).*
-ORDER BY 1 ASC;
+ORDER BY colname, tablename ASC;
   colname  |                  tablename                   | aggregate 
 -----------+----------------------------------------------+-----------
  geoid     | obs_11ee8b82c877c073438bc935a91d3dfccef875d1 | 
@@ -77,3 +82,18 @@ SELECT
  SELECT  vals[1] As total_pop, vals[2] As male_pop, vals[3] As female_pop, vals[4] As median_age
 (1 row)
 
+\i test/sql/drop_fixtures.sql
+SET client_min_messages TO NOTICE;
+\set ECHO none
+Dropping obs_table.sql fixture table...
+Done.
+Dropping obs_column.sql fixture table...
+Done.
+Dropping obs_column_table.sql fixture table...
+Done.
+Dropping obs_column_to_column.sql fixture table...
+Done.
+Dropping obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1 fixture table...
+Done.
+Dropping obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb fixture table...
+Done.

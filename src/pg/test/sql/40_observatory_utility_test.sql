@@ -1,11 +1,6 @@
-SELECT set_config(
-    'search_path',
-    current_setting('search_path') || ',cdb_observatory,observatory',
-    false
-) WHERE current_setting('search_path') !~ '(^|,)(cdb_observatory|observatory)(,|$)';
-
 \i test/sql/load_fixtures.sql
 
+\set ECHO ALL
 
 -- OBS_GeomTable
 -- get table with known geometry_id
@@ -36,7 +31,7 @@ SELECT
     Array['"us.census.tiger".census_tract_geoid', '"us.census.acs".B01001001'],
     '2009 - 2013'
   ))).*
-ORDER BY 1 ASC;
+ORDER BY colname, tablename ASC;
 
 -- OBS_LookupCensusHuman
 -- should give back: {"\"us.census.acs\".B19083001"}

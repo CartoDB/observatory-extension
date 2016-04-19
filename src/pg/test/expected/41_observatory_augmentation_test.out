@@ -1,13 +1,3 @@
-SELECT set_config(
-    'search_path',
-    current_setting('search_path') || ',cdb_observatory,observatory',
-    false
-) WHERE current_setting('search_path') !~ '(^|,)(cdb_observatory|observatory)(,|$)';
-                      set_config                      
-------------------------------------------------------
- "$user", public, cartodb,cdb_observatory,observatory
-(1 row)
-
 \i test/sql/load_fixtures.sql
 SET client_min_messages TO WARNING;
 \set ECHO none

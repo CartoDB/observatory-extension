@@ -1,11 +1,4 @@
-SELECT set_config(
-    'search_path',
-    current_setting('search_path') || ',cdb_observatory,observatory',
-    false
-) WHERE current_setting('search_path') !~ '(^|,)(cdb_observatory|observatory)(,|$)';
-
 \i test/sql/load_fixtures.sql
-
 --
 SELECT * FROM
   cdb_observatory.OBS_GetDemographicSnapshot(

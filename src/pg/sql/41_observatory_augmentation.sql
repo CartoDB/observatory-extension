@@ -577,7 +577,7 @@ target_cols := Array[
            SELECT
              names As names,
              vals As vals
-           FROM OBS_Get($1,
+           FROM cdb_observatory.OBS_Get($1,
                         $2,
                         '2009 - 2013',
                         $3)

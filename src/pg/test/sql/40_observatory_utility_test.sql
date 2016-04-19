@@ -1,6 +1,6 @@
 \i test/sql/load_fixtures.sql
 
-\set ECHO ALL
+\set ECHO all
 
 -- OBS_GeomTable
 -- get table with known geometry_id

@@ -212,9 +212,9 @@ BEGIN
          SELECT
            dimension As names,
            dimension_value As vals
-        FROM cdb_observatory.OBS_GetCensus($1,$2,$3,$4)
+        FROM cdb_observatory._OBS_GetCensus($1,$2,$3,$4)
       )' ||
-      cdb_observatory.OBS_BuildSnapshotQuery(target_cols) ||
+      cdb_observatory._OBS_BuildSnapshotQuery(target_cols) ||
       ' FROM a';
 
   RETURN QUERY
@@ -233,7 +233,7 @@ $$ LANGUAGE plpgsql;
 
 --Returns arrays of values for the given census dimension names for a given
 --point or polygon
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCensus(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCensus(
   geom geometry,
   dimension_names text[],
   time_span text DEFAULT '2009 - 2013',
@@ -245,17 +245,17 @@ DECLARE
   ids text[];
 BEGIN
 
-  ids := cdb_observatory.OBS_LookupCensusHuman(dimension_names);
+  ids := cdb_observatory._OBS_LookupCensusHuman(dimension_names);
 
   RETURN QUERY
-    SELECT names, vals FROM cdb_observatory.OBS_Get(geom, ids, time_span, geometry_level);
+    SELECT names, vals FROM cdb_observatory._OBS_Get(geom, ids, time_span, geometry_level);
 END;
 $$ LANGUAGE plpgsql;
 
 
 
 -- Base augmentation fucntion.
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_Get(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_Get(
   geom geometry,
   column_ids text[],
   time_span text,
@@ -271,7 +271,7 @@ DECLARE
   data_table_info cdb_observatory.OBS_ColumnData[];
 BEGIN
 
-  geom_table_name := cdb_observatory.OBS_GeomTable(geom, geometry_level);
+  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
 
   IF geom_table_name IS NULL
   THEN
@@ -279,7 +279,7 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
   END IF;
 
-  data_table_info := cdb_observatory.OBS_GetColumnData(geometry_level,
+  data_table_info := cdb_observatory._OBS_GetColumnData(geometry_level,
                                        column_ids,
                                        time_span);
 
@@ -288,13 +288,13 @@ BEGIN
 
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
-    results := cdb_observatory.OBS_GetPoints(geom,
+    results := cdb_observatory._OBS_GetPoints(geom,
                              geom_table_name,
                              data_table_info);
 
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
-    results := cdb_observatory.OBS_GetPolygons(geom,
+    results := cdb_observatory._OBS_GetPolygons(geom,
                                geom_table_name,
                                data_table_info);
   END IF;
@@ -311,7 +311,7 @@ $$ LANGUAGE plpgsql;
 
 -- If the variable of interest is just a rate return it as such,
 --  otherwise normalize it to the census block area and return that
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPoints(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
   geom geometry,
   geom_table_name text,
   data_table_info cdb_observatory.OBS_ColumnData[]
@@ -392,7 +392,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPolygons(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
   geom geometry,
   geom_table_name text,
   data_table_info cdb_observatory.OBS_ColumnData[]
@@ -562,7 +562,7 @@ target_cols := Array[
     EXECUTE
       $query$
       SELECT (categories)[1]
-      FROM cdb_observatory.OBS_GetCategories(
+      FROM cdb_observatory._OBS_GetCategories(
          $1,
          Array['"us.census.spielman_singleton_segments".X10'],
          $2)
@@ -577,7 +577,7 @@ target_cols := Array[
            SELECT
              names As names,
              vals As vals
-           FROM cdb_observatory.OBS_Get($1,
+           FROM cdb_observatory._OBS_Get($1,
                         $2,
                         '2009 - 2013',
                         $3)
@@ -587,7 +587,7 @@ target_cols := Array[
          FROM  a)
         SELECT $4, percentiles.*
           FROM percentiles
-       $query$, cdb_observatory.OBS_BuildSnapshotQuery(target_cols));
+       $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols));
 
     RETURN QUERY
     EXECUTE
@@ -599,7 +599,7 @@ $$ LANGUAGE plpgsql;
 
 --Get categorical variables from point
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategories(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCategories(
   geom geometry,
   dimension_names text[],
   geometry_level text DEFAULT '"us.census.tiger".block_group',
@@ -615,7 +615,7 @@ DECLARE
   data_table_info cdb_observatory.OBS_ColumnData[];
 BEGIN
 
-  geom_table_name := cdb_observatory.OBS_GeomTable(geom, geometry_level);
+  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
 
   IF geom_table_name IS NULL
   THEN
@@ -623,7 +623,7 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
   END IF;
 
-  data_table_info := cdb_observatory.OBS_GetColumnData(geometry_level,
+  data_table_info := cdb_observatory._OBS_GetColumnData(geometry_level,
                                        dimension_names,
                                        time_span);
 

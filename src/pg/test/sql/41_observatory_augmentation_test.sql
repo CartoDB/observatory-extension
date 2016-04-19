@@ -15,7 +15,7 @@ SELECT * FROM
 
 SELECT *
 FROM
-  cdb_observatory.OBS_GetCensus(
+  cdb_observatory._OBS_GetCensus(
     cdb_observatory._TestPoint(),
     Array['total_pop','male_pop']::text[]
   );
@@ -24,14 +24,14 @@ FROM
 -- expect nulls back: {female_pop, male_pop} | {NULL, NULL}
 SELECT *
 FROM
-  cdb_observatory.OBS_GetCensus(
+  cdb_observatory._OBS_GetCensus(
     ST_Buffer(CDB_LatLng(0, 0)::geography, 5000)::geometry,
     Array['female_pop','male_pop']::text[]
   );
 -- expect nulls back {female_pop, male_pop} | {NULL, NULL}
 SELECT *
 FROM
-  cdb_observatory.OBS_GetCensus(
+  cdb_observatory._OBS_GetCensus(
     CDB_LatLng(0, 0),
     Array['female_pop', 'male_pop']::text[]
   );
@@ -42,7 +42,7 @@ FROM
 -- gini_index | 0.3494
 
 SELECT * FROM
-  cdb_observatory.OBS_Get(
+  cdb_observatory._OBS_Get(
     cdb_observatory._TestPoint(),
     Array['"us.census.acs".B19083001']::text[],
     '2009 - 2013',
@@ -51,7 +51,7 @@ SELECT * FROM
 
 -- gini index at null island
 SELECT * FROM
-  cdb_observatory.OBS_Get(
+  cdb_observatory._OBS_Get(
     CDB_LatLng(0, 0),
     Array['"us.census.acs".B19083001']::text[],
     '2009 - 2013',
@@ -64,7 +64,7 @@ SELECT * FROM
 -- {4809.33511352425}
 
 SELECT
-  cdb_observatory.OBS_GetPoints(
+  cdb_observatory._OBS_GetPoints(
     cdb_observatory._TestPoint(),
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
     Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::cdb_observatory.OBS_ColumnData]
@@ -72,7 +72,7 @@ SELECT
 
 -- what happens at null island
 SELECT
-  cdb_observatory.OBS_GetPoints(
+  cdb_observatory._OBS_GetPoints(
     CDB_LatLng(0, 0),
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
     Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::cdb_observatory.OBS_ColumnData]
@@ -84,7 +84,7 @@ SELECT
 --  {12996.8172420752}
 
 SELECT
-  cdb_observatory.OBS_GetPolygons(
+  cdb_observatory._OBS_GetPolygons(
     cdb_observatory._TestArea(),
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
     Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::cdb_observatory.OBS_ColumnData]
@@ -92,7 +92,7 @@ SELECT
 
 -- see what happens around null island
 SELECT
-  cdb_observatory.OBS_GetPolygons(
+  cdb_observatory._OBS_GetPolygons(
     ST_Buffer(CDB_LatLng(0, 0)::geography, 500)::geometry,
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
     Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::cdb_observatory.OBS_ColumnData]
@@ -112,14 +112,14 @@ SELECT * FROM
 );
 
 SELECT * FROM
-  cdb_observatory.OBS_GetCategories(
+  cdb_observatory._OBS_GetCategories(
     cdb_observatory._TestPoint(),
     Array['"us.census.spielman_singleton_segments".X10'],
     '"us.census.tiger".census_tract'
 );
 
 SELECT * FROM
-  cdb_observatory.OBS_GetCategories(
+  cdb_observatory._OBS_GetCategories(
     CDB_LatLng(0, 0),
     Array['"us.census.spielman_singleton_segments".X10'],
     '"us.census.tiger".census_tract'

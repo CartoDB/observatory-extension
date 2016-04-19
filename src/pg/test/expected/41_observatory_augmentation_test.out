@@ -51,23 +51,23 @@ Done.
  {gini_index} | {}
 (1 row)
 
-   obs_getpoints    
+   _obs_getpoints   
 --------------------
  {4809.33511352425}
 (1 row)
 
- obs_getpoints 
----------------
+ _obs_getpoints 
+----------------
  
 (1 row)
 
-  obs_getpolygons   
+  _obs_getpolygons  
 --------------------
  {1570.72353789469}
 (1 row)
 
- obs_getpolygons 
------------------
+ _obs_getpolygons 
+------------------
  {NULL}
 (1 row)
 

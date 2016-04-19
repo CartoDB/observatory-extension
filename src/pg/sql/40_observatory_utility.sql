@@ -3,7 +3,7 @@
 -- TODO probably needs to take in the column_id array to get the relevant
 -- table where there is multiple sources for a column from multiple
 -- geometries.
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GeomTable(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GeomTable(
   geom geometry,
   geometry_id text
 )
@@ -39,7 +39,7 @@ CREATE TYPE cdb_observatory.OBS_ColumnData AS (colname text, tablename text, agg
 
 -- A function that gets the column data for multiple columns
 -- Old: OBS_GetColumnData
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetColumnData(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetColumnData(
   geometry_id text,
   column_ids text[],
   timespan text
@@ -78,7 +78,7 @@ $$ LANGUAGE plpgsql;
 --Gets the column id for a census variable given a human readable version of it
 -- Old: OBS_LOOKUP_CENSUS_HUMAN
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_LookupCensusHuman(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_LookupCensusHuman(
   column_names text[],
   -- TODO: change variable name table_name to table_id
   table_name text DEFAULT '"us.census.acs".extract_block_group_5yr_2013_69b156927c'
@@ -130,7 +130,7 @@ $$ LANGUAGE plpgsql;
 
 --Used to expand a column based response to a table based one. Give it the desired
 --columns and it will return a partial query for rolling them out to a table.
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_BuildSnapshotQuery(names text[])
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_BuildSnapshotQuery(names text[])
 RETURNS TEXT
 AS $$
 DECLARE

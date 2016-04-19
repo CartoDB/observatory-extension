@@ -123,7 +123,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._TestArea()
 AS $$
 BEGIN
   -- Buffer NYC point by 500 meters
-  RETURN ST_Buffer(_TestPoint()::geography, 500)::geometry;
+  RETURN ST_Buffer(cdb_observatory._TestPoint()::geography, 500)::geometry;
 
 END;
 $$ LANGUAGE plpgsql;

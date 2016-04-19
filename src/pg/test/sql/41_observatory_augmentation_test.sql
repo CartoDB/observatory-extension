@@ -84,23 +84,23 @@ SELECT
 --  {12996.8172420752}
 
 SELECT
-  OBS_GetPolygons(
-    _TestArea(),
+  cdb_observatory.OBS_GetPolygons(
+    cdb_observatory._TestArea(),
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
-    Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::OBS_ColumnData]
+    Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::cdb_observatory.OBS_ColumnData]
 );
 
 -- see what happens around null island
 SELECT
-  OBS_GetPolygons(
+  cdb_observatory.OBS_GetPolygons(
     ST_Buffer(CDB_LatLng(0, 0)::geography, 500)::geometry,
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
-    Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::OBS_ColumnData]
+    Array[('total_pop','obs_ab038198aaab3f3cb055758638ee4de28ad70146','sum')::cdb_observatory.OBS_ColumnData]
 );
 
 SELECT * FROM
   cdb_observatory.OBS_GetSegmentSnapshot(
-    _TestPoint(),
+    cdb_observatory._TestPoint(),
     '"us.census.tiger".census_tract'
 );
 
@@ -113,7 +113,7 @@ SELECT * FROM
 
 SELECT * FROM
   cdb_observatory.OBS_GetCategories(
-    _TestPoint(),
+    cdb_observatory._TestPoint(),
     Array['"us.census.spielman_singleton_segments".X10'],
     '"us.census.tiger".census_tract'
 );

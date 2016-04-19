@@ -25,107 +25,12 @@
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group')
 RETURNS json
 AS $$
-  BEGIN
-    RETURN row_to_json(cdb_observatory._OBS_GetDemographicSnapshot(geom, time_span, geometry_level));
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
-RETURNS TABLE(
-  total_pop NUMERIC,
-  male_pop NUMERIC,
-  female_pop NUMERIC,
-  median_age NUMERIC,
-  white_pop NUMERIC,
-  black_pop NUMERIC,
-  asian_pop NUMERIC,
-  hispanic_pop NUMERIC,
-  amerindian_pop NUMERIC,
-  other_race_pop NUMERIC,
-  two_or_more_races_pop NUMERIC,
-  not_hispanic_pop NUMERIC,
-  --not_us_citizen_pop NUMERIC,
-  --workers_16_and_over NUMERIC,
-  --commuters_by_car_truck_van NUMERIC,
-  --commuters_drove_alone NUMERIC,
-  --commuters_by_carpool NUMERIC,
-  --commuters_by_public_transportation NUMERIC,
-  --commuters_by_bus NUMERIC,
-  --commuters_by_subway_or_elevated NUMERIC,
-  --walked_to_work NUMERIC,
-  --worked_at_home NUMERIC,
-  --children NUMERIC, -- TODO we should be able to get this at BG
-  households NUMERIC,
-  --population_3_years_over NUMERIC,
-  --in_school NUMERIC,
-  --in_grades_1_to_4 NUMERIC,
-  --in_grades_5_to_8 NUMERIC,
-  --in_grades_9_to_12 NUMERIC,
-  --in_undergrad_college NUMERIC,
-  pop_25_years_over NUMERIC,
-  high_school_diploma NUMERIC,
-  less_one_year_college NUMERIC,
-  one_year_more_college NUMERIC,
-  associates_degree NUMERIC,
-  bachelors_degree NUMERIC,
-  masters_degree NUMERIC,
-  --pop_5_years_over NUMERIC,
-  --speak_only_english_at_home NUMERIC,
-  --speak_spanish_at_home NUMERIC,
-  --pop_determined_poverty_status NUMERIC,
-  --poverty NUMERIC,
-  median_income NUMERIC,
-  gini_index NUMERIC,
-  income_per_capita NUMERIC,
-  housing_units NUMERIC,
-  vacant_housing_units NUMERIC,
-  vacant_housing_units_for_rent NUMERIC,
-  vacant_housing_units_for_sale NUMERIC,
-  median_rent NUMERIC,
-  percent_income_spent_on_rent NUMERIC,
-  owner_occupied_housing_units NUMERIC,
-  million_dollar_housing_units NUMERIC,
-  mortgaged_housing_units NUMERIC,
-  --pop_15_and_over NUMERIC,
-  --pop_never_married NUMERIC,
-  --pop_now_married NUMERIC,
-  --pop_separated NUMERIC,
-  --pop_widowed NUMERIC,
-  --pop_divorced NUMERIC,
-  commuters_16_over NUMERIC,
-  commute_less_10_mins NUMERIC,
-  commute_10_14_mins NUMERIC,
-  commute_15_19_mins NUMERIC,
-  commute_20_24_mins NUMERIC,
-  commute_25_29_mins NUMERIC,
-  commute_30_34_mins NUMERIC,
-  commute_35_44_mins NUMERIC,
-  commute_45_59_mins NUMERIC,
-  commute_60_more_mins NUMERIC,
-  aggregate_travel_time_to_work NUMERIC,
-  income_less_10000 NUMERIC,
-  income_10000_14999 NUMERIC,
-  income_15000_19999 NUMERIC,
-  income_20000_24999 NUMERIC,
-  income_25000_29999 NUMERIC,
-  income_30000_34999 NUMERIC,
-  income_35000_39999 NUMERIC,
-  income_40000_44999 NUMERIC,
-  income_45000_49999 NUMERIC,
-  income_50000_59999 NUMERIC,
-  income_60000_74999 NUMERIC,
-  income_75000_99999 NUMERIC,
-  income_100000_124999 NUMERIC,
-  income_125000_149999 NUMERIC,
-  income_150000_199999 NUMERIC,
-  income_200000_or_more NUMERIC,
-  land_area NUMERIC)
-AS $$
 DECLARE
  target_cols text[];
  names text[];
  vals NUMERIC[];
  q text;
+ rec record;
 BEGIN
  target_cols := Array['total_pop',
                  'male_pop',
@@ -225,12 +130,12 @@ BEGIN
       cdb_observatory._OBS_BuildSnapshotQuery(target_cols) ||
       ' FROM a';
 
-  RETURN QUERY
   EXECUTE
     q
-  USING geom, target_cols, time_span, geometry_level;
+  USING geom, target_cols, time_span, geometry_level
+  INTO rec;
 
-  RETURN;
+  RETURN row_to_json(rec);
 END;
 $$ LANGUAGE plpgsql;
 

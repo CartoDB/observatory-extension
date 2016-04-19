@@ -1,11 +1,11 @@
 \i test/sql/load_fixtures.sql
 --
 SELECT * FROM
-  cdb_observatory._OBS_GetDemographicSnapshot(
+  cdb_observatory.OBS_GetDemographicSnapshot(
       cdb_observatory._TestPoint(),
       '2009 - 2013',
       '"us.census.tiger".block_group'
-  ) As snapshot;
+  ) AS snapshot;
 
 --
 -- dimension | dimension_value

@@ -1,7 +1,9 @@
 CREATE TABLE obs_table(cartodb_id bigint, the_geom geometry, the_geom_webmercator geometry, id text, tablename text, timespan text, bounds text, description text, version text);
 
 
-INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (1, NULL, NULL, '"us.census.spielman_singleton_segments".spielman_singleton_table_99914b932b', 'obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d', '2009 - 2013', 'BOX(0 0,0 0)', NULL, 5);
+-- Commented out until somebody actually adds that fixture
+--INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (1, NULL, NULL, '"us.census.spielman_singleton_segments".spielman_singleton_table_99914b932b', 'obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d', '2009 - 2013', 'BOX(0 0,0 0)', NULL, 5);
+
 INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (2, NULL, NULL, '"us.census.acs".extract_block_group_5yr_2013_69b156927c', 'obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb', '2009 - 2013', 'BOX(-179.231086 -14.601813,179.859681 71.441059)', NULL, 1);
 INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (3, NULL, NULL, '"us.census.tiger".sum_level_false_block_group_2013_5c764f39d2', 'obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1', '2013', 'BOX(-179.231086 -14.601813,179.859681 71.441059)', NULL, 4);
 INSERT INTO obs_table (cartodb_id, the_geom, the_geom_webmercator, id, tablename, timespan, bounds, description, version) VALUES (4, NULL, NULL, '"us.census.tiger".sum_level_false_census_tract_2013_c489085a44', 'obs_a92e1111ad3177676471d66bb8036e6d057f271b', '2013', 'BOX(-179.231086 -14.601813,179.859681 71.441059)', NULL, 4);

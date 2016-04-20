@@ -24,8 +24,8 @@ BEGIN
                   aggregate,
                   replace(split_part(id,'".', 1),'"', '') source
                   FROM observatory.OBS_column
-                  where name ilike '%'|| %L || '%'
-                  or description ilike '%'|| %L || '%'
+                  where name ilike     '%%' || %L || '%%'
+                  or description ilike '%%' || %L || '%%'
                   %s
                 $string$, search_term, search_term,boundary_term);
   RETURN;
@@ -33,12 +33,41 @@ END
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION OBS_GetAvailableBoundaries(geometry location)
+-- Functions to return the geometry levels that a point is part of
+--------------------------------------------------------------------------------
+-- TODO add test response
+
+CREATE OR REPLACE FUNCTION OBS_GetAvailableBoundaries(
+  geom geometry,
+  time_span text DEFAULT null)
 RETURNS TABLE(description text, name text, id text)  as $$
+DECLARE
+  timespan_query TEXT DEFAULT '';
 BEGIN
+
+  IF time_span != null THEN
+    timespan_query = format('AND timespan = %L', time_span);
+  END IF;
+
   RETURN QUERY
-  EXECUTE format($string$
-    Select description, name, id FROM observatory.OBS_column
-  $string$)
+  EXECUTE
+  $string$
+      select
+        column_id,
+        obs_column.description,
+        table_id
+      FROM
+        observatory.OBS_table,
+        observatory.OBS_column_table,
+        observatory.OBS_column
+      WHERE
+        observatory.OBS_column_table.column_id = observatory.obs_column.id
+      AND
+        observatory.OBS_column.type='Geometry'
+      AND
+        $1 && bounds::box2d
+  $string$ || timespan_query
+  USING geom
+  RETURN;
 END
-$$
+$$ LANGUAGE plpgsql;

@@ -257,7 +257,31 @@ SELECT OBS_GetGeometryById(geometry_id) the_geom, geometry_id FROM tablename GRO
 
 # Discovery
 
-## OBS_Search(Search Term, Relevant Boundary)
+## OBS_Search(search_term)
+
+
+#### Arguments
+
+Name | Description
+--- | ---
+search_term | a string to search for available Measures
+boundary_id | a string identifier for a Boundary geometry (optional)
+
+#### Returns
+
+Key | Description
+--- | ---
+measure_id | the unique id of the measue for use with the ```OBS_GetMeasure``` method
+name | the human readable name of the measure
+description | a brief description of the measure
+aggregate_type | **sum** are raw count values, **median** are statistical medians, **average** are statistical averages, **undefined** other (e.g. an index value)
+sources | where the data came from (e.g. US Census Bureau)
+
+#### Example
+
+```SQL
+SELECT * FROM OBS_Search('inequality')
+```
 
 
 ## OBS_GetAvailableBoundaries(Relevant Geometry)

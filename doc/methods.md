@@ -206,10 +206,34 @@ UPDATE tablename SET the_geom = OBS_GetGeometry(the_geom, ' "us.census.tiger".bl
 Should add the SQL API call here too
 -->
 
-## OBS_GetGeometryId(point_geometry, boundary_id )
+## OBS_GetGeometryId(point_geometry, boundary_id)
 
+The ```OBS_GetGeometryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary table below](below). The method can be combined with ```OBS_GetGeometryById(geometry_id)``` to create a point aggregation workflow.
 
-## OBS_GetGeometryById( Boundary Layer ID, Boundary ID )
+#### Arguments
+
+Name |Description
+--- | ---
+point_geometry | a WGS84 polygon geometry (the_geom)
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)  
+
+#### Returns
+
+A JSON object containing the following properties
+
+Key | Description
+--- | ---
+geometry_id | a string identifier of a geometry in the Boundaries
+
+#### Example
+
+Write the geometry_id that contains the point geometry for every row as a new column in your table
+
+```SQL
+UPDATE tablename SET new_column_name = OBS_GetGeometryId(the_geom, ' "us.census.tiger".block_group')
+```
+
+## OBS_GetGeometryById(geometry_id)
 
 
 # Discovery

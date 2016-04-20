@@ -3,7 +3,7 @@
 -- TODO allow the user to specify the boundary to search for measures
 --
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_Search_STU(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_Search(
   search_term text,
   relevant_boundary text DEFAULT null
 )

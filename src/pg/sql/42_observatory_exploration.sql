@@ -53,9 +53,9 @@ BEGIN
   EXECUTE
   $string$
       select
-        column_id boundary_id,
+        column_id,
         obs_column.description,
-        timespan time_span,
+        timespan,
         tablename
       FROM
         observatory.OBS_table,

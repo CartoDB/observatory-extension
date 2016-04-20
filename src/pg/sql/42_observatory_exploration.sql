@@ -39,7 +39,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION OBS_GetAvailableBoundaries(
   geom geometry,
-  time_span text DEFAULT null)
+  timespan text DEFAULT null)
 RETURNS TABLE(boundary_id text, description text, time_span text, tablename text)  as $$
 DECLARE
   timespan_query TEXT DEFAULT '';

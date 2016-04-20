@@ -259,6 +259,7 @@ SELECT OBS_GetGeometryById(geometry_id) the_geom, geometry_id FROM tablename GRO
 
 ## OBS_Search(search_term)
 
+Use arbitrary text to search all available Measures
 
 #### Arguments
 
@@ -283,9 +284,29 @@ sources | where the data came from (e.g. US Census Bureau)
 SELECT * FROM OBS_Search('inequality')
 ```
 
+## OBS_GetAvailableBoundaries(point_geometry)
 
-## OBS_GetAvailableBoundaries(Relevant Geometry)
+Returns available boundary_ids at a given point geometry.
 
+#### Arguments
+
+Name | Description
+--- | ---
+point_geometry |  a WGS84 point geometry (e.g. the_geom)
+
+#### Returns
+
+Key | Description
+--- | ---
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)  
+description | a brief description of the boundary dataset
+timespan | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
+
+#### Example
+
+```SQL
+SELECT * FROM OBS_GetAvailableBoundaries(CDB_LatLng(40.7, -73.9))
+```
 
 # Glossary
 

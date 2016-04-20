@@ -62,7 +62,7 @@ BEGIN
         observatory.OBS_column_table,
         observatory.OBS_column
       WHERE
-        observatory.OBS_column_table.column_id = observatory.obs_column.id
+        observatory.OBS_column_table.column_id = observatory.obs_column.id AND
         observatory.OBS_column_table.table_id = observatory.obs_table.id
       AND
         observatory.OBS_column.type='Geometry'

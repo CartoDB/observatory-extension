@@ -2,4 +2,4 @@
 
 SELECT cdb_observatory.OBS_Search('total_pop');
 
-SELECT * from cdb_observatory.OBS_GetAvailableBoundaries(_test_point());
+SELECT * from cdb_observatory.OBS_GetAvailableBoundaries(cdb_observatory._test_point());

@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_Search(
   search_term text,
   relevant_boundary text DEFAULT null
 )
-RETURNS TABLE(description text, name text, aggregate text, source text)  as $$
+RETURNS TABLE(id text, description text, name text, aggregate text, source text)  as $$
 DECLARE
   boundary_term text;
 BEGIN
@@ -19,7 +19,7 @@ BEGIN
 
   RETURN QUERY
   EXECUTE format($string$
-              SELECT description,
+              SELECT id, description,
                 name,
                   aggregate,
                   replace(split_part(id,'".', 1),'"', '') source
@@ -40,7 +40,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION OBS_GetAvailableBoundaries(
   geom geometry,
   time_span text DEFAULT null)
-RETURNS TABLE(description text, name text, id text)  as $$
+RETURNS TABLE(boundary_id text, description text, time_span text, tablename text)  as $$
 DECLARE
   timespan_query TEXT DEFAULT '';
 BEGIN
@@ -53,15 +53,17 @@ BEGIN
   EXECUTE
   $string$
       select
-        column_id,
+        column_id boundary_id,
         obs_column.description,
-        table_id
+        timespan time_span,
+        tablename
       FROM
         observatory.OBS_table,
         observatory.OBS_column_table,
         observatory.OBS_column
       WHERE
         observatory.OBS_column_table.column_id = observatory.obs_column.id
+        observatory.OBS_column_table.table_id = observatory.obs_table.id
       AND
         observatory.OBS_column.type='Geometry'
       AND

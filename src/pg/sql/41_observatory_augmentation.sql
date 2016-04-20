@@ -400,6 +400,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
+  geom GEOMETRY,
+  measure_id TEXT,
+  normalize TEXT DEFAULT 'area', -- TODO denominator, none
+  boundary_id TEXT DEFAULT NULL,
+  time_span TEXT DEFAULT NULL
+)
+RETURNS JSON
+AS $$
+DECLARE
+  names TEXT[];
+  vals NUMERIC[];
+BEGIN
+
+  IF boundary_id IS NULL THEN
+    -- TODO we should determine best boundary for this geom
+    boundary_id := '"us.census.tiger".block_group';
+  END IF;
+
+  IF time_span IS NULL THEN
+    -- TODO we should determine latest timespan for this measure
+    time_span := '2009 - 2013';
+  END IF;
+
+  EXECUTE '
+    SELECT names, vals FROM cdb_observatory._OBS_Get($1, ARRAY[$2], $3, $4) LIMIT 1
+  '
+  INTO names, vals
+  USING geom, measure_id, time_span, boundary_id;
+
+  RETURN json_build_object('name', (names)[1], 'value', (vals)[1]);
+
+END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
   geom geometry,
   geom_table_name text,
@@ -686,3 +723,4 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+

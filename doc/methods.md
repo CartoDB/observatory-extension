@@ -115,13 +115,13 @@ type | the data type (text, number, boolean)
 Add a Measure to an empty column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006') -> 'value'
+UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006') -> 'value'
 ```
 
 Get a measure at a single point location
 
 ```SQL
-SELECT * FROM json_each(OBS_GetMeasure(CDB_LatLng(40.7, -73.9), 'us.census.acs.B08134006'))
+SELECT * FROM json_each(OBS_GetMeasure(CDB_LatLng(40.7, -73.9), '"us.census.acs".B08134006'))
 ```
 
 <!--
@@ -157,13 +157,13 @@ type | the data type (text, number, boolean)
 Add a Measure to an empty column based on polygons in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006') -> 'value'
+UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006') -> 'value'
 ```
 
 Get a measure within a polygon
 
 ```SQL
-SELECT * FROM json_each(OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), 'us.census.acs.B08134006'))
+SELECT * FROM json_each(OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), '"us.census.acs".B08134006'))
 ```
 
 <!--
@@ -183,7 +183,7 @@ Should add the SQL API call here too
 Below is a list of human readable names accepted in the ```OBS_GetUSCensusMeasure``` method. For the more comprehensive list of columns available to the ```OBS_GetMeasure``` method, see the [Data Catalog]
 
 Measure name   |  Measure description
---- | ---
+--------------------- | ---
 Total Population  |  The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.
 Male Population  |  The number of people within each geography who are male.
 Female Population  |  The number of people within each geography who are female.
@@ -218,56 +218,56 @@ Population 25 Years and Over  |  The number of people in a geographic area who a
 Population Completed High School  |  The number of people in a geographic area over the age of 25 who completed high school, and did not complete a more advanced degree.
 Population completed less than one year of college, no degree  |  The number of people in a geographic area over the age of 25 who attended college for less than one year and no further.
 Population completed more than one year of college, no degree  |  The number of people in a geographic area over the age of 25 who attended college for more than one year but did not obtain a degree
-Population Completed Associate's Degree  |  The number of people in a geographic area over the age of 25 who obtained a associate's degree, and did not complete a more advanced degree.
-Population Completed Bachelor's Degree  |  The number of people in a geographic area over the age of 25 who obtained a bachelor's degree, and did not complete a more advanced degree.
-Population Completed Master's Degree  |  The number of people in a geographic area over the age of 25 who obtained a master's degree, but did not complete a more advanced degree.
+Population Completed Associates Degree  |  The number of people in a geographic area over the age of 25 who obtained a associates degree, and did not complete a more advanced degree.
+Population Completed Bachelors Degree  |  The number of people in a geographic area over the age of 25 who obtained a bachelors degree, and did not complete a more advanced degree.
+Population Completed Masters Degree  |  The number of people in a geographic area over the age of 25 who obtained a masters degree, but did not complete a more advanced degree.
 Population 5 Years and Over  |  The number of people in a geographic area who are over the age of 5.  This is primarily used as a denominator of measures of language spoken at home.
 Speaks only English at Home  |  The number of people in a geographic area over age 5 who speak only English at home.
 Speaks Spanish at Home  |  The number of people in a geographic area over age 5 who speak Spanish at home, possibly in addition to other languages.
 Population for Whom Poverty Status Determined  |  The number of people in each geography who could be identified as either living in poverty or not.  This should be used as the denominator when calculating poverty rates, as it excludes people for whom it was not possible to determine poverty.
-Income In The Past 12 Months Below Poverty Level  |  The number of people in a geographic area who are part of a family (which could be just them as an individual) determined to be in poverty following the Office of Management and Budget's Directive 14. (https://www.census.gov/hhes/povmeas/methodology/ombdir14.html)
-Median Household Income in the past 12 Months  |  Within a geographic area, the median income received by every household on a regular basis before payments for personal income taxes, social security, union dues, medicare deductions, etc.  It includes income received from wages, salary, commissions, bonuses, and tips; self-employment income from own nonfarm or farm businesses, including proprietorships and partnerships; interest, dividends, net rental income, royalty income, or income from estates and trusts; Social Security or Railroad Retirement income; Supplemental Security Income (SSI); any cash public assistance or welfare payments from the state or local welfare office; retirement, survivor, or disability benefits; and any other sources of income received regularly such as Veterans' (VA) payments, unemployment and/or worker's compensation, child support, and alimony.
-Gini Index  |  
-Per Capita Income in the past 12 Months  |  
+Income In The Past 12 Months Below Poverty Level  |  The number of people in a geographic area who are part of a family (which could be just them as an individual) determined to be in poverty following the Office of Management and Budgets Directive 14. (https://www.census.gov/hhes/povmeas/methodology/ombdir14.html)
+Median Household Income in the past 12 Months  |  Within a geographic area, the median income received by every household on a regular basis before payments for personal income taxes, social security, union dues, medicare deductions, etc.  It includes income received from wages, salary, commissions, bonuses, and tips; self-employment income from own nonfarm or farm businesses, including proprietorships and partnerships; interest, dividends, net rental income, royalty income, or income from estates and trusts; Social Security or Railroad Retirement income; Supplemental Security Income (SSI); any cash public assistance or welfare payments from the state or local welfare office; retirement, survivor, or disability benefits; and any other sources of income received regularly such as Veterans (VA) payments, unemployment and/or workers compensation, child support, and alimony.
+Gini Index  |
+Per Capita Income in the past 12 Months  |
 Housing Units  |  A count of housing units in each geography.  A housing unit is a house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters.
 Vacant Housing Units  |  The count of vacant housing units in a geographic area. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.
 Vacant Housing Units for Rent  |  The count of vacant housing units in a geographic area that are for rent. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.
 Vacant Housing Units for Sale  |  The count of vacant housing units in a geographic area that are for sale. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.
 Median Rent  |  The median contract rent within a geographic area. The contract rent is the monthly rent agreed to or contracted for, regardless of any furnishings, utilities, fees, meals, or services that may be included. For vacant units, it is the monthly rent asked for the rental unit at the time of interview.
 Percent of Household Income Spent on Rent  |  Within a geographic area, the median percentage of household income which was spent on gross rent.  Gross rent is the amount of the contract rent plus the estimated average monthly cost of utilities (electricity, gas, water, sewer etc.) and fuels (oil, coal, wood, etc.) if these are paid by the renter.  Household income is the sum of the income of all people 15 years and older living in the household.
-Owner-occupied Housing Units  |  
-Owner-occupied Housing Units valued at $1,000,000 or more.  |  The count of owner occupied housing units in a geographic area that are valued at $1,000,000 or more.  Value is the respondent's estimate of how much the property (house and lot, mobile home and lot, or condominium unit) would sell for if it were for sale.
+Owner-occupied Housing Units  |
+Owner-occupied Housing Units valued at $1,000,000 or more.  |  The count of owner occupied housing units in a geographic area that are valued at $1,000,000 or more.  Value is the respondents estimate of how much the property (house and lot, mobile home and lot, or condominium unit) would sell for if it were for sale.
 Owner-occupied Housing Units with a Mortgage  |  The count of housing units within a geographic area that are mortagaged. Mortgage refers to all forms of debt where the property is pledged as security for repayment of the debt, including deeds of trust, trust deed, contracts to purchase, land contracts, junior mortgages, and home equity loans.
-Families with young children (under 6 years of age)  |  
-Two-parent families with young children (under 6 years of age)  |  
-Two-parent families, both parents in labor force with young children (under 6 years of age)  |  
-Two-parent families, father only in labor force with young children (under 6 years of age)  |  
-Two-parent families, mother only in labor force with young children (under 6 years of age)  |  
-Two-parent families, neither parent in labor force with young children (under 6 years of age)  |  
-One-parent families with young children (under 6 years of age)  |  
-One-parent families, father, with young children (under 6 years of age)  |  
+Families with young children (under 6 years of age)  |
+Two-parent families with young children (under 6 years of age)  |
+Two-parent families, both parents in labor force with young children (under 6 years of age)  |
+Two-parent families, father only in labor force with young children (under 6 years of age)  |
+Two-parent families, mother only in labor force with young children (under 6 years of age)  |
+Two-parent families, neither parent in labor force with young children (under 6 years of age)  |
+One-parent families with young children (under 6 years of age)  |
+One-parent families, father, with young children (under 6 years of age)  |
 Men age 45 to 64 (middle aged)  |  0
-Men age 45 to 49  |  
-Men age 50 to 54  |  
-Men age 55 to 59  |  
-Men age 60 to 61  |  
-Men age 62 to 64  |  
-Black Men age 45 to 54  |  
-Black Men age 55 to 64  |  
-Hispanic Men age 45 to 54  |  
-Hispanic Men age 55 to 64  |  
-White Men age 45 to 54  |  
-White Men age 55 to 64  |  
-Asian Men age 45 to 54  |  
-Asian Men age 55 to 64  |  
-Men age 45 to 64 who attained less than a 9th grade education  |  
-Men age 45 to 64 who attained between 9th and 12th grade, no diploma  |  
-Men age 45 to 64 who completed high school or obtained GED  |  
-Men age 45 to 64 who completed some college, no degree  |  
-Men age 45 to 64 who obtained an associate's degree  |  
-Men age 45 to 64 who obtained a bachelor's degree  |  
-Men age 45 to 64 who obtained a graduate or professional degree  |  
-One-parent families, father in labor force, with young children (under 6 years of age)  |  
+Men age 45 to 49  |
+Men age 50 to 54  |
+Men age 55 to 59  |
+Men age 60 to 61  |
+Men age 62 to 64  |
+Black Men age 45 to 54  |
+Black Men age 55 to 64  |
+Hispanic Men age 45 to 54  |
+Hispanic Men age 55 to 64  |
+White Men age 45 to 54  |
+White Men age 55 to 64  |
+Asian Men age 45 to 54  |
+Asian Men age 55 to 64  |
+Men age 45 to 64 who attained less than a 9th grade education  |
+Men age 45 to 64 who attained between 9th and 12th grade, no diploma  |
+Men age 45 to 64 who completed high school or obtained GED  |
+Men age 45 to 64 who completed some college, no degree  |
+Men age 45 to 64 who obtained an associates degree  |
+Men age 45 to 64 who obtained a bachelors degree  |
+Men age 45 to 64 who obtained a graduate or professional degree  |
+One-parent families, father in labor force, with young children (under 6 years of age)  |
 Population 15 Years and Over  |  The number of people in a geographic area who are over the age of 15.  This is used mostly as a denominator of marital status.
 Never Married  |  The number of people in a geographic area who have never been married.
 Currently married  |  The number of people in a geographic area who are currently married

@@ -181,16 +181,14 @@ The ```OBS_GetGeometry(point_geometry, boundary_id)``` method returns a boundary
 
 #### Arguments
 
-Name |Description
+Name | Description
 --- | ---
 point_geometry | a WGS84 polygon geometry (the_geom)
 boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)  
 
 #### Returns
 
-A JSON object containing the following properties
-
-Key | Description
+Value | Description
 --- | ---
 geom | WKB geometry
 
@@ -219,9 +217,7 @@ boundary_id | a boundary identifier from the [Boundary ID glossary table below](
 
 #### Returns
 
-A JSON object containing the following properties
-
-Key | Description
+Value | Description
 --- | ---
 geometry_id | a string identifier of a geometry in the Boundaries
 
@@ -235,6 +231,29 @@ UPDATE tablename SET new_column_name = OBS_GetGeometryId(the_geom, ' "us.census.
 
 ## OBS_GetGeometryById(geometry_id)
 
+The ```OBS_GetGeometryById(geometry_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetGeometryId(point_geometry, boundary_id)``` method described above.
+
+#### Arguments
+
+Name |Description
+--- | ---
+geometry_id | a string identifier for a Boundary geometry
+
+#### Returns
+
+A JSON object containing the following properties
+
+Key | Description
+--- | ---
+geom | a WGS84 polygon geometry
+
+#### Example
+
+Use a table of geometry_id to select the unique boundaries. Useful with the ```Table from query``` option in CartoDB.
+
+```SQL
+SELECT OBS_GetGeometryById(geometry_id) the_geom, geometry_id FROM tablename GROUP BY geometry_id
+```
 
 # Discovery
 

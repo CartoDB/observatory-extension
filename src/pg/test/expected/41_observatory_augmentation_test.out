@@ -91,6 +91,16 @@ Done.
  {X10} | 
 (1 row)
 
+                   obs_getmeasure
+----------------------------------------------------
+ {"name" : "total_pop", "value" : 9516.27915900609}
+(1 row)
+
+                   obs_getmeasure
+----------------------------------------------------
+ {"name" : "total_pop", "value" : 12140.2484103572}
+(1 row)
+
 Dropping obs_table.sql fixture table...
 Done.
 Dropping obs_column.sql fixture table...

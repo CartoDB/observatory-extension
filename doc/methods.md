@@ -206,8 +206,19 @@ UPDATE tablename SET the_geom = OBS_GetGeometry(the_geom, ' "us.census.tiger".bl
 Should add the SQL API call here too
 -->
 
+## OBS_GetGeometryId(point_geometry, boundary_id )
+
+
+## OBS_GetGeometryById( Boundary Layer ID, Boundary ID )
+
 
 # Discovery
+
+## OBS_Search(Search Term, Relevant Boundary)
+
+
+## OBS_GetAvailableBoundaries(Relevant Geometry)
+
 
 # Glossary
 

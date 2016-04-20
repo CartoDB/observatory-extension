@@ -12,7 +12,7 @@ The ```OBS_GetUSCensusMeasure(point_geometry, measure_name)``` method returns a 
 
 Name |Description
 --- | ---
-geom | a WGS84 point geometry (the_geom)
+point_geometry | a WGS84 point geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The glossary of measure_names is [available below]('measure_name table').
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the
 
@@ -54,7 +54,7 @@ The ```OBS_GetUSCensusMeasure(point_geometry, measure_name)``` method returns a 
 
 Name |Description
 --- | ---
-geom | a WGS84 polygon geometry (the_geom)
+point_geometry | a WGS84 polygon geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The glossary of measure_names is [available below]('measure_name table').
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) (optional)
 
@@ -95,7 +95,7 @@ The ```OBS_GetMeasure(point_geometry, measure_id)``` method returns any Data Obs
 
 Name |Description
 --- | ---
-geom | a WGS84 point geometry (the_geom)
+point_geometry | a WGS84 point geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](http://cartodb.github.io/bigmetadata/index.html))  
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) and 'none' which will return a raw value. (optional)
 
@@ -137,7 +137,7 @@ The ```OBS_GetMeasure(polygon_geometry, measure_id)``` method returns any Data O
 
 Name |Description
 --- | ---
-geom | a WGS84 polygon geometry (the_geom)
+polygon_geometry | a WGS84 polygon geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](http://cartodb.github.io/bigmetadata/index.html))  
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) (optional)
 
@@ -174,9 +174,58 @@ Should add the SQL API call here too
 
 # Boundaries
 
+
+## OBS_GetGeometry(point_geometry, boundary_id)
+
+The ```OBS_GetGeometry(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary table below](below). This is a useful method for performing aggregations of points.
+
+#### Arguments
+
+Name |Description
+--- | ---
+point_geometry | a WGS84 polygon geometry (the_geom)
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)  
+
+#### Returns
+
+A JSON object containing the following properties
+
+Key | Description
+--- | ---
+geom | WKB geometry
+
+#### Example
+
+Overwrite a point geometry with a boundary geometry that contains it in your table
+
+```SQL
+UPDATE tablename SET the_geom = OBS_GetGeometry(the_geom, ' "us.census.tiger".block_group')
+```
+
+<!--
+Should add the SQL API call here too
+-->
+
+
 # Discovery
 
 # Glossary
+
+#### Boundary IDs
+
+Boundary name   |  Boundary ID
+--------------------- | ---
+US Census Block Groups  |  "us.census.tiger".block_group
+US Census Tracts  |  "us.census.tiger".census_tract
+US States  |  "us.census.tiger".state
+US County  |  "us.census.tiger".county
+US Census Public Use Microdata Areas  |  "us.census.tiger".puma
+US Census Zip Code Tabulation Areas  |  "us.census.tiger".zcta5
+Unified School District  |  "us.census.tiger".school_district_unified
+US Congressional Districts  |  "us.census.tiger".congressional_district
+Elementary School District  |  "us.census.tiger".school_district_elementary
+Secondary School District  |  "us.census.tiger".school_district_secondary
+US Census Blocks  |  "us.census.tiger".block
 
 #### OBS_GetUSCensusMeasure names table
 

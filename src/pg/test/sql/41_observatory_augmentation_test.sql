@@ -125,4 +125,19 @@ SELECT * FROM
     '"us.census.tiger".census_tract'
 );
 
+-- Point-based OBS_GetMeasure, default normalization (area)
+SELECT * FROM
+  cdb_observatory.OBS_GetMeasure(
+    cdb_observatory._TestPoint(),
+    '"us.census.acs".B01001001'
+);
+
+-- Poly-based OBS_GetMeasure, default normalization (none)
+SELECT * FROM
+  cdb_observatory.OBS_GetMeasure(
+    cdb_observatory._TestArea(),
+    '"us.census.acs".B01001001'
+);
+
+
 \i test/sql/drop_fixtures.sql

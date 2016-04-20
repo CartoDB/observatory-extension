@@ -183,6 +183,7 @@ Should add the SQL API call here too
 Below is a list of human readable names accepted in the ```OBS_GetUSCensusMeasure``` method. For the more comprehensive list of columns available to the ```OBS_GetMeasure``` method, see the [Data Catalog]
 
 Measure name   |  Measure description
+--- | ---
 Total Population  |  The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.
 Male Population  |  The number of people within each geography who are male.
 Female Population  |  The number of people within each geography who are female.

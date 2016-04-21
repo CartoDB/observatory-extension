@@ -34,7 +34,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- A type for use with the OBS_GetColumnData function
-CREATE TYPE cdb_observatory.OBS_ColumnData AS (colname text, tablename text, aggregate text);
+CREATE TYPE cdb_observatory.OBS_ColumnData AS (
+  colname text, 
+  tablename text, 
+  aggregate text, 
+  name text,
+  type text);
 
 
 -- A function that gets the column data for multiple columns
@@ -60,7 +65,7 @@ BEGIN
   column_ids as (
     select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a
   )
- SELECT array_agg(ROW(colname, tablename, aggregate)::cdb_observatory.OBS_ColumnData order by column_ids.no)
+ SELECT array_agg(ROW(colname, tablename, aggregate, name, type)::cdb_observatory.OBS_ColumnData order by column_ids.no)
  FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
  WHERE column_ids.column_id  = c.id
    AND c.id = ct.column_id

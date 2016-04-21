@@ -84,4 +84,7 @@ SELECT cdb_observatory._OBS_GetRelatedColumn(
      'denominator'
  );
 
+-- should give back a standardized measure name
+SELECT cdb_observatory._OBS_StandardizeMeasureName('test 343 %% 2 qqq }}{{}}');
+
 \i test/sql/drop_fixtures.sql

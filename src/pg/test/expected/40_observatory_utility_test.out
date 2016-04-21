@@ -127,6 +127,13 @@ SELECT
  SELECT  vals[1] As mandarin_orange
 (1 row)
 
+-- should give back a normalized name
+SELECT cdb_observatory._OBS_NormalizeMeasureName('test 343 %% 2 qqq }}{{}}');
+_obs_normalizemeasurename 
+---------------------------
+test_343_2_qqq
+(1 row)
+
 \i test/sql/drop_fixtures.sql
 SET client_min_messages TO NOTICE;
 \set ECHO none

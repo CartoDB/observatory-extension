@@ -101,6 +101,16 @@ Done.
  {"name" : "total_pop", "value" : 1655}
 (1 row)
 
+ obs_getpopulation 
+-------------------
+  9516.27915900609
+(1 row)
+
+ obs_getpopulation 
+-------------------
+  12140.2484103572
+(1 row)
+
 Dropping obs_table.sql fixture table...
 Done.
 Dropping obs_column.sql fixture table...

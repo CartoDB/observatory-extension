@@ -139,5 +139,16 @@ SELECT * FROM
     '"us.census.acs".B01001001'
 );
 
+-- Point-based OBS_GetPopulation, default normalization (area)
+SELECT * FROM
+  cdb_observatory.OBS_GetPopulation(
+    cdb_observatory._TestPoint()
+  );
+
+-- Poly-based OBS_GetPopulation, default normalization (none)
+SELECT * FROM
+  cdb_observatory.OBS_GetPopulation(
+    cdb_observatory._TestArea()
+  );
 
 \i test/sql/drop_fixtures.sql

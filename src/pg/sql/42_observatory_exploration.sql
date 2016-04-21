@@ -2,7 +2,7 @@
 -- return a table that contains a string match based on input
 -- TODO: implement search for timespan
 
-CREATE OR REPLACE FUNCTION _OBS_SearchTables(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_SearchTables(
   search_term text,
   time_span text DEFAULT NULL
 )

@@ -75,4 +75,8 @@ SELECT
     Array['mandarin_orange']
   );
 
+ -- should give back a normalized name
+ SELECT cdb_observatory._OBS_NormalizeMeasureName('test 343 %% 2 qqq }}{{}}');
+
+
 \i test/sql/drop_fixtures.sql

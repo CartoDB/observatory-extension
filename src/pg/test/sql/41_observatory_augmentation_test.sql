@@ -139,6 +139,16 @@ SELECT * FROM
     '"us.census.acs".B01001001'
 );
 
+-- Point-based OBS_GetMeasure with denominator normalization
+SELECT cdb_observatory.OBS_GetMeasure(
+  cdb_observatory._TestPoint(),
+  '"us.census.acs".B01001002', 'denominator');
+
+-- Poly-based OBS_GetMeasure with denominator normalization
+SELECT cdb_observatory.OBS_GetMeasure(
+  cdb_observatory._TestArea(),
+  '"us.census.acs".B01001002', 'denominator');
+
 -- Point-based OBS_GetPopulation, default normalization (area)
 SELECT * FROM
   cdb_observatory.OBS_GetPopulation(

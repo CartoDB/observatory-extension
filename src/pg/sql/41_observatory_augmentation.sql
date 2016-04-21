@@ -404,7 +404,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
   geom GEOMETRY,
   measure_id TEXT,
-  normalize TEXT DEFAULT 'area', -- TODO denominator, none
+  normalize TEXT DEFAULT 'area', -- TODO none/null
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
 )
@@ -412,6 +412,8 @@ RETURNS JSON
 AS $$
 DECLARE
   names TEXT[];
+  measure_ids TEXT[];
+  denominator_id TEXT;
   vals NUMERIC[];
 BEGIN
 
@@ -425,17 +427,35 @@ BEGIN
     time_span := '2009 - 2013';
   END IF;
 
+  IF normalize ILIKE 'area' THEN
+    measure_ids := ARRAY[measure_id];
+  ELSIF normalize ILIKE 'denominator' THEN
+    EXECUTE 'SELECT (cdb_observatory._OBS_GetRelatedColumn(ARRAY[$1], ''denominator''))[1]
+    ' INTO denominator_id
+    USING measure_id;
+    measure_ids := ARRAY[measure_id, denominator_id];
+  ELSIF normalize IS NULL OR normalize ILIKE 'none' THEN
+    -- TODO we need a switch on obs_get to disable area normalization
+    RAISE EXCEPTION 'No normalization not yet supported.';
+  ELSE
+    RAISE EXCEPTION 'Only valid inputs for "normalize" are "area" (default), "denominator", or "none".';
+  END IF;
+
   EXECUTE '
-    SELECT names, vals FROM cdb_observatory._OBS_Get($1, ARRAY[$2], $3, $4) LIMIT 1
+    SELECT names, vals FROM cdb_observatory._OBS_Get($1, $2, $3, $4) LIMIT 1
   '
   INTO names, vals
-  USING geom, measure_id, time_span, boundary_id;
+  USING geom, measure_ids, time_span, boundary_id;
 
-  RETURN json_build_object('name', (names)[1], 'value', (vals)[1]);
+  IF normalize ILIKE 'denominator' THEN
+    RETURN json_build_object('name', format('%I over %I', names[1], names[2]),
+      'value', vals[1]/ vals[2]);
+  ELSE
+    RETURN json_build_object('name', (names)[1], 'value', (vals)[1]);
+  END IF;
 
 END;
 $$ LANGUAGE plpgsql;
-
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
   geom geometry,

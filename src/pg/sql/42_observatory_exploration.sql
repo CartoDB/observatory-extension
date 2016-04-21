@@ -14,12 +14,13 @@ BEGIN
 
   EXECUTE
   'SELECT array_agg(tablename)
-FROM observatory.obs_table t JOIN observatory.obs_column_table ct
-  ON ct.table_id = t.id
-JOIN observatory.obs_column c
-  ON ct.column_id = c.id
-WHERE c.type ILIKE ''geometry''
-AND c.id = $1'
+     FROM observatory.obs_table t
+     JOIN observatory.obs_column_table ct
+       ON ct.table_id = t.id
+     JOIN observatory.obs_column c
+       ON ct.column_id = c.id
+     WHERE c.type ILIKE ''geometry''
+      AND c.id = $1'
   INTO out_var
   USING search_term;
 

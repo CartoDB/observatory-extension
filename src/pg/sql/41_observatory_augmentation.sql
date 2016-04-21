@@ -269,10 +269,10 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_Get(
   time_span text,
   geometry_level text
 )
-RETURNS TABLE(names text[], vals NUMERIC[])
+RETURNS SETOF JSON
 AS $$
 DECLARE
-  results NUMERIC[];
+  results numeric[];
   geom_table_name text;
   names text[];
   query text;
@@ -290,10 +290,6 @@ BEGIN
   data_table_info := cdb_observatory._OBS_GetColumnData(geometry_level,
                                        column_ids,
                                        time_span);
-
-  names := (SELECT array_agg((d).colname)
-            FROM unnest(data_table_info) As d);
-
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
     results := cdb_observatory._OBS_GetPoints(geom,
@@ -311,8 +307,19 @@ BEGIN
   THEN
     results := Array[]::numeric[];
   END IF;
-
-  RETURN QUERY SELECT names, results;
+  
+  RAISE NOTICE '%', results;
+  
+  RETURN QUERY
+  SELECT row_to_json(d)
+  FROM (
+    SELECT (meta).aggregate as aggregate,
+           (meta).name  as name,
+           (meta).type  as type,
+           val as value
+    FROM  (select unnest(data_table_info) as meta, 
+          unnest(results) as val) b
+  ) d;
 END;
 $$ LANGUAGE plpgsql;
 

@@ -108,7 +108,7 @@ Done.
 
  obs_getpopulation 
 -------------------
-  12140.2484103572
+              1655
 (1 row)
 
 Dropping obs_table.sql fixture table...

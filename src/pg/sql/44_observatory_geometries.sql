@@ -6,7 +6,7 @@
 
 -- From an input point geometry, find the boundary which intersects with the centroid of the input geometry
 
-CREATE OR REPLACE FUNCTION OBS_GetGeometry(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometry(
   geom geometry(geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL)
@@ -29,14 +29,14 @@ BEGIN
   IF time_span IS NULL
   THEN
     SELECT x.target_tables INTO target_table
-    FROM _OBS_SearchTables(boundary_id,
-                           time_span) As x(target_tables,
-                                                time_spans)
+    FROM cdb_observatory._OBS_SearchTables(boundary_id,
+                                           time_span) As x(target_tables,
+                                                           time_spans)
     ORDER BY x.time_spans DESC
     LIMIT 1;
   ELSE
     SELECT x.target_tables INTO target_table
-    FROM _OBS_SearchTables(boundary_id,
+    FROM cdb_observatory._OBS_SearchTables(boundary_id,
                             time_span) As x(target_tables,
                                             time_spans)
     WHERE x.time_spans = time_span
@@ -66,7 +66,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION OBS_GetGeometryId(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometryId(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL
@@ -88,14 +88,14 @@ BEGIN
   IF time_span IS NULL
   THEN
     SELECT x.target_tables INTO target_table
-    FROM cdb_observatory._OBS_SearchTables(boundary_id,
-                           time_span) As x(target_tables,
+    FROM cdb_observatory.cdb_observatory._OBS_SearchTables(boundary_id,
+                            time_span) As x(target_tables,
                                                 time_spans)
     ORDER BY x.time_spans DESC
     LIMIT 1;
   ELSE
     SELECT x.target_tables INTO target_table
-    FROM cdb_observatory._OBS_SearchTables(boundary_id,
+    FROM cdb_observatory.cdb_observatory._OBS_SearchTables(boundary_id,
                             time_span) As x(target_tables,
                                             time_spans)
     WHERE x.time_spans = time_span
@@ -130,7 +130,7 @@ $$ LANGUAGE plpgsql;
 -- @param geometry_id text: identifier for boundary geometry corresponding to a boundary id `boundary_id`. E.g., '36047' is a geoid for US Census Tiger boundaries corresponding to a county (047) in New York State (36)
 -- @param boundary_id:
 
-CREATE OR REPLACE FUNCTION ANDY_OBS_GetGeometryById(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometryById(
   geometry_id text,            -- ex: '36047'
   boundary_id text,            -- ex: '"us.census.tiger".county'
   time_span text DEFAULT NULL  --ex: '2009'

@@ -130,7 +130,7 @@ $$ LANGUAGE plpgsql;
 
 -- Generates json from an array of keys and values
 --
-CREATE OR REPLACE FUNCTION cdb_observatory._keys_vals_to_json(keys text[], vals anyarray )
+CREATE OR REPLACE FUNCTION cdb_ervatory._keys_vals_to_json(keys text[], vals anyarray )
 RETURNS json
 as $$
 DECLARE
@@ -196,5 +196,26 @@ BEGIN
   result = trim(both  '_' from result);
   result = lower(result);
   RETURN result;
+END $$
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetRelatedColumn(columns_ids text[], reltype text )
+RETURNS TEXT[]
+AS $$
+DECLARE
+  result TEXT[];
+BEGIN
+  EXECUTE '
+    With ids as (
+      select row_number() over() as no, id from (select unnest($1) as id) t
+    )
+    select array_agg(target_id order by no)
+    FROM  ids
+    LEFT JOIN observatory.obs_column_to_column
+    on  source_id  = id
+    where reltype = $2 or reltype is null
+  '
+  INTO result
+  using columns_ids, reltype;
+  return result;
 END;
 $$ LANGUAGE plpgsql;

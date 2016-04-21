@@ -238,6 +238,36 @@ $$ LANGUAGE plpgsql;
 --Base functions for performing augmentation
 ----------------------------------------------------------------------------------------
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
+  name text,
+  normalized text DEFAULT 'Area',
+  time_span text DEFAULT '2009 - 2013',
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
+)
+RETURNS JSON AS $$
+DECLARE
+  normalized_name text;
+  id text;
+  result text;
+BEGIN
+  normalized_name = cdb_observatory._OBS_NormalizeMeasureName(name);
+
+  EXECUTE $query$
+    WITH ids as (
+      SELECT array_agg(id) as ids
+      FROM cdb_observatroy.OBS_Columns
+      WHERE cdb_observatory._NormalizeMeasureName(name) = $1)
+    )
+    select
+
+  $query$
+  INTO id
+  USING normalized_name;
+
+  RETURN
+END;
+$$ LANGUAGE plpgsql;
+
 
 --Returns arrays of values for the given census dimension names for a given
 --point or polygon
@@ -269,7 +299,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_Get(
   time_span text,
   geometry_level text
 )
-RETURNS TABLE(names text[], vals NUMERIC[])
+RETURNS json
 AS $$
 DECLARE
   results NUMERIC[];
@@ -312,7 +342,8 @@ BEGIN
     results := Array[]::numeric[];
   END IF;
 
-  RETURN QUERY SELECT names, results;
+
+  RETURN QUERY SELECT cdb_observatory._OBS_KeysValsToJson(names, results);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -322,7 +353,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
   geom geometry,
   geom_table_name text,
-  data_table_info cdb_observatory.OBS_ColumnData[]
+  data_table_info json[]
 )
 RETURNS NUMERIC[]
 AS $$
@@ -365,14 +396,14 @@ BEGIN
     THEN
       -- give back null values
       query := query || format('NULL::numeric ');
-    ELSIF ((data_table_info)[i]).aggregate != 'sum'
+    ELSIF (data_table_info)[i]->'aggregate' != 'sum'
     THEN
       -- give back full variable
-      query := query || format('%I ', ((data_table_info)[i]).colname);
+      query := query || format('%I ', (data_table_info)[i]->'colname');
     ELSE
       -- give back variable normalized by area of geography
       query := query || format('%I/%s ',
-        ((data_table_info)[i]).colname,
+        (data_table_info)[i]->'colname',
         area);
     END IF;
 
@@ -386,8 +417,8 @@ BEGIN
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
-  ((data_table_info)[1]).tablename,
-  ((data_table_info)[1]).tablename,
+  (data_table_info)[1]->'tablename',
+  (data_table_info)[1]->'tablename',
   geoid
   );
 
@@ -400,47 +431,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
-  geom GEOMETRY,
-  measure_id TEXT,
-  normalize TEXT DEFAULT 'area', -- TODO denominator, none
-  boundary_id TEXT DEFAULT NULL,
-  time_span TEXT DEFAULT NULL
-)
-RETURNS JSON
-AS $$
-DECLARE
-  names TEXT[];
-  vals NUMERIC[];
-BEGIN
-
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := '"us.census.tiger".block_group';
-  END IF;
-
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2009 - 2013';
-  END IF;
-
-  EXECUTE '
-    SELECT names, vals FROM cdb_observatory._OBS_Get($1, ARRAY[$2], $3, $4) LIMIT 1
-  '
-  INTO names, vals
-  USING geom, measure_id, time_span, boundary_id;
-
-  RETURN json_build_object('name', (names)[1], 'value', (vals)[1]);
-
-END;
-$$ LANGUAGE plpgsql;
-
-
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
   geom geometry,
   geom_table_name text,
-  data_table_info cdb_observatory.OBS_ColumnData[]
+  data_table_info json[]
 )
 RETURNS NUMERIC[]
 AS $$
@@ -457,11 +451,11 @@ BEGIN
 
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
-    q_select := q_select || format( '%I ', ((data_table_info)[i]).colname);
+    q_select := q_select || format( '%I ', (data_table_info)[i]->'colname');
 
-    IF ((data_table_info)[i]).aggregate ='sum'
+    IF (data_table_info)[i]->'aggregate' ='sum'
     THEN
-      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
+      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',(data_table_info)[i]->'colname',(data_table_info)[i]->'colname');
     ELSE
       q_sum := q_sum || ' NULL::numeric ';
     END IF;
@@ -485,7 +479,7 @@ BEGIN
     values As (
     ', geom_table_name);
 
-  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
+  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1]->'tablename'));
 
   q := q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
   WHERE values.geoid = _overlaps.geoid';
@@ -557,7 +551,7 @@ RETURNS TABLE(
   percent_income_spent_on_rent_quantile NUMERIC,
   owner_occupied_housing_units_quantile NUMERIC,
   million_dollar_housing_units_quantile NUMERIC
-) 
+)
 AS $$
 DECLARE
   target_cols text[];
@@ -723,4 +717,3 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
-

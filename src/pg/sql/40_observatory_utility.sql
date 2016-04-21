@@ -14,7 +14,7 @@ DECLARE
 BEGIN
   EXECUTE '
     SELECT tablename FROM observatory.OBS_table
-    WHERE id IN (
+    WHERE id IN (ps
       SELECT table_id
       FROM observatory.OBS_table tab,
            observatory.OBS_column_table coltable,
@@ -128,6 +128,33 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Generates json from an array of keys and values
+--
+CREATE OR REPLACE FUNCTION cdb_ervatory._keys_vals_to_json(keys text[], vals anyarray )
+RETURNS json
+as $$
+DECLARE
+  query text;
+  result text;
+BEGIN
+query = '';
+for i in 1..array_upper(keys,1) LOOP
+  query = query || format('vals[%s]  %I' , i , keys[i]);
+  if i < array_upper(keys,1) then
+    query = query || ', ';
+  end IF;
+end LOOP;
+  RAISE NOTICE ' query %', query;
+  EXECUTE
+    ' with key_vals as (select $1 keys, $2 vals),
+      expanded as (select '||query||' from key_vals)
+      select row_to_json(expanded) from expanded'
+  INTO result
+  USING keys, vals;
+  return result;
+END;
+$$ language plpgsql ;
+
 --Used to expand a column based response to a table based one. Give it the desired
 --columns and it will return a partial query for rolling them out to a table.
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_BuildSnapshotQuery(names text[])
@@ -151,6 +178,25 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function that replaces all non digits or letters with _ trims and lowercases the
+-- passed measure name
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_NormalizeMeasureName(measure_name text )
+RETURNS text
+AS $$
+DECLARE
+  result text;
+BEGIN
+  -- Turn non letter or digits to _
+  result = regexp_replace(measure_name, '[^\dA-Za-z]+','_', 'g');
+  -- Remove duplicate _'s
+  result = regexp_replace(result,'_{2,}','_', 'g');
+  -- Trim _'s from begning and end
+  result = trim(both  '_' from result);
+  result = lower(result);
+  RETURN result;
+END $$
 
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetRelatedColumn(columns_ids text[], reltype text )
 RETURNS TEXT[]

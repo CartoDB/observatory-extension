@@ -84,4 +84,6 @@ SELECT cdb_observatory._OBS_GetRelatedColumn(
      'denominator'
  );
 
+SELECT cdb_observatory._OBS_NormalizeMeasureName('test 343 %% 2 qqq }}{{}}');
+
 \i test/sql/drop_fixtures.sql

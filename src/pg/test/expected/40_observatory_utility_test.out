@@ -127,6 +127,13 @@ SELECT
  SELECT  vals[1] As mandarin_orange
 (1 row)
 
+<<<<<<< HEAD
+-- should give back a normalized name
+SELECT cdb_observatory._OBS_NormalizeMeasureName('test 343 %% 2 qqq }}{{}}');
+_obs_normalizemeasurename 
+---------------------------
+test_343_2_qqq
+=======
 SELECT cdb_observatory._OBS_GetRelatedColumn(
     Array[
     '"es.ine".pop_0_4',
@@ -138,6 +145,7 @@ SELECT cdb_observatory._OBS_GetRelatedColumn(
                     _obs_getrelatedcolumn                    
 -------------------------------------------------------------
  {"\"es.ine\".total_pop",NULL,"\"us.census.acs\".B01001001"}
+>>>>>>> release_v1_api_functions
 (1 row)
 
 \i test/sql/drop_fixtures.sql

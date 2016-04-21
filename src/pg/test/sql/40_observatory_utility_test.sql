@@ -75,4 +75,13 @@ SELECT
     Array['mandarin_orange']
   );
 
+SELECT cdb_observatory._OBS_GetRelatedColumn(
+    Array[
+    '"es.ine".pop_0_4',
+     '"us.census.acs".B01001001',
+    '"us.census.acs".B01001002'
+    ],
+     'denominator'
+ );
+
 \i test/sql/drop_fixtures.sql

@@ -76,7 +76,7 @@ SELECT
   );
 
 SELECT
-  select * from  cdb_observatory._GetRelatedColumn(
+  select cdb_observatory._OBS_GetRelatedColumn(
     Array[
     '"es.ine".pop_0_4',
      '"us.census.acs".B01001001',

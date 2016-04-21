@@ -29,7 +29,7 @@ SELECT
     CDB_LatLng(40.7128,-74.0059),
     '"us.census.tiger".census_tract'
   );
-                _obs_geomtable
+                _obs_geomtable                
 ----------------------------------------------
  obs_a92e1111ad3177676471d66bb8036e6d057f271b
 (1 row)
@@ -41,7 +41,7 @@ SELECT
     CDB_LatLng(40.7128,-74.0059),
     '"us.census.tiger".nonexistant_id' -- not in catalog
   );
- _obs_geomtable
+ _obs_geomtable 
 ----------------
 
 (1 row)
@@ -54,7 +54,7 @@ SELECT
 --   );
 -- OBS_GetColumnData
 -- should give back:
---  colname   | tablename       | aggregate
+--  colname   | tablename       | aggregate 
 -- -----------|-----------------|-----------
 --  geoid     | obs_{hex table} | null
 --  total_pop | obs_{hex table} | sum
@@ -65,7 +65,7 @@ SELECT
     '2009 - 2013'
   ))).*
 ORDER BY colname, tablename ASC;
-  colname  |                  tablename                   | aggregate
+  colname  |                  tablename                   | aggregate 
 -----------+----------------------------------------------+-----------
  geoid     | obs_11ee8b82c877c073438bc935a91d3dfccef875d1 |
  geoid     | obs_ab038198aaab3f3cb055758638ee4de28ad70146 |
@@ -81,7 +81,7 @@ SELECT
     '2009 - 2013'
   ))).*
 ORDER BY 1 ASC;
- colname | tablename | aggregate
+ colname | tablename | aggregate 
 ---------+-----------+-----------
 (0 rows)
 
@@ -91,7 +91,7 @@ SELECT
   cdb_observatory._OBS_LookupCensusHuman(
     Array['gini_index']
   );
-     _obs_lookupcensushuman
+     _obs_lookupcensushuman      
 ---------------------------------
  {"\"us.census.acs\".B19083001"}
 (1 row)
@@ -101,7 +101,7 @@ SELECT
   cdb_observatory._OBS_LookupCensusHuman(
     Array['cookies']
   );
- _obs_lookupcensushuman
+ _obs_lookupcensushuman 
 ------------------------
 
 (1 row)
@@ -112,7 +112,7 @@ SELECT
   cdb_observatory._OBS_BuildSnapshotQuery(
     Array['total_pop','male_pop','female_pop','median_age']
   );
-                                     _obs_buildsnapshotquery
+                                     _obs_buildsnapshotquery                                     
 -------------------------------------------------------------------------------------------------
  SELECT  vals[1] As total_pop, vals[2] As male_pop, vals[3] As female_pop, vals[4] As median_age
 (1 row)
@@ -122,7 +122,7 @@ SELECT
   cdb_observatory._OBS_BuildSnapshotQuery(
     Array['mandarin_orange']
   );
-      _obs_buildsnapshotquery
+      _obs_buildsnapshotquery       
 ------------------------------------
  SELECT  vals[1] As mandarin_orange
 (1 row)
@@ -137,7 +137,7 @@ SELECT
     ],
      'denominator'
  );
-                     _getrelatedcolumn
+                     _getrelatedcolumn                       
 -------------------------------------------------------------
 {"\"es.ine\".total_pop",NULL,"\"us.census.acs\".B01001001"}
 (1 row)

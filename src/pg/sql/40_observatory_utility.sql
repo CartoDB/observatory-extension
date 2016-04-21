@@ -152,7 +152,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION cdb_observatory._GetRelatedColumn(columns_ids text[], reltype text )
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetRelatedColumn(columns_ids text[], reltype text )
 RETURNS TEXT[]
 AS $$
 DECLARE

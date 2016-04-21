@@ -173,3 +173,23 @@ BEGIN
   return result;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function that replaces all non digits or letters with _ trims and lowercases the
+-- passed measure name
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_StandardizeMeasureName(measure_name text)
+RETURNS text
+AS $$
+DECLARE
+  result text;
+BEGIN
+  -- Turn non letter or digits to _
+  result = regexp_replace(measure_name, '[^\dA-Za-z]+','_', 'g');
+  -- Remove duplicate _'s
+  result = regexp_replace(result,'_{2,}','_', 'g');
+  -- Trim _'s from beginning and end
+  result = trim(both  '_' from result);
+  result = lower(result);
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql;

@@ -437,6 +437,31 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
+  geom geometry,
+  normalize TEXT DEFAULT 'area',
+  boundary_id TEXT DEFAULT NULL,
+  time_span TEXT DEFAULT NULL
+)
+RETURNS NUMERIC
+AS $$
+DECLARE
+  population_measure_id TEXT;
+  result NUMERIC;
+BEGIN
+  -- TODO use a super-column for global pop
+  population_measure_id := '"us.census.acs".B01001001';
+
+  EXECUTE format('SELECT (cdb_observatory.OBS_GetMeasure(
+      %L, %L, %L, %L, %L
+  ))->''value'' LIMIT 1', geom, population_measure_id, normalize, boundary_id, time_span)
+  INTO result;
+
+  return result;
+END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
   geom geometry,
   geom_table_name text,

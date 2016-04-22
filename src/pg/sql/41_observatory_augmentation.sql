@@ -457,6 +457,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
+   geom GEOMETRY,
+   name TEXT,
+   normalize TEXT DEFAULT 'area',
+   boundary_id TEXT DEFAULT NULL,
+   time_span TEXT DEFAULT NULL
+ )
+RETURNS JSON AS $$
+DECLARE
+  standardized_name text;
+  measure_id text;
+  result JSON;
+BEGIN
+  standardized_name = cdb_observatory._OBS_StandardizeMeasureName(name);
+
+  EXECUTE $string$
+  SELECT c.id
+  FROM observatory.obs_column c
+       JOIN observatory.obs_column_tag ct
+         ON c.id = ct.column_id
+       WHERE cdb_observatory._OBS_StandardizeMeasureName(c.name) = $1
+         AND ct.tag_id = '"us.census.acs".demographics'
+  $string$
+  INTO measure_id
+  USING standardized_name;
+
+  EXECUTE 'SELECT cdb_observatory.OBS_GetMeasure($1, $2, $3, $4, $5)'
+  INTO result
+  USING geom, measure_id, normalize, boundary_id, time_span;
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
   geom geometry,
   normalize TEXT DEFAULT 'area',

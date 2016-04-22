@@ -41,34 +41,34 @@ Done.
  {female_pop,male_pop} | {}
 (1 row)
 
-    names     |   vals   
---------------+----------
- {gini_index} | {0.3494}
+obs_get_gini_index_at_test_point 
+----------------------------------
+t
 (1 row)
 
-    names     | vals 
---------------+------
- {gini_index} | {}
+obs_get_gini_index_at_null_island 
+-----------------------------------
+t
 (1 row)
 
-   _obs_getpoints   
---------------------
- {4809.33511352425}
+obs_getpoints_for_test_point 
+------------------------------
+t
 (1 row)
 
- _obs_getpoints 
-----------------
- 
+obs_getpoints_for_null_island 
+-------------------------------
+t
 (1 row)
 
-  _obs_getpolygons  
---------------------
- {1570.72353789469}
+obs_getpolygons_for_test_point 
+--------------------------------
+t
 (1 row)
 
- _obs_getpolygons 
-------------------
- {NULL}
+obs_getpolygons_for_null_island 
+---------------------------------
+t
 (1 row)
 
         segment_name         | total_pop_quantile | male_pop_quantile | female_pop_quantile | median_age_quantile | white_pop_quantile | black_pop_quantile | asian_pop_quantile | hispanic_pop_quantile | not_us_citizen_pop_quantile | workers_16_and_over_quantile | commuters_by_car_truck_van_quantile | commuters_by_public_transportation_quantile | commuters_by_bus_quantile | commuters_by_subway_or_elevated_quantile | walked_to_work_quantile | worked_at_home_quantile | children_quantile  | households_quantile | population_3_years_over_quantile | in_school_quantile | in_grades_1_to_4_quantile | in_grades_5_to_8_quantile | in_grades_9_to_12_quantile | in_undergrad_college_quantile | pop_25_years_over_quantile | high_school_diploma_quantile | bachelors_degree_quantile | masters_degree_quantile | pop_5_years_over_quantile | speak_only_english_at_home_quantile | speak_spanish_at_home_quantile | pop_determined_poverty_status_quantile | poverty_quantile  | median_income_quantile | gini_index_quantile | income_per_capita_quantile | housing_units_quantile | vacant_housing_units_quantile | vacant_housing_units_for_rent_quantile | vacant_housing_units_for_sale_quantile | median_rent_quantile | percent_income_spent_on_rent_quantile | owner_occupied_housing_units_quantile | million_dollar_housing_units_quantile 

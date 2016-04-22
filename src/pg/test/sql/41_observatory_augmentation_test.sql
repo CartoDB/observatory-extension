@@ -161,4 +161,12 @@ SELECT * FROM
     cdb_observatory._TestArea()
   );
 
+-- Point-based OBS_GetUSCensusMeasure, default normalization (area)
+SELECT cdb_observatory.obs_getuscensusmeasure(
+  cdb_observatory._testpoint(), 'male population');
+
+-- Poly-based OBS_GetUSCensusMeasure, default normalization (none)
+SELECT cdb_observatory.obs_getuscensusmeasure(
+  cdb_observatory._testarea(), 'male population');
+
 \i test/sql/drop_fixtures.sql

@@ -467,7 +467,7 @@ RETURNS NUMERIC AS $$
 DECLARE
   standardized_name text;
   measure_id text;
-  result JSON;
+  result NUMERIC;
 BEGIN
   standardized_name = cdb_observatory._OBS_StandardizeMeasureName(name);
 
@@ -505,9 +505,9 @@ BEGIN
   -- TODO use a super-column for global pop
   population_measure_id := '"us.census.acs".B01001001';
 
-  EXECUTE format('SELECT (cdb_observatory.OBS_GetMeasure(
+  EXECUTE format('SELECT cdb_observatory.OBS_GetMeasure(
       %L, %L, %L, %L, %L
-  ))->''value'' LIMIT 1', geom, population_measure_id, normalize, boundary_id, time_span)
+  ) LIMIT 1', geom, population_measure_id, normalize, boundary_id, time_span)
   INTO result;
 
   return result;

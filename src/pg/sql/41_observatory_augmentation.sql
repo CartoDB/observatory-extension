@@ -691,14 +691,14 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCategories(
   geometry_level text DEFAULT '"us.census.tiger".block_group',
   time_span text DEFAULT '2009 - 2013'
 )
-RETURNS TABLE(names text[], categories text[]) as $$
+RETURNS SETOF JSON as $$
 DECLARE
   geom_table_name text;
   geoid text;
   names text[];
   results text[];
   query text;
-  data_table_info cdb_observatory.OBS_ColumnData[];
+  data_table_info json[];
 BEGIN
 
   geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
@@ -709,13 +709,12 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
   END IF;
 
-  data_table_info := cdb_observatory._OBS_GetColumnData(geometry_level,
-                                       dimension_names,
-                                       time_span);
-
-
-  names := (SELECT array_agg((d).colname)
-            FROM unnest(data_table_info) As d);
+  execute'
+  select array_agg( _obs_getcolumndatajson)  from cdb_observatory._OBS_GetColumnDataJSON($1,
+                                       $2,
+                                       $3);'
+  INTO   data_table_info
+  using geometry_level, dimension_names, time_span;
 
 
   EXECUTE
@@ -729,7 +728,7 @@ BEGIN
   query := 'SELECT ARRAY[';
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
-    query = query || format('%I ', lower(((data_table_info)[i]).colname));
+    query = query || format('%I ', lower(((data_table_info)[i])->>'colname'));
     IF i <  array_upper(data_table_info, 1)
     THEN
       query := query || ',';
@@ -740,8 +739,8 @@ BEGIN
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
-  ((data_table_info)[1]).tablename,
-  ((data_table_info)[1]).tablename,
+  ((data_table_info)[1])->>'tablename',
+  ((data_table_info)[1])->>'tablename',
   geoid
   );
 
@@ -749,9 +748,21 @@ BEGIN
     query
   INTO results
   USING geom;
-
+  
   RETURN QUERY
-    SELECT names,results
+  EXECUTE 
+    $query$
+     select row_to_json(t) from(
+      select categories as category,
+              meta->>'name'  as name, 
+              meta->>'tablename' as tablename,
+              meta->>'aggregate' as aggregate,
+              meta->>'type'  as type,
+              meta->>'description' as description
+             from (select unnest($1) as categories, unnest($2) as meta) b
+      ) t
+    $query$
+    USING results, data_table_info;
   RETURN;
 
 END;

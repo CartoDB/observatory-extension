@@ -33,13 +33,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- A type for use with the OBS_GetColumnData function
-CREATE TYPE cdb_observatory.OBS_ColumnData AS (
-  colname text, 
-  tablename text, 
-  aggregate text, 
-  name text,
-  type text);
 
 
 -- A function that gets the column data for multiple columns
@@ -49,11 +42,10 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetColumnData(
   column_ids text[],
   timespan text
 )
-RETURNS cdb_observatory.OBS_ColumnData[]
+RETURNS SETOF JSON
 AS $$
-DECLARE
-  result cdb_observatory.OBS_ColumnData[];
 BEGIN
+  RETURN QUERY
   EXECUTE '
   WITH geomref AS (
     SELECT t.table_id id
@@ -65,17 +57,24 @@ BEGIN
   column_ids as (
     select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a
   )
- SELECT array_agg(ROW(colname, tablename, aggregate, name, type)::cdb_observatory.OBS_ColumnData order by column_ids.no)
- FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
- WHERE column_ids.column_id  = c.id
-   AND c.id = ct.column_id
-   AND t.id = ct.table_id
-   AND t.timespan = $3
-   AND t.id in (SELECT id FROM geomref)
+ SELECT row_to_json(a) from (
+   select  colname, 
+            tablename, 
+            aggregate, 
+            name, 
+            type,
+            c.description 
+           FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
+           WHERE column_ids.column_id  = c.id
+             AND c.id = ct.column_id
+             AND t.id = ct.table_id
+             AND t.timespan = $3
+             AND t.id in (SELECT id FROM geomref)
+          order by column_ids.no
+    ) a
  '
  USING geometry_id, column_ids, timespan
- INTO result;
- RETURN result;
+ RETURN;
 
 END;
 $$ LANGUAGE plpgsql;

@@ -122,19 +122,29 @@ SELECT * FROM
     '"us.census.tiger".census_tract'
 );
 
-SELECT * FROM
-  cdb_observatory._OBS_GetCategories(
-    cdb_observatory._TestPoint(),
-    Array['"us.census.spielman_singleton_segments".X10'],
-    '"us.census.tiger".census_tract'
-);
-
-SELECT * FROM
-  cdb_observatory._OBS_GetCategories(
-    CDB_LatLng(0, 0),
-    Array['"us.census.spielman_singleton_segments".X10'],
-    '"us.census.tiger".census_tract'
-);
+WITH result as (
+  SELECT array_agg(_OBS_GetCategories) as expected FROM
+    cdb_observatory._OBS_GetCategories(
+      cdb_observatory._TestPoint(),
+      Array['"us.census.spielman_singleton_segments".X10'],
+      '"us.census.tiger".census_tract'
+  )
+)
+  select (expected)[1]::text = '{"category":"Wealthy, urban without Kids","name":"SS_segment_10_clusters","tablename":"obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_1,
+  (expected)[2]::text ='{"category":"Wealthy, urban without Kids","name":"SS_segment_10_clusters","tablename":"obs_11ee8b82c877c073438bc935a91d3dfccef875d1","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_2
+  from result;
+  
+WITH result as (
+  SELECT array_agg(_OBS_GetCategories) as expected FROM
+    cdb_observatory._OBS_GetCategories(
+      -- cdb_observatory._TestPoint(),
+      CDB_LatLng(0,0),
+      Array['"us.census.spielman_singleton_segments".X10'],
+      '"us.census.tiger".census_tract'
+  )
+)
+  select expected is null as GetCategories_at_null_island
+  from result;
 
 -- Point-based OBS_GetMeasure, default normalization (area)
 SELECT * FROM

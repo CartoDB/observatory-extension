@@ -81,15 +81,16 @@ t
               |                    |                   |                     |                     |                    |                    |                    |                       |                             |                              |                                     |                                             |                           |                                          |                         |                         |                   |                     |                                  |                    |                           |                           |                            |                               |                            |                              |                           |                         |                           |                                     |                                |                                        |                  |                        |                     |                            |                        |                               |                                        |                                        |                      |                                       |                                       |                                      
 (1 row)
 
- names |           categories            
--------+---------------------------------
- {X10} | {"Wealthy, urban without Kids"}
+getcategories_at_test_point_1 | getcategories_at_test_point_2 
+-------------------------------+-------------------------------
+t                             | t
 (1 row)
 
- names | categories 
--------+------------
- {X10} | 
+getcategories_at_null_island 
+------------------------------
+t
 (1 row)
+
 
                    obs_getmeasure                   
 ----------------------------------------------------

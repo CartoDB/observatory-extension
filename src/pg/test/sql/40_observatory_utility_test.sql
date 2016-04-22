@@ -53,7 +53,7 @@ SELECT
     Array['"us.census.tiger".baloney'],
     '2009 - 2013') a 
 )
-select expected is null as OBS_GetColumnDataJSON_missing_measure
+select expected is null as OBS_GetColumnData_missing_measure
 from result;
 
 -- OBS_LookupCensusHuman

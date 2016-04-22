@@ -42,20 +42,21 @@ FROM
 -- gini_index | 0.3494
 
 WITH result as (
-  SELECT _OBS_GetJSON::text as expected FROM
-  cdb_observatory._OBS_GetJSON(
+  SELECT _OBS_Get::text as expected FROM
+  cdb_observatory._OBS_Get(
     cdb_observatory._TestPoint(),
     Array['"us.census.acs".B19083001']::text[],
     '2009 - 2013',
     '"us.census.tiger".block_group'
   ) 
 ) select expected = '{"value":0.3494,"name":"Gini Index","tablename":"obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb","aggregate":"","type":"Numeric","description":""}'
+  as OBS_Get_gini_index_at_test_point
   from result;
 
 -- gini index at null island
 WITH result as (
-  SELECT count(_OBS_GetJSON) as expected FROM
-  cdb_observatory._OBS_GetJSON(
+  SELECT count(_OBS_Get) as expected FROM
+  cdb_observatory._OBS_Get(
     CDB_LatLng(0, 0),
     Array['"us.census.acs".B19083001']::text[],
     '2009 - 2013',

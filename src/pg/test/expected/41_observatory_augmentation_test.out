@@ -115,6 +115,16 @@ Done.
  0.64652567975830815710
 (1 row)
 
+       obs_getcategory       
+-----------------------------
+ Wealthy, urban without Kids
+(1 row)
+
+       obs_getcategory       
+-----------------------------
+ Wealthy, urban without Kids
+(1 row)
+
  obs_getpopulation 
 -------------------
   9516.27915900609
@@ -133,6 +143,16 @@ Done.
  obs_getuscensusmeasure 
 ------------------------
                    1070
+(1 row)
+
+   obs_getuscensuscategory   
+-----------------------------
+ Wealthy, urban without Kids
+(1 row)
+
+   obs_getuscensuscategory   
+-----------------------------
+ Wealthy, urban without Kids
 (1 row)
 
 Dropping obs_table.sql fixture table...

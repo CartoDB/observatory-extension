@@ -18,6 +18,14 @@ DROP TABLE observatory.obs_column_table;
 DROP TABLE observatory.obs_column_to_column;
 \echo Done.
 
+\echo Dropping obs_column_tag.sql fixture table...
+DROP TABLE observatory.obs_column_tag;
+\echo Done.
+
+\echo Dropping obs_tag.sql fixture table...
+DROP TABLE observatory.obs_tag;
+\echo Done.
+
 -- data
 \echo Dropping obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1 fixture table...
 DROP TABLE observatory.obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1;

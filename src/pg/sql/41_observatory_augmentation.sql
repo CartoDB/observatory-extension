@@ -272,11 +272,11 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_Get(
 RETURNS SETOF JSON
 AS $$
 DECLARE
-  results numeric[];
+  results json[];
   geom_table_name text;
   names text[];
   query text;
-  data_table_info cdb_observatory.OBS_ColumnData[];
+  data_table_info json[];
 BEGIN
 
   geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
@@ -287,9 +287,13 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
   END IF;
 
-  data_table_info := cdb_observatory._OBS_GetColumnData(geometry_level,
-                                       column_ids,
-                                       time_span);
+  execute'
+  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnData($1,
+                                       $2,
+                                       $3);'
+  INTO   data_table_info
+  using geometry_level, column_ids, time_span;
+    
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
     results := cdb_observatory._OBS_GetPoints(geom,
@@ -298,28 +302,19 @@ BEGIN
 
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
+    -- RAISE EXCEPTION 'polygons not supported for now';
     results := cdb_observatory._OBS_GetPolygons(geom,
                                geom_table_name,
                                data_table_info);
   END IF;
-
-  IF results IS NULL
-  THEN
-    results := Array[]::numeric[];
-  END IF;
-  
-  RAISE NOTICE '%', results;
   
   RETURN QUERY
-  SELECT row_to_json(d)
-  FROM (
-    SELECT (meta).aggregate as aggregate,
-           (meta).name  as name,
-           (meta).type  as type,
-           val as value
-    FROM  (select unnest(data_table_info) as meta, 
-          unnest(results) as val) b
-  ) d;
+  EXECUTE
+  $query$
+    SELECT unnest($1)
+  $query$
+  USING results;
+  
 END;
 $$ LANGUAGE plpgsql;
 
@@ -329,12 +324,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
   geom geometry,
   geom_table_name text,
-  data_table_info cdb_observatory.OBS_ColumnData[]
+  data_table_info json[]
 )
-RETURNS NUMERIC[]
+RETURNS json[]
 AS $$
 DECLARE
   result NUMERIC[];
+  json_result json[];
   query  text;
   i int;
   geoid text;
@@ -372,14 +368,14 @@ BEGIN
     THEN
       -- give back null values
       query := query || format('NULL::numeric ');
-    ELSIF ((data_table_info)[i]).aggregate != 'sum'
+    ELSIF ((data_table_info)[i])->>'aggregate' != 'sum'
     THEN
       -- give back full variable
-      query := query || format('%I ', ((data_table_info)[i]).colname);
+      query := query || format('%I ', ((data_table_info)[i])->>'colname');
     ELSE
       -- give back variable normalized by area of geography
       query := query || format('%I/%s ',
-        ((data_table_info)[i]).colname,
+        ((data_table_info)[i])->>'colname',
         area);
     END IF;
 
@@ -393,17 +389,32 @@ BEGIN
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
-  ((data_table_info)[1]).tablename,
-  ((data_table_info)[1]).tablename,
+  ((data_table_info)[1])->>'tablename',
+  ((data_table_info)[1])->>'tablename',
   geoid
   );
-
+  
   EXECUTE
     query
   INTO result
   USING geom;
-
-  RETURN result;
+  
+  EXECUTE 
+    $query$
+     select array_agg(row_to_json(t)) from(
+      select values as value,
+              meta->>'name'  as name, 
+              meta->>'tablename' as tablename,
+              meta->>'aggregate' as aggregate,
+              meta->>'type'  as type,
+              meta->>'description' as description
+             from (select unnest($1) as values, unnest($2) as meta) b
+      ) t
+    $query$
+    INTO json_result
+    USING result, data_table_info;
+  
+  RETURN json_result;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -418,8 +429,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
 RETURNS JSON
 AS $$
 DECLARE
-  names TEXT[];
-  vals NUMERIC[];
+  result json;
 BEGIN
 
   IF boundary_id IS NULL THEN
@@ -432,14 +442,14 @@ BEGIN
     time_span := '2009 - 2013';
   END IF;
 
-  EXECUTE '
-    SELECT names, vals FROM cdb_observatory._OBS_Get($1, ARRAY[$2], $3, $4) LIMIT 1
+  
+  EXECUTE  '
+    SELECT * FROM cdb_observatory._OBS_Get($1, ARRAY[$2], $3, $4)  LIMIT 1
   '
-  INTO names, vals
+  INTO result
   USING geom, measure_id, time_span, boundary_id;
 
-  RETURN json_build_object('name', (names)[1], 'value', (vals)[1]);
-
+  RETURN result;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -447,12 +457,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
   geom geometry,
   geom_table_name text,
-  data_table_info cdb_observatory.OBS_ColumnData[]
+  data_table_info json[]
 )
-RETURNS NUMERIC[]
+RETURNS json[]
 AS $$
 DECLARE
-  result NUMERIC[];
+  result numeric[];
+  json_result json[];
   q_select text;
   q_sum text;
   q text;
@@ -464,11 +475,11 @@ BEGIN
 
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
-    q_select := q_select || format( '%I ', ((data_table_info)[i]).colname);
+    q_select := q_select || format( '%I ', ((data_table_info)[i])->>'colname');
 
-    IF ((data_table_info)[i]).aggregate ='sum'
+    IF ((data_table_info)[i])->>'aggregate' ='sum'
     THEN
-      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
+      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i])->>'colname',((data_table_info)[i])->>'colname');
     ELSE
       q_sum := q_sum || ' NULL::numeric ';
     END IF;
@@ -492,17 +503,32 @@ BEGIN
     values As (
     ', geom_table_name);
 
-  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
+  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1]->>'tablename'));
 
   q := q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
   WHERE values.geoid = _overlaps.geoid';
-
+  
   EXECUTE
     q
   INTO result
   USING geom;
-
-  RETURN result;
+  
+  EXECUTE 
+    $query$
+     select array_agg(row_to_json(t)) from(
+      select values as value,
+              meta->>'name'  as name, 
+              meta->>'tablename' as tablename,
+              meta->>'aggregate' as aggregate,
+              meta->>'type'  as type,
+              meta->>'description' as description
+             from (select unnest($1) as values, unnest($2) as meta) b
+      ) t
+    $query$
+    INTO json_result
+    USING result, data_table_info;
+  
+  RETURN json_result;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -730,4 +756,3 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
-

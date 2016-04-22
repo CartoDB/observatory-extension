@@ -95,24 +95,24 @@ Done.
  {X10} | 
 (1 row)
 
-                   obs_getmeasure                   
-----------------------------------------------------
- {"name" : "total_pop", "value" : 9516.27915900609}
+  obs_getmeasure  
+------------------
+ 9516.27915900609
 (1 row)
 
-             obs_getmeasure             
-----------------------------------------
- {"name" : "total_pop", "value" : 1655}
+ obs_getmeasure 
+----------------
+           1655
 (1 row)
 
-                             obs_getmeasure                             
-------------------------------------------------------------------------
- {"name" : "male_pop over total_pop", "value" : 0.64652567975830779836}
+     obs_getmeasure     
+------------------------
+ 0.64652567975830779836
 (1 row)
 
-                             obs_getmeasure                             
-------------------------------------------------------------------------
- {"name" : "male_pop over total_pop", "value" : 0.64652567975830815710}
+     obs_getmeasure     
+------------------------
+ 0.64652567975830815710
 (1 row)
 
  obs_getpopulation 
@@ -125,14 +125,14 @@ Done.
               1655
 (1 row)
 
-              obs_getuscensusmeasure               
----------------------------------------------------
- {"name" : "male_pop", "value" : 6152.51885204623}
+ obs_getuscensusmeasure 
+------------------------
+       6152.51885204623
 (1 row)
 
-        obs_getuscensusmeasure         
----------------------------------------
- {"name" : "male_pop", "value" : 1070}
+ obs_getuscensusmeasure 
+------------------------
+                   1070
 (1 row)
 
 Dropping obs_table.sql fixture table...

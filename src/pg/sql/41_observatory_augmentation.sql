@@ -408,7 +408,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
 )
-RETURNS JSON
+RETURNS NUMERIC
 AS $$
 DECLARE
   names TEXT[];
@@ -448,10 +448,9 @@ BEGIN
   USING geom, measure_ids, time_span, boundary_id;
 
   IF normalize ILIKE 'denominator' THEN
-    RETURN json_build_object('name', format('%I over %I', names[1], names[2]),
-      'value', vals[1]/ vals[2]);
+    RETURN (vals)[1]/(vals)[2];
   ELSE
-    RETURN json_build_object('name', (names)[1], 'value', (vals)[1]);
+    RETURN (vals)[1];
   END IF;
 
 END;
@@ -464,7 +463,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
    boundary_id TEXT DEFAULT NULL,
    time_span TEXT DEFAULT NULL
  )
-RETURNS JSON AS $$
+RETURNS NUMERIC AS $$
 DECLARE
   standardized_name text;
   measure_id text;

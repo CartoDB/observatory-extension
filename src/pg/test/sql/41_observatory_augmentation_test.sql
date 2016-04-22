@@ -149,6 +149,14 @@ SELECT cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestArea(),
   '"us.census.acs".B01001002', 'denominator');
 
+-- Point-based OBS_GetCategory
+SELECT cdb_observatory.OBS_GetCategory(
+  cdb_observatory._TestPoint(), '"us.census.spielman_singleton_segments".X10');
+
+-- Poly-based OBS_GetCategory
+SELECT cdb_observatory.OBS_GetCategory(
+  cdb_observatory._TestArea(), '"us.census.spielman_singleton_segments".X10');
+
 -- Point-based OBS_GetPopulation, default normalization (area)
 SELECT * FROM
   cdb_observatory.OBS_GetPopulation(
@@ -168,5 +176,14 @@ SELECT cdb_observatory.obs_getuscensusmeasure(
 -- Poly-based OBS_GetUSCensusMeasure, default normalization (none)
 SELECT cdb_observatory.obs_getuscensusmeasure(
   cdb_observatory._testarea(), 'male population');
+
+-- Point-based OBS_GetUSCensusCategory
+SELECT cdb_observatory.OBS_GetUSCensusCategory(
+  cdb_observatory._testpoint(), 'SS Segment, 10 clusters');
+
+-- Area-based OBS_GetUSCensusCategory
+SELECT cdb_observatory.OBS_GetUSCensusCategory(
+  cdb_observatory._testarea(), 'SS Segment, 10 clusters');
+
 
 \i test/sql/drop_fixtures.sql

@@ -456,6 +456,42 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
+  geom GEOMETRY,
+  category_id TEXT,
+  boundary_id TEXT DEFAULT NULL,
+  time_span TEXT DEFAULT NULL
+)
+RETURNS TEXT
+AS $$
+DECLARE
+  names TEXT[];
+  category_ids TEXT[];
+  denominator_id TEXT;
+  categories TEXT[];
+BEGIN
+
+  IF boundary_id IS NULL THEN
+    -- TODO we should determine best boundary for this geom
+    boundary_id := '"us.census.tiger".census_tract';
+  END IF;
+
+  IF time_span IS NULL THEN
+    -- TODO we should determine latest timespan for this measure
+    time_span := '2009 - 2013';
+  END IF;
+
+  EXECUTE '
+    SELECT names, categories FROM cdb_observatory._OBS_GetCategories($1, $2, $3, $4) LIMIT 1
+  '
+  INTO names, categories
+  USING geom, ARRAY[category_id], boundary_id, time_span;
+
+  RETURN (categories)[1];
+
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
    geom GEOMETRY,
    name TEXT,
@@ -489,6 +525,39 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusCategory(
+   geom GEOMETRY,
+   name TEXT,
+   boundary_id TEXT DEFAULT NULL,
+   time_span TEXT DEFAULT NULL
+ )
+RETURNS TEXT AS $$
+DECLARE
+  standardized_name text;
+  category_id text;
+  result TEXT;
+BEGIN
+  standardized_name = cdb_observatory._OBS_StandardizeMeasureName(name);
+
+  EXECUTE $string$
+  SELECT c.id
+  FROM observatory.obs_column c
+       --JOIN observatory.obs_column_tag ct
+       --  ON c.id = ct.column_id
+       WHERE cdb_observatory._OBS_StandardizeMeasureName(c.name) = $1
+         AND c.type ILIKE 'TEXT'
+         AND c.id ILIKE '"us.census%' -- TODO this should be done by tag
+         --AND ct.tag_id = '"us.census.acs".demographics'
+  $string$
+  INTO category_id
+  USING standardized_name;
+
+  EXECUTE 'SELECT cdb_observatory.OBS_GetCategory($1, $2, $3, $4)'
+  INTO result
+  USING geom, category_id, boundary_id, time_span;
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
   geom geometry,

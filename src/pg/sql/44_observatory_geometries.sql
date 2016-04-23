@@ -1,19 +1,34 @@
--- Returns the polygon(s) that overlap with the input geometry.
--- Input:
--- :param geom geometry: input geometry
--- :param boundary_id text: table to get polygon from (can be approximate name)
--- :param use_literal boolean: use the literal table name (defaults to true)
+-- Data Observatory -- Welcome to the Future
+-- These Data Observatory functions provide access to boundary polyons (and
+--   their ids) such as those available through the US Census Tiger, Who's on
+--   First, the Spanish Census, and so on
 
--- From an input point geometry, find the boundary which intersects with the centroid of the input geometry
+
+-- OBS_GetGeometry
+--
+-- Returns the boundary polygon(s) that overlap with the input point geometry.
+-- From an input point geometry, find the boundary which intersects with the
+--   centroid of the input geometry
+-- Inputs:
+--   geom geometry: input point geometry
+--   boundary_id text: source id of boundaries
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   boundary geometry: geometry boundary that intersects with geom, is at the
+--                      resolution requested with boundary_id, and time_span
+--
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometry(
-  geom geometry(geometry, 4326),
+  geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL)
-RETURNS geometry(geometry, 4326)
+RETURNS geometry(Geometry, 4326)
 AS $$
 DECLARE
-  boundary geometry(geometry, 4326);
+  boundary geometry(Geometry, 4326);
   target_table text;
 BEGIN
 
@@ -31,15 +46,18 @@ BEGIN
     SELECT x.target_tables INTO target_table
     FROM cdb_observatory._OBS_SearchTables(boundary_id,
                                            time_span) As x(target_tables,
-                                                           time_spans)
-    ORDER BY x.time_spans DESC
+                                                           timespans)
+    ORDER BY x.timespans DESC
     LIMIT 1;
   ELSE
+    -- TODO: modify for only one table returned instead of arbitrarily choosing
+    --       one with LIMIT 1 (could be conflict between clipped vs non-clipped
+    --       boundaries in the metadata tables)
     SELECT x.target_tables INTO target_table
     FROM cdb_observatory._OBS_SearchTables(boundary_id,
                             time_span) As x(target_tables,
-                                            time_spans)
-    WHERE x.time_spans = time_span
+                                            timespans)
+    WHERE x.timespans = time_span
     LIMIT 1;
   END IF;
 
@@ -66,6 +84,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- OBS_GetGeometryId
+--
+-- retrieves the boundary identifier (e.g., '36047' = Kings County/Brooklyn, NY)
+--   corresponding to the location geom and boundary types (e.g.,
+--   us.census.tiger.county)
+
+-- Inputs:
+--   geom geometry: location where the boundary is requested to overlap with
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   geometry_id text: identifier of the geometry which overlaps with the input
+--                     point geom in the table corresponding to boundary_id and
+--                     time_span
+--
+
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometryId(
   geom geometry(Geometry, 4326),
   boundary_id text,
@@ -88,17 +125,17 @@ BEGIN
   IF time_span IS NULL
   THEN
     SELECT x.target_tables INTO target_table
-    FROM cdb_observatory.cdb_observatory._OBS_SearchTables(boundary_id,
+    FROM cdb_observatory._OBS_SearchTables(boundary_id,
                             time_span) As x(target_tables,
-                                                time_spans)
-    ORDER BY x.time_spans DESC
+                                                timespans)
+    ORDER BY x.timespans DESC
     LIMIT 1;
   ELSE
     SELECT x.target_tables INTO target_table
-    FROM cdb_observatory.cdb_observatory._OBS_SearchTables(boundary_id,
+    FROM cdb_observatory._OBS_SearchTables(boundary_id,
                             time_span) As x(target_tables,
-                                            time_spans)
-    WHERE x.time_spans = time_span
+                                            timespans)
+    WHERE x.timespans = time_span
     LIMIT 1;
   END IF;
 
@@ -125,10 +162,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Given a geometry reference (e.g., geoid for US Census), and it's geometry level (see OBS_ListGeomColumns() for all available boundary ids), give back the boundary that corresponds to that reference and level.
 
--- @param geometry_id text: identifier for boundary geometry corresponding to a boundary id `boundary_id`. E.g., '36047' is a geoid for US Census Tiger boundaries corresponding to a county (047) in New York State (36)
--- @param boundary_id:
+-- OBS_GetGeometryById
+--
+-- Given a geometry reference (e.g., geoid for US Census), and it's geometry
+--  level (see OBS_ListGeomColumns() for all available boundary ids), give back
+--  the boundary that corresponds to that geometry_id, boundary_id, and
+--   time_span
+
+-- Inputs:
+--   geometry_id text: geometry id of the requested boundary
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   boundary geometry: geometry boundary that matches geometry_id, is at the
+--                      resolution requested with boundary_id, and time_span
+--
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometryById(
   geometry_id text,            -- ex: '36047'

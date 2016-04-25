@@ -33,8 +33,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- A type for use with the OBS_GetColumnData function
-CREATE TYPE cdb_observatory.OBS_ColumnData AS (colname text, tablename text, aggregate text);
 
 
 -- A function that gets the column data for multiple columns
@@ -44,11 +42,10 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetColumnData(
   column_ids text[],
   timespan text
 )
-RETURNS cdb_observatory.OBS_ColumnData[]
+RETURNS SETOF JSON
 AS $$
-DECLARE
-  result cdb_observatory.OBS_ColumnData[];
 BEGIN
+  RETURN QUERY
   EXECUTE '
   WITH geomref AS (
     SELECT t.table_id id
@@ -60,17 +57,24 @@ BEGIN
   column_ids as (
     select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a
   )
- SELECT array_agg(ROW(colname, tablename, aggregate)::cdb_observatory.OBS_ColumnData order by column_ids.no)
- FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
- WHERE column_ids.column_id  = c.id
-   AND c.id = ct.column_id
-   AND t.id = ct.table_id
-   AND t.timespan = $3
-   AND t.id in (SELECT id FROM geomref)
+ SELECT row_to_json(a) from (
+   select  colname, 
+            tablename, 
+            aggregate, 
+            name, 
+            type,
+            c.description 
+           FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
+           WHERE column_ids.column_id  = c.id
+             AND c.id = ct.column_id
+             AND t.id = ct.table_id
+             AND t.timespan = $3
+             AND t.id in (SELECT id FROM geomref)
+          order by column_ids.no
+    ) a
  '
  USING geometry_id, column_ids, timespan
- INTO result;
- RETURN result;
+ RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -149,5 +153,47 @@ BEGIN
   END LOOP;
   RETURN q;
 
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetRelatedColumn(columns_ids text[], reltype text )
+RETURNS TEXT[]
+AS $$
+DECLARE
+  result TEXT[];
+BEGIN
+  EXECUTE '
+    With ids as (
+      select row_number() over() as no, id from (select unnest($1) as id) t
+    )
+    select array_agg(target_id order by no)
+    FROM  ids
+    LEFT JOIN observatory.obs_column_to_column
+    on  source_id  = id
+    where reltype = $2 or reltype is null
+  '
+  INTO result
+  using columns_ids, reltype;
+  return result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function that replaces all non digits or letters with _ trims and lowercases the
+-- passed measure name
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_StandardizeMeasureName(measure_name text)
+RETURNS text
+AS $$
+DECLARE
+  result text;
+BEGIN
+  -- Turn non letter or digits to _
+  result = regexp_replace(measure_name, '[^\dA-Za-z]+','_', 'g');
+  -- Remove duplicate _'s
+  result = regexp_replace(result,'_{2,}','_', 'g');
+  -- Trim _'s from beginning and end
+  result = trim(both  '_' from result);
+  result = lower(result);
+  RETURN result;
 END;
 $$ LANGUAGE plpgsql;

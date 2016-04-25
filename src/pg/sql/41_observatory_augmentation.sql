@@ -23,216 +23,313 @@
 -- Creates a table of demographic snapshot
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group')
-RETURNS json
+RETURNS SETOF JSON
 AS $$
+  DECLARE 
+  target_cols text[];
   BEGIN
-    RETURN row_to_json(cdb_observatory._OBS_GetDemographicSnapshot(geom, time_span, geometry_level));
+  target_cols := Array['total_pop',
+                  'male_pop',
+                  'female_pop',
+                  'median_age',
+                  'white_pop',
+                  'black_pop',
+                  'asian_pop',
+                  'hispanic_pop',
+                  'amerindian_pop',
+                  'other_race_pop',
+                  'two_or_more_races_pop',
+                  'not_hispanic_pop',
+                  --'not_us_citizen_pop',
+                  --'workers_16_and_over',
+                  --'commuters_by_car_truck_van',
+                  --'commuters_drove_alone',
+                  --'commuters_by_carpool',
+                  --'commuters_by_public_transportation',
+                  --'commuters_by_bus',
+                  --'commuters_by_subway_or_elevated',
+                  --'walked_to_work',
+                  --'worked_at_home',
+                  --'children',
+                  'households',
+                  --'population_3_years_over',
+                  --'in_school',
+                  --'in_grades_1_to_4',
+                  --'in_grades_5_to_8',
+                  --'in_grades_9_to_12',
+                  --'in_undergrad_college',
+                  'pop_25_years_over',
+                  'high_school_diploma',
+                  'less_one_year_college',
+                  'one_year_more_college',
+                  'associates_degree',
+                  'bachelors_degree',
+                  'masters_degree',
+                  --'pop_5_years_over',
+                  --'speak_only_english_at_home',
+                  --'speak_spanish_at_home',
+                  --'pop_determined_poverty_status',
+                  --'poverty',
+                  'median_income',
+                  'gini_index',
+                  'income_per_capita',
+                  'housing_units',
+                  'vacant_housing_units',
+                  'vacant_housing_units_for_rent',
+                  'vacant_housing_units_for_sale',
+                  'median_rent',
+                  'percent_income_spent_on_rent',
+                  'owner_occupied_housing_units',
+                  'million_dollar_housing_units',
+                  'mortgaged_housing_units',
+                  --'pop_15_and_over',
+                  --'pop_never_married',
+                  --'pop_now_married',
+                  --'pop_separated',
+                  --'pop_widowed',
+                  --'pop_divorced',
+                  'commuters_16_over',
+                  'commute_less_10_mins',
+                  'commute_10_14_mins',
+                  'commute_15_19_mins',
+                  'commute_20_24_mins',
+                  'commute_25_29_mins',
+                  'commute_30_34_mins',
+                  'commute_35_44_mins',
+                  'commute_45_59_mins',
+                  'commute_60_more_mins',
+                  'aggregate_travel_time_to_work',
+                  'income_less_10000',
+                  'income_10000_14999',
+                  'income_15000_19999',
+                  'income_20000_24999',
+                  'income_25000_29999',
+                  'income_30000_34999',
+                  'income_35000_39999',
+                  'income_40000_44999',
+                  'income_45000_49999',
+                  'income_50000_59999',
+                  'income_60000_74999',
+                  'income_75000_99999',
+                  'income_100000_124999',
+                  'income_125000_149999',
+                  'income_150000_199999',
+                  'income_200000_or_more',
+                  'land_area'];
+    RETURN QUERY 
+    EXECUTE
+    'select * from cdb_observatory._OBS_GetCensus($1, $2 )'
+    USING geom, target_cols
+    RETURN;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
-RETURNS TABLE(
-  total_pop NUMERIC,
-  male_pop NUMERIC,
-  female_pop NUMERIC,
-  median_age NUMERIC,
-  white_pop NUMERIC,
-  black_pop NUMERIC,
-  asian_pop NUMERIC,
-  hispanic_pop NUMERIC,
-  amerindian_pop NUMERIC,
-  other_race_pop NUMERIC,
-  two_or_more_races_pop NUMERIC,
-  not_hispanic_pop NUMERIC,
-  --not_us_citizen_pop NUMERIC,
-  --workers_16_and_over NUMERIC,
-  --commuters_by_car_truck_van NUMERIC,
-  --commuters_drove_alone NUMERIC,
-  --commuters_by_carpool NUMERIC,
-  --commuters_by_public_transportation NUMERIC,
-  --commuters_by_bus NUMERIC,
-  --commuters_by_subway_or_elevated NUMERIC,
-  --walked_to_work NUMERIC,
-  --worked_at_home NUMERIC,
-  --children NUMERIC, -- TODO we should be able to get this at BG
-  households NUMERIC,
-  --population_3_years_over NUMERIC,
-  --in_school NUMERIC,
-  --in_grades_1_to_4 NUMERIC,
-  --in_grades_5_to_8 NUMERIC,
-  --in_grades_9_to_12 NUMERIC,
-  --in_undergrad_college NUMERIC,
-  pop_25_years_over NUMERIC,
-  high_school_diploma NUMERIC,
-  less_one_year_college NUMERIC,
-  one_year_more_college NUMERIC,
-  associates_degree NUMERIC,
-  bachelors_degree NUMERIC,
-  masters_degree NUMERIC,
-  --pop_5_years_over NUMERIC,
-  --speak_only_english_at_home NUMERIC,
-  --speak_spanish_at_home NUMERIC,
-  --pop_determined_poverty_status NUMERIC,
-  --poverty NUMERIC,
-  median_income NUMERIC,
-  gini_index NUMERIC,
-  income_per_capita NUMERIC,
-  housing_units NUMERIC,
-  vacant_housing_units NUMERIC,
-  vacant_housing_units_for_rent NUMERIC,
-  vacant_housing_units_for_sale NUMERIC,
-  median_rent NUMERIC,
-  percent_income_spent_on_rent NUMERIC,
-  owner_occupied_housing_units NUMERIC,
-  million_dollar_housing_units NUMERIC,
-  mortgaged_housing_units NUMERIC,
-  --pop_15_and_over NUMERIC,
-  --pop_never_married NUMERIC,
-  --pop_now_married NUMERIC,
-  --pop_separated NUMERIC,
-  --pop_widowed NUMERIC,
-  --pop_divorced NUMERIC,
-  commuters_16_over NUMERIC,
-  commute_less_10_mins NUMERIC,
-  commute_10_14_mins NUMERIC,
-  commute_15_19_mins NUMERIC,
-  commute_20_24_mins NUMERIC,
-  commute_25_29_mins NUMERIC,
-  commute_30_34_mins NUMERIC,
-  commute_35_44_mins NUMERIC,
-  commute_45_59_mins NUMERIC,
-  commute_60_more_mins NUMERIC,
-  aggregate_travel_time_to_work NUMERIC,
-  income_less_10000 NUMERIC,
-  income_10000_14999 NUMERIC,
-  income_15000_19999 NUMERIC,
-  income_20000_24999 NUMERIC,
-  income_25000_29999 NUMERIC,
-  income_30000_34999 NUMERIC,
-  income_35000_39999 NUMERIC,
-  income_40000_44999 NUMERIC,
-  income_45000_49999 NUMERIC,
-  income_50000_59999 NUMERIC,
-  income_60000_74999 NUMERIC,
-  income_75000_99999 NUMERIC,
-  income_100000_124999 NUMERIC,
-  income_125000_149999 NUMERIC,
-  income_150000_199999 NUMERIC,
-  income_200000_or_more NUMERIC,
-  land_area NUMERIC)
-AS $$
-DECLARE
- target_cols text[];
- names text[];
- vals NUMERIC[];
- q text;
-BEGIN
- target_cols := Array['total_pop',
-                 'male_pop',
-                 'female_pop',
-                 'median_age',
-                 'white_pop',
-                 'black_pop',
-                 'asian_pop',
-                 'hispanic_pop',
-                 'amerindian_pop',
-                 'other_race_pop',
-                 'two_or_more_races_pop',
-                 'not_hispanic_pop',
-                 --'not_us_citizen_pop',
-                 --'workers_16_and_over',
-                 --'commuters_by_car_truck_van',
-                 --'commuters_drove_alone',
-                 --'commuters_by_carpool',
-                 --'commuters_by_public_transportation',
-                 --'commuters_by_bus',
-                 --'commuters_by_subway_or_elevated',
-                 --'walked_to_work',
-                 --'worked_at_home',
-                 --'children',
-                 'households',
-                 --'population_3_years_over',
-                 --'in_school',
-                 --'in_grades_1_to_4',
-                 --'in_grades_5_to_8',
-                 --'in_grades_9_to_12',
-                 --'in_undergrad_college',
-                 'pop_25_years_over',
-                 'high_school_diploma',
-                 'less_one_year_college',
-                 'one_year_more_college',
-                 'associates_degree',
-                 'bachelors_degree',
-                 'masters_degree',
-                 --'pop_5_years_over',
-                 --'speak_only_english_at_home',
-                 --'speak_spanish_at_home',
-                 --'pop_determined_poverty_status',
-                 --'poverty',
-                 'median_income',
-                 'gini_index',
-                 'income_per_capita',
-                 'housing_units',
-                 'vacant_housing_units',
-                 'vacant_housing_units_for_rent',
-                 'vacant_housing_units_for_sale',
-                 'median_rent',
-                 'percent_income_spent_on_rent',
-                 'owner_occupied_housing_units',
-                 'million_dollar_housing_units',
-                 'mortgaged_housing_units',
-                 --'pop_15_and_over',
-                 --'pop_never_married',
-                 --'pop_now_married',
-                 --'pop_separated',
-                 --'pop_widowed',
-                 --'pop_divorced',
-                 'commuters_16_over',
-                 'commute_less_10_mins',
-                 'commute_10_14_mins',
-                 'commute_15_19_mins',
-                 'commute_20_24_mins',
-                 'commute_25_29_mins',
-                 'commute_30_34_mins',
-                 'commute_35_44_mins',
-                 'commute_45_59_mins',
-                 'commute_60_more_mins',
-                 'aggregate_travel_time_to_work',
-                 'income_less_10000',
-                 'income_10000_14999',
-                 'income_15000_19999',
-                 'income_20000_24999',
-                 'income_25000_29999',
-                 'income_30000_34999',
-                 'income_35000_39999',
-                 'income_40000_44999',
-                 'income_45000_49999',
-                 'income_50000_59999',
-                 'income_60000_74999',
-                 'income_75000_99999',
-                 'income_100000_124999',
-                 'income_125000_149999',
-                 'income_150000_199999',
-                 'income_200000_or_more',
-                 'land_area'];
-
-  q := 'WITH a As (
-         SELECT
-           dimension As names,
-           dimension_value As vals
-        FROM cdb_observatory._OBS_GetCensus($1,$2,$3,$4)
-      )' ||
-      cdb_observatory._OBS_BuildSnapshotQuery(target_cols) ||
-      ' FROM a';
-
-  RETURN QUERY
-  EXECUTE
-    q
-  USING geom, target_cols, time_span, geometry_level;
-
-  RETURN;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
+-- RETURNS TABLE(
+--   total_pop NUMERIC,
+--   male_pop NUMERIC,
+--   female_pop NUMERIC,
+--   median_age NUMERIC,
+--   white_pop NUMERIC,
+--   black_pop NUMERIC,
+--   asian_pop NUMERIC,
+--   hispanic_pop NUMERIC,
+--   amerindian_pop NUMERIC,
+--   other_race_pop NUMERIC,
+--   two_or_more_races_pop NUMERIC,
+--   not_hispanic_pop NUMERIC,
+--   --not_us_citizen_pop NUMERIC,
+--   --workers_16_and_over NUMERIC,
+--   --commuters_by_car_truck_van NUMERIC,
+--   --commuters_drove_alone NUMERIC,
+--   --commuters_by_carpool NUMERIC,
+--   --commuters_by_public_transportation NUMERIC,
+--   --commuters_by_bus NUMERIC,
+--   --commuters_by_subway_or_elevated NUMERIC,
+--   --walked_to_work NUMERIC,
+--   --worked_at_home NUMERIC,
+--   --children NUMERIC, -- TODO we should be able to get this at BG
+--   households NUMERIC,
+--   --population_3_years_over NUMERIC,
+--   --in_school NUMERIC,
+--   --in_grades_1_to_4 NUMERIC,
+--   --in_grades_5_to_8 NUMERIC,
+--   --in_grades_9_to_12 NUMERIC,
+--   --in_undergrad_college NUMERIC,
+--   pop_25_years_over NUMERIC,
+--   high_school_diploma NUMERIC,
+--   less_one_year_college NUMERIC,
+--   one_year_more_college NUMERIC,
+--   associates_degree NUMERIC,
+--   bachelors_degree NUMERIC,
+--   masters_degree NUMERIC,
+--   --pop_5_years_over NUMERIC,
+--   --speak_only_english_at_home NUMERIC,
+--   --speak_spanish_at_home NUMERIC,
+--   --pop_determined_poverty_status NUMERIC,
+--   --poverty NUMERIC,
+--   median_income NUMERIC,
+--   gini_index NUMERIC,
+--   income_per_capita NUMERIC,
+--   housing_units NUMERIC,
+--   vacant_housing_units NUMERIC,
+--   vacant_housing_units_for_rent NUMERIC,
+--   vacant_housing_units_for_sale NUMERIC,
+--   median_rent NUMERIC,
+--   percent_income_spent_on_rent NUMERIC,
+--   owner_occupied_housing_units NUMERIC,
+--   million_dollar_housing_units NUMERIC,
+--   mortgaged_housing_units NUMERIC,
+--   --pop_15_and_over NUMERIC,
+--   --pop_never_married NUMERIC,
+--   --pop_now_married NUMERIC,
+--   --pop_separated NUMERIC,
+--   --pop_widowed NUMERIC,
+--   --pop_divorced NUMERIC,
+--   commuters_16_over NUMERIC,
+--   commute_less_10_mins NUMERIC,
+--   commute_10_14_mins NUMERIC,
+--   commute_15_19_mins NUMERIC,
+--   commute_20_24_mins NUMERIC,
+--   commute_25_29_mins NUMERIC,
+--   commute_30_34_mins NUMERIC,
+--   commute_35_44_mins NUMERIC,
+--   commute_45_59_mins NUMERIC,
+--   commute_60_more_mins NUMERIC,
+--   aggregate_travel_time_to_work NUMERIC,
+--   income_less_10000 NUMERIC,
+--   income_10000_14999 NUMERIC,
+--   income_15000_19999 NUMERIC,
+--   income_20000_24999 NUMERIC,
+--   income_25000_29999 NUMERIC,
+--   income_30000_34999 NUMERIC,
+--   income_35000_39999 NUMERIC,
+--   income_40000_44999 NUMERIC,
+--   income_45000_49999 NUMERIC,
+--   income_50000_59999 NUMERIC,
+--   income_60000_74999 NUMERIC,
+--   income_75000_99999 NUMERIC,
+--   income_100000_124999 NUMERIC,
+--   income_125000_149999 NUMERIC,
+--   income_150000_199999 NUMERIC,
+--   income_200000_or_more NUMERIC,
+--   land_area NUMERIC)
+-- AS $$
+-- DECLARE
+--  target_cols text[];
+--  names text[];
+--  vals NUMERIC[];
+--  q text;
+-- BEGIN
+--  target_cols := Array['total_pop',
+--                  'male_pop',
+--                  'female_pop',
+--                  'median_age',
+--                  'white_pop',
+--                  'black_pop',
+--                  'asian_pop',
+--                  'hispanic_pop',
+--                  'amerindian_pop',
+--                  'other_race_pop',
+--                  'two_or_more_races_pop',
+--                  'not_hispanic_pop',
+--                  --'not_us_citizen_pop',
+--                  --'workers_16_and_over',
+--                  --'commuters_by_car_truck_van',
+--                  --'commuters_drove_alone',
+--                  --'commuters_by_carpool',
+--                  --'commuters_by_public_transportation',
+--                  --'commuters_by_bus',
+--                  --'commuters_by_subway_or_elevated',
+--                  --'walked_to_work',
+--                  --'worked_at_home',
+--                  --'children',
+--                  'households',
+--                  --'population_3_years_over',
+--                  --'in_school',
+--                  --'in_grades_1_to_4',
+--                  --'in_grades_5_to_8',
+--                  --'in_grades_9_to_12',
+--                  --'in_undergrad_college',
+--                  'pop_25_years_over',
+--                  'high_school_diploma',
+--                  'less_one_year_college',
+--                  'one_year_more_college',
+--                  'associates_degree',
+--                  'bachelors_degree',
+--                  'masters_degree',
+--                  --'pop_5_years_over',
+--                  --'speak_only_english_at_home',
+--                  --'speak_spanish_at_home',
+--                  --'pop_determined_poverty_status',
+--                  --'poverty',
+--                  'median_income',
+--                  'gini_index',
+--                  'income_per_capita',
+--                  'housing_units',
+--                  'vacant_housing_units',
+--                  'vacant_housing_units_for_rent',
+--                  'vacant_housing_units_for_sale',
+--                  'median_rent',
+--                  'percent_income_spent_on_rent',
+--                  'owner_occupied_housing_units',
+--                  'million_dollar_housing_units',
+--                  'mortgaged_housing_units',
+--                  --'pop_15_and_over',
+--                  --'pop_never_married',
+--                  --'pop_now_married',
+--                  --'pop_separated',
+--                  --'pop_widowed',
+--                  --'pop_divorced',
+--                  'commuters_16_over',
+--                  'commute_less_10_mins',
+--                  'commute_10_14_mins',
+--                  'commute_15_19_mins',
+--                  'commute_20_24_mins',
+--                  'commute_25_29_mins',
+--                  'commute_30_34_mins',
+--                  'commute_35_44_mins',
+--                  'commute_45_59_mins',
+--                  'commute_60_more_mins',
+--                  'aggregate_travel_time_to_work',
+--                  'income_less_10000',
+--                  'income_10000_14999',
+--                  'income_15000_19999',
+--                  'income_20000_24999',
+--                  'income_25000_29999',
+--                  'income_30000_34999',
+--                  'income_35000_39999',
+--                  'income_40000_44999',
+--                  'income_45000_49999',
+--                  'income_50000_59999',
+--                  'income_60000_74999',
+--                  'income_75000_99999',
+--                  'income_100000_124999',
+--                  'income_125000_149999',
+--                  'income_150000_199999',
+--                  'income_200000_or_more',
+--                  'land_area'];
+-- 
+--   q :=
+--     $query$
+--       WITH a As (
+--          SELECT
+--            array_agg(_OBS_GetCensusJ->>'name') As names,
+--            array_agg(_OBS_GetCensusJ->>'value')  As vals
+--         FROM cdb_observatory._OBS_GetCensusJ($1,$2,$3,$4)
+--       )$query$ ||
+--       cdb_observatory._OBS_BuildSnapshotQuery(target_cols) ||
+--       ' FROM a'
+--     ;
+-- 
+--   RETURN QUERY
+--   EXECUTE
+--     q
+--   USING geom, target_cols, time_span, geometry_level;
+-- 
+--   RETURN;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 
 --Base functions for performing augmentation
@@ -247,7 +344,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCensus(
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".block_group'
 )
-RETURNS TABLE(dimension text[], dimension_value NUMERIC[])
+RETURNS SETOF JSON
 AS $$
 DECLARE
   ids text[];
@@ -256,10 +353,35 @@ BEGIN
   ids := cdb_observatory._OBS_LookupCensusHuman(dimension_names);
 
   RETURN QUERY
-    SELECT names, vals FROM cdb_observatory._OBS_Get(geom, ids, time_span, geometry_level);
+    SELECT * FROM cdb_observatory._OBS_Get(geom, ids, time_span, geometry_level);
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCensus(
+  geom geometry,
+  dimension_name text,
+  time_span text DEFAULT '2009 - 2013',
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
+)
+RETURNS NUMERIC
+AS $$
+DECLARE
+  ids Text[];
+  result_json json;
+  result Numeric;
+BEGIN
+
+  ids := cdb_observatory._OBS_LookupCensusHuman(Array[dimension_name]);
+  result_json := (SELECT a FROM cdb_observatory._OBS_Get(geom, ids, time_span, geometry_level) as a limit 1);
+  EXECUTE
+    format('select $1::numeric as "%s"', result_json->>'name')
+  INTO result
+  USING
+    result_json->>'value';
+    
+  return result;
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Base augmentation fucntion.
@@ -269,14 +391,14 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_Get(
   time_span text,
   geometry_level text
 )
-RETURNS TABLE(names text[], vals NUMERIC[])
+RETURNS SETOF JSON
 AS $$
 DECLARE
-  results NUMERIC[];
+  results json[];
   geom_table_name text;
   names text[];
   query text;
-  data_table_info cdb_observatory.OBS_ColumnData[];
+  data_table_info json[];
 BEGIN
 
   geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
@@ -287,13 +409,13 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
   END IF;
 
-  data_table_info := cdb_observatory._OBS_GetColumnData(geometry_level,
-                                       column_ids,
-                                       time_span);
-
-  names := (SELECT array_agg((d).colname)
-            FROM unnest(data_table_info) As d);
-
+  execute'
+  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnData($1,
+                                       $2,
+                                       $3);'
+  INTO   data_table_info
+  using geometry_level, column_ids, time_span;
+    
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
     results := cdb_observatory._OBS_GetPoints(geom,
@@ -302,17 +424,19 @@ BEGIN
 
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
+    -- RAISE EXCEPTION 'polygons not supported for now';
     results := cdb_observatory._OBS_GetPolygons(geom,
                                geom_table_name,
                                data_table_info);
   END IF;
-
-  IF results IS NULL
-  THEN
-    results := Array[]::numeric[];
-  END IF;
-
-  RETURN QUERY SELECT names, results;
+  
+  RETURN QUERY
+  EXECUTE
+  $query$
+    SELECT unnest($1)
+  $query$
+  USING results;
+  
 END;
 $$ LANGUAGE plpgsql;
 
@@ -322,12 +446,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
   geom geometry,
   geom_table_name text,
-  data_table_info cdb_observatory.OBS_ColumnData[]
+  data_table_info json[]
 )
-RETURNS NUMERIC[]
+RETURNS json[]
 AS $$
 DECLARE
   result NUMERIC[];
+  json_result json[];
   query  text;
   i int;
   geoid text;
@@ -365,14 +490,14 @@ BEGIN
     THEN
       -- give back null values
       query := query || format('NULL::numeric ');
-    ELSIF ((data_table_info)[i]).aggregate != 'sum'
+    ELSIF ((data_table_info)[i])->>'aggregate' != 'sum'
     THEN
       -- give back full variable
-      query := query || format('%I ', ((data_table_info)[i]).colname);
+      query := query || format('%I ', ((data_table_info)[i])->>'colname');
     ELSE
       -- give back variable normalized by area of geography
       query := query || format('%I/%s ',
-        ((data_table_info)[i]).colname,
+        ((data_table_info)[i])->>'colname',
         area);
     END IF;
 
@@ -386,29 +511,81 @@ BEGIN
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
-  ((data_table_info)[1]).tablename,
-  ((data_table_info)[1]).tablename,
+  ((data_table_info)[1])->>'tablename',
+  ((data_table_info)[1])->>'tablename',
   geoid
   );
-
+  
   EXECUTE
     query
   INTO result
   USING geom;
+  
+  EXECUTE 
+    $query$
+     select array_agg(row_to_json(t)) from(
+      select values as value,
+              meta->>'name'  as name, 
+              meta->>'tablename' as tablename,
+              meta->>'aggregate' as aggregate,
+              meta->>'type'  as type,
+              meta->>'description' as description
+             from (select unnest($1) as values, unnest($2) as meta) b
+      ) t
+    $query$
+    INTO json_result
+    USING result, data_table_info;
+  
+  RETURN json_result;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
+  geom GEOMETRY,
+  measure_id TEXT,
+  normalize TEXT DEFAULT 'area', -- TODO denominator, none
+  boundary_id TEXT DEFAULT NULL,
+  time_span TEXT DEFAULT NULL
+)
+RETURNS JSON
+AS $$
+DECLARE
+  result json;
+BEGIN
+
+  IF boundary_id IS NULL THEN
+    -- TODO we should determine best boundary for this geom
+    boundary_id := '"us.census.tiger".block_group';
+  END IF;
+
+  IF time_span IS NULL THEN
+    -- TODO we should determine latest timespan for this measure
+    time_span := '2009 - 2013';
+  END IF;
+
+  
+  EXECUTE  '
+    SELECT * FROM cdb_observatory._OBS_Get($1, ARRAY[$2], $3, $4)  LIMIT 1
+  '
+  INTO result
+  USING geom, measure_id, time_span, boundary_id;
 
   RETURN result;
 END;
 $$ LANGUAGE plpgsql;
 
+
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
   geom geometry,
   geom_table_name text,
-  data_table_info cdb_observatory.OBS_ColumnData[]
+  data_table_info json[]
 )
-RETURNS NUMERIC[]
+RETURNS json[]
 AS $$
 DECLARE
-  result NUMERIC[];
+  result numeric[];
+  json_result json[];
   q_select text;
   q_sum text;
   q text;
@@ -420,11 +597,11 @@ BEGIN
 
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
-    q_select := q_select || format( '%I ', ((data_table_info)[i]).colname);
+    q_select := q_select || format( '%I ', ((data_table_info)[i])->>'colname');
 
-    IF ((data_table_info)[i]).aggregate ='sum'
+    IF ((data_table_info)[i])->>'aggregate' ='sum'
     THEN
-      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i]).colname,((data_table_info)[i]).colname);
+      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i])->>'colname',((data_table_info)[i])->>'colname');
     ELSE
       q_sum := q_sum || ' NULL::numeric ';
     END IF;
@@ -448,85 +625,50 @@ BEGIN
     values As (
     ', geom_table_name);
 
-  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
+  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1]->>'tablename'));
 
   q := q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
   WHERE values.geoid = _overlaps.geoid';
-
+  
   EXECUTE
     q
   INTO result
   USING geom;
-
-  RETURN result;
+  
+  EXECUTE 
+    $query$
+     select array_agg(row_to_json(t)) from(
+      select values as value,
+              meta->>'name'  as name, 
+              meta->>'tablename' as tablename,
+              meta->>'aggregate' as aggregate,
+              meta->>'type'  as type,
+              meta->>'description' as description
+             from (select unnest($1) as values, unnest($2) as meta) b
+      ) t
+    $query$
+    INTO json_result
+    USING result, data_table_info;
+  
+  RETURN json_result;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION OBS_GetSegmentSnapshot(geom geometry, geometry_level text default '"us.census.tiger".census_tract')
-RETURNS json
-AS $$
-  BEGIN
-    RETURN row_to_json(cdb_observatory._OBS_GetSegmentSnapshot(geom, geometry_level));
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION _OBS_GetSegmentSnapshot(
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
   geom geometry,
   geometry_level text DEFAULT '"us.census.tiger".census_tract'
- )
-RETURNS TABLE(
-  segment_name TEXT,
-  total_pop_quantile NUMERIC,
-  male_pop_quantile NUMERIC,
-  female_pop_quantile NUMERIC,
-  median_age_quantile NUMERIC,
-  white_pop_quantile NUMERIC,
-  black_pop_quantile NUMERIC,
-  asian_pop_quantile NUMERIC,
-  hispanic_pop_quantile NUMERIC,
-  not_us_citizen_pop_quantile NUMERIC,
-  workers_16_and_over_quantile NUMERIC,
-  commuters_by_car_truck_van_quantile NUMERIC,
-  commuters_by_public_transportation_quantile NUMERIC,
-  commuters_by_bus_quantile NUMERIC,
-  commuters_by_subway_or_elevated_quantile NUMERIC,
-  walked_to_work_quantile NUMERIC,
-  worked_at_home_quantile NUMERIC,
-  children_quantile NUMERIC,
-  households_quantile NUMERIC,
-  population_3_years_over_quantile NUMERIC,
-  in_school_quantile NUMERIC,
-  in_grades_1_to_4_quantile NUMERIC,
-  in_grades_5_to_8_quantile NUMERIC,
-  in_grades_9_to_12_quantile NUMERIC,
-  in_undergrad_college_quantile NUMERIC,
-  pop_25_years_over_quantile NUMERIC,
-  high_school_diploma_quantile NUMERIC,
-  bachelors_degree_quantile NUMERIC,
-  masters_degree_quantile NUMERIC,
-  pop_5_years_over_quantile NUMERIC,
-  speak_only_english_at_home_quantile NUMERIC,
-  speak_spanish_at_home_quantile NUMERIC,
-  pop_determined_poverty_status_quantile NUMERIC,
-  poverty_quantile NUMERIC,
-  median_income_quantile NUMERIC,
-  gini_index_quantile NUMERIC,
-  income_per_capita_quantile NUMERIC,
-  housing_units_quantile NUMERIC,
-  vacant_housing_units_quantile NUMERIC,
-  vacant_housing_units_for_rent_quantile NUMERIC,
-  vacant_housing_units_for_sale_quantile NUMERIC,
-  median_rent_quantile NUMERIC,
-  percent_income_spent_on_rent_quantile NUMERIC,
-  owner_occupied_housing_units_quantile NUMERIC,
-  million_dollar_housing_units_quantile NUMERIC
-) 
+)
+RETURNS JSON 
 AS $$
 DECLARE
   target_cols text[];
-  seg_name    Text;
-  geom_id     Text;
-  q           Text;
+  result       json;
+  seg_name     Text;
+  geom_id      Text;
+  q            Text;
+  segment_name Text;
 BEGIN
 target_cols := Array[
           '"us.census.acs".B01001001_quantile',
@@ -577,7 +719,7 @@ target_cols := Array[
 
     EXECUTE
       $query$
-      SELECT (categories)[1]
+      SELECT (_OBS_GetCategories)->>'name'
       FROM cdb_observatory._OBS_GetCategories(
          $1,
          Array['"us.census.spielman_singleton_segments".X10'],
@@ -591,8 +733,8 @@ target_cols := Array[
       format($query$
       WITH a As (
            SELECT
-             names As names,
-             vals As vals
+             array_agg(_OBS_GET->>'name') As names,
+             array_agg(_OBS_GET->>'value') As vals
            FROM cdb_observatory._OBS_Get($1,
                         $2,
                         '2009 - 2013',
@@ -601,14 +743,18 @@ target_cols := Array[
         ), percentiles As (
            %s
          FROM  a)
-        SELECT $4, percentiles.*
-          FROM percentiles
-       $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols));
+         SELECT row_to_json(r) FROM 
+         ( SELECT $4 as segment_name, percentiles.*
+          FROM percentiles) r
+       $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols)) results;
 
-    RETURN QUERY
+    
     EXECUTE
       q
+    into result 
     USING geom, target_cols, geometry_level, segment_name;
+    
+    return result;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -621,14 +767,14 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCategories(
   geometry_level text DEFAULT '"us.census.tiger".block_group',
   time_span text DEFAULT '2009 - 2013'
 )
-RETURNS TABLE(names text[], categories text[]) as $$
+RETURNS SETOF JSON as $$
 DECLARE
   geom_table_name text;
   geoid text;
   names text[];
   results text[];
   query text;
-  data_table_info cdb_observatory.OBS_ColumnData[];
+  data_table_info json[];
 BEGIN
 
   geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
@@ -639,13 +785,12 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
   END IF;
 
-  data_table_info := cdb_observatory._OBS_GetColumnData(geometry_level,
-                                       dimension_names,
-                                       time_span);
-
-
-  names := (SELECT array_agg((d).colname)
-            FROM unnest(data_table_info) As d);
+  execute'
+  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnData($1,
+                                       $2,
+                                       $3);'
+  INTO   data_table_info
+  using geometry_level, dimension_names, time_span;
 
 
   EXECUTE
@@ -659,7 +804,7 @@ BEGIN
   query := 'SELECT ARRAY[';
   FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
-    query = query || format('%I ', lower(((data_table_info)[i]).colname));
+    query = query || format('%I ', lower(((data_table_info)[i])->>'colname'));
     IF i <  array_upper(data_table_info, 1)
     THEN
       query := query || ',';
@@ -670,8 +815,8 @@ BEGIN
     FROM observatory.%I
     WHERE %I.geoid  = %L
   ',
-  ((data_table_info)[1]).tablename,
-  ((data_table_info)[1]).tablename,
+  ((data_table_info)[1])->>'tablename',
+  ((data_table_info)[1])->>'tablename',
   geoid
   );
 
@@ -679,9 +824,21 @@ BEGIN
     query
   INTO results
   USING geom;
-
+  
   RETURN QUERY
-    SELECT names,results
+  EXECUTE 
+    $query$
+     select row_to_json(t) from(
+      select categories as category,
+              meta->>'name'  as name, 
+              meta->>'tablename' as tablename,
+              meta->>'aggregate' as aggregate,
+              meta->>'type'  as type,
+              meta->>'description' as description
+             from (select unnest($1) as categories, unnest($2) as meta) b
+      ) t
+    $query$
+    USING results, data_table_info;
   RETURN;
 
 END;

@@ -13,28 +13,42 @@ SELECT * FROM
 -- total_pop | 9516.27915900609
 -- male_pop  | 6152.51885204623
 
-SELECT *
-FROM
-  cdb_observatory._OBS_GetCensus(
-    cdb_observatory._TestPoint(),
-    Array['total_pop','male_pop']::text[]
-  );
-
+WITH result as (
+  SELECT array_agg(_obs_getcensus->>'value') as b
+  FROM( select * from 
+    cdb_observatory._OBS_GetCensus(
+      cdb_observatory._TestPoint(),
+      Array['total_pop','male_pop']::text[]
+    )) a
+) 
+select b='{9516.27915900609,6152.51885204623}'
+  as test_obsGetCensusWithTestPointAnd2Variables
+  from result;
 -- what happens on null island?
 -- expect nulls back: {female_pop, male_pop} | {NULL, NULL}
-SELECT *
-FROM
-  cdb_observatory._OBS_GetCensus(
-    ST_Buffer(CDB_LatLng(0, 0)::geography, 5000)::geometry,
-    Array['female_pop','male_pop']::text[]
-  );
+
+WITH result as (
+  SELECT count(vals) non_null
+  FROM( select _OBS_GetCensus->>'value' vals from 
+    cdb_observatory._OBS_GetCensus(
+      ST_Buffer(CDB_LatLng(0, 0)::geography, 5000)::geometry,
+      Array['total_pop','male_pop']::text[]
+    )) a
+) 
+SELECT non_null = 0 as test_obsGetCensusWithNullIslandArea
+FROM result;
+
 -- expect nulls back {female_pop, male_pop} | {NULL, NULL}
-SELECT *
-FROM
-  cdb_observatory._OBS_GetCensus(
-    CDB_LatLng(0, 0),
-    Array['female_pop', 'male_pop']::text[]
-  );
+WITH result as (
+  SELECT count(vals) non_null
+  FROM( select _OBS_GetCensus->>'value' vals from 
+    cdb_observatory._OBS_GetCensus(
+      CDB_LatLng(0, 0),
+      Array['total_pop','male_pop']::text[]
+    )) a
+) 
+SELECT non_null = 0 as test_obsGetCensusWithNullIsland
+FROM result;
 
 --
 -- names      | vals

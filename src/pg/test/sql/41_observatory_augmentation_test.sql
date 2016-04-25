@@ -1,9 +1,9 @@
 \i test/sql/load_fixtures.sql
 --
 WITH result as(
-  Select count(cdb_observatory.OBS_GetDemographicSnapshot->>'value') expected_columns
+  Select count(coalesce(OBS_GetDemographicSnapshot->>'value', 'foo')) expected_columns
   FROM cdb_observatory.OBS_GetDemographicSnapshot(cdb_observatory._TestPoint())
-) select expected_columns ='58' as OBS_GetDemographicSnapshot_test_no_returns
+) select expected_columns ='59' as OBS_GetDemographicSnapshot_test_no_returns
 FROM result;
 --
 -- dimension | dimension_value

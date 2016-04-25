@@ -22,7 +22,7 @@
 
 -- Creates a table of demographic snapshot
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshotJ(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group')
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group')
 RETURNS SETOF JSON
 AS $$
   DECLARE 

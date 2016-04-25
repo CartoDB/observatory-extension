@@ -122,14 +122,14 @@ SELECT
   as OBS_GetPolygons_for_null_island;
 
 SELECT * FROM
-  cdb_observatory._OBS_GetSegmentSnapshot(
+  cdb_observatory.OBS_GetSegmentSnapshot(
     cdb_observatory._TestPoint(),
     '"us.census.tiger".census_tract'
 );
 
 -- segmentation around null island
 SELECT * FROM
-  cdb_observatory._OBS_GetSegmentSnapshot(
+  cdb_observatory.OBS_GetSegmentSnapshot(
     CDB_LatLng(0, 0),
     '"us.census.tiger".census_tract'
 );
@@ -149,7 +149,6 @@ WITH result as (
 WITH result as (
   SELECT array_agg(_OBS_GetCategories) as expected FROM
     cdb_observatory._OBS_GetCategories(
-      -- cdb_observatory._TestPoint(),
       CDB_LatLng(0,0),
       Array['"us.census.spielman_singleton_segments".X10'],
       '"us.census.tiger".census_tract'

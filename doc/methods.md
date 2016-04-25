@@ -18,27 +18,24 @@ normalize | for measures that are are **sums** (e.g. population) the default nor
 
 #### Returns
 
-A JSON object containing the following properties
+A NUMERIC value containing the following properties
 
 Key | Description
 --- | ---
 value | the raw or normalized measure
-name | the human readable name of the measure
-description | a brief description of the measure
-type | the data type (text, number, boolean)
 
 #### Example
 
 Add a Measure to an empty column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population') -> 'value'
+UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
 Get a measure at a single point location
 
 ```SQL
-SELECT * FROM json_each(OBS_GetUSCensusMeasure(CDB_LatLng(40.7, -73.9), 'Male Population'))
+SELECT OBS_GetUSCensusMeasure(CDB_LatLng(40.7, -73.9), 'Male Population')
 ```
 
 <!--
@@ -48,7 +45,7 @@ Should add the SQL API call here too
 
 ## OBS_GetUSCensusMeasure(polygon_geometry, measure_name);
 
-The ```OBS_GetUSCensusMeasure(point_geometry, measure_name)``` method returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` method is limited to only a subset of all measures that are available in the Data Observatory, to access the full list, use the ```OBS_GetMeasure``` method below.
+The ```OBS_GetUSCensusMeasure(point_geometry, measure_name)``` method returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` method is limited to only a subset of all measures that are available in the Data Observatory, to access the full list, use the ```OBS_GetUSCensusMeasure``` method below.
 
 #### Arguments
 
@@ -60,27 +57,61 @@ normalize | for measures that are are **sums** (e.g. population) the default nor
 
 #### Returns
 
-A JSON object containing the following properties
+A NUMERIC value
 
 Key | Description
 --- | ---
 value | the raw or normalized measure
-name | the human readable name of the measure
-description | a brief description of the measure
-type | the data type (text, number, boolean)
 
 #### Example
 
 Add a Measure to an empty column based on polygons in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population') -> 'value'
+UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
 Get a measure at a single polygon
 
 ```SQL
-SELECT * FROM json_each(OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), 'Male Population'))
+SELECT OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), 'Male Population')
+```
+
+<!--
+Should add the SQL API call here too
+-->
+
+
+## OBS_GetUSCensusCategory(point_geometry, measure_name);
+
+The ```OBS_GetUSCensusCategory(point_geometry, category_name)``` method returns a categorical measure based on a subset of the US Census variables at a point location. It requires a different function from ```OBS_GetUSCensusMeasure``` because this function will always return TEXT, whereas ```OBS_GetUSCensusMeasure``` will always returna  NUMERIC value. 
+
+#### Arguments
+
+Name |Description
+--- | ---
+point_geometry | a WGS84 point geometry (the_geom)
+measure_name | a human readable string name of a US Census variable. The glossary of measure_names is [available below]('measure_name table').
+#### Returns
+
+A NUMERIC value containing the following properties
+
+Key | Description
+--- | ---
+value | the raw or normalized measure
+
+#### Example
+
+Add a Measure to an empty column based on point locations in your table
+
+```SQL
+UPDATE tablename SET local_male_population = OBS_GetUSCensusCategory(the_geom, 'Spielman Singleton Category 10')
+```
+
+Get a measure at a single point location
+
+```SQL
+SELECT OBS_GetUSCensusCategory(CDB_LatLng(40.7, -73.9), 'Spielman Singleton Category 10')
 ```
 
 <!--
@@ -101,27 +132,24 @@ normalize | for measures that are are **sums** (e.g. population) the default nor
 
 #### Returns
 
-A JSON object containing the following properties
+A NUMERIC value
 
 Key | Description
 --- | ---
 value | the raw or normalized measure
-name | the human readable name of the measure
-description | a brief description of the measure
-type | the data type (text, number, boolean)
 
 #### Example
 
 Add a Measure to an empty column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006') -> 'value'
+UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006')
 ```
 
 Get a measure at a single point location
 
 ```SQL
-SELECT * FROM json_each(OBS_GetMeasure(CDB_LatLng(40.7, -73.9), '"us.census.acs".B08134006'))
+SELECT OBS_GetMeasure(CDB_LatLng(40.7, -73.9), '"us.census.acs".B08134006')
 ```
 
 <!--
@@ -143,27 +171,26 @@ normalize | for measures that are are **sums** (e.g. population) the default nor
 
 #### Returns
 
-A JSON object containing the following properties
+A NUMERIC value
 
 Key | Description
 --- | ---
 value | the raw or normalized measure
-name | the human readable name of the measure
-description | a brief description of the measure
-type | the data type (text, number, boolean)
 
 #### Example
 
 Add a Measure to an empty column based on polygons in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006') -> 'value'
+UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006')
 ```
 
 Get a measure within a polygon
 
 ```SQL
-SELECT * FROM json_each(OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), '"us.census.acs".B08134006'))
+SELECT OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), '"us.census.acs".B08134006')
+
+
 ```
 
 <!--

@@ -51,4 +51,8 @@ SET client_min_messages TO WARNING;
 \i test/fixtures/obs_d34555209878e8c4b37cf0b2b3d072ff129ec470.sql
 \echo Done.
 
+\echo Loading obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4.sql fixture file...
+\i test/fixtures/obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4.sql
+\echo Done.
+
 \unset ECHO

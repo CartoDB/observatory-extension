@@ -51,4 +51,8 @@ DROP TABLE observatory.obs_11ee8b82c877c073438bc935a91d3dfccef875d1;
 DROP TABLE observatory.obs_d34555209878e8c4b37cf0b2b3d072ff129ec470;
 \echo Done.
 
+\echo Dropping obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4 fixture table...
+DROP TABLE observatory.obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4;
+\echo Done.
+
 \unset ECHO

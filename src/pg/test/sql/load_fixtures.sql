@@ -55,4 +55,6 @@ SET client_min_messages TO WARNING;
 \i test/fixtures/obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4.sql
 \echo Done.
 
+\i test/fixtures/obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d.sql
+
 \unset ECHO

@@ -55,4 +55,6 @@ DROP TABLE observatory.obs_d34555209878e8c4b37cf0b2b3d072ff129ec470;
 DROP TABLE observatory.obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4;
 \echo Done.
 
+DROP TABLE observatory.obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d.sql;
+
 \unset ECHO

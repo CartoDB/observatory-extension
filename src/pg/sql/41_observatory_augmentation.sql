@@ -117,6 +117,7 @@ AS $$
                   'income_200000_or_more',
                   'land_area'];
     RETURN QUERY 
+    EXECUTE
     'select * from cdb_observatory._OBS_GetCensus($1, $2 )'
     USING geom, target_cols
     RETURN;
@@ -653,71 +654,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION OBS_GetSegmentSnapshot(geom geometry, geometry_level text default '"us.census.tiger".census_tract')
-RETURNS json
-AS $$
-  BEGIN
-    RETURN row_to_json(cdb_observatory._OBS_GetSegmentSnapshot(geom, geometry_level));
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION _OBS_GetSegmentSnapshot(
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
   geom geometry,
   geometry_level text DEFAULT '"us.census.tiger".census_tract'
- )
-RETURNS TABLE(
-  segment_name TEXT,
-  total_pop_quantile NUMERIC,
-  male_pop_quantile NUMERIC,
-  female_pop_quantile NUMERIC,
-  median_age_quantile NUMERIC,
-  white_pop_quantile NUMERIC,
-  black_pop_quantile NUMERIC,
-  asian_pop_quantile NUMERIC,
-  hispanic_pop_quantile NUMERIC,
-  not_us_citizen_pop_quantile NUMERIC,
-  workers_16_and_over_quantile NUMERIC,
-  commuters_by_car_truck_van_quantile NUMERIC,
-  commuters_by_public_transportation_quantile NUMERIC,
-  commuters_by_bus_quantile NUMERIC,
-  commuters_by_subway_or_elevated_quantile NUMERIC,
-  walked_to_work_quantile NUMERIC,
-  worked_at_home_quantile NUMERIC,
-  children_quantile NUMERIC,
-  households_quantile NUMERIC,
-  population_3_years_over_quantile NUMERIC,
-  in_school_quantile NUMERIC,
-  in_grades_1_to_4_quantile NUMERIC,
-  in_grades_5_to_8_quantile NUMERIC,
-  in_grades_9_to_12_quantile NUMERIC,
-  in_undergrad_college_quantile NUMERIC,
-  pop_25_years_over_quantile NUMERIC,
-  high_school_diploma_quantile NUMERIC,
-  bachelors_degree_quantile NUMERIC,
-  masters_degree_quantile NUMERIC,
-  pop_5_years_over_quantile NUMERIC,
-  speak_only_english_at_home_quantile NUMERIC,
-  speak_spanish_at_home_quantile NUMERIC,
-  pop_determined_poverty_status_quantile NUMERIC,
-  poverty_quantile NUMERIC,
-  median_income_quantile NUMERIC,
-  gini_index_quantile NUMERIC,
-  income_per_capita_quantile NUMERIC,
-  housing_units_quantile NUMERIC,
-  vacant_housing_units_quantile NUMERIC,
-  vacant_housing_units_for_rent_quantile NUMERIC,
-  vacant_housing_units_for_sale_quantile NUMERIC,
-  median_rent_quantile NUMERIC,
-  percent_income_spent_on_rent_quantile NUMERIC,
-  owner_occupied_housing_units_quantile NUMERIC,
-  million_dollar_housing_units_quantile NUMERIC
-) 
+)
+RETURNS JSON 
 AS $$
 DECLARE
   target_cols text[];
-  seg_name    Text;
-  geom_id     Text;
-  q           Text;
+  result       json;
+  seg_name     Text;
+  geom_id      Text;
+  q            Text;
+  segment_name Text;
 BEGIN
 target_cols := Array[
           '"us.census.acs".B01001001_quantile',
@@ -768,7 +719,7 @@ target_cols := Array[
 
     EXECUTE
       $query$
-      SELECT (categories)[1]
+      SELECT (_OBS_GetCategories)->>'name'
       FROM cdb_observatory._OBS_GetCategories(
          $1,
          Array['"us.census.spielman_singleton_segments".X10'],
@@ -782,8 +733,8 @@ target_cols := Array[
       format($query$
       WITH a As (
            SELECT
-             names As names,
-             vals As vals
+             array_agg(_OBS_GET->>'name') As names,
+             array_agg(_OBS_GET->>'value') As vals
            FROM cdb_observatory._OBS_Get($1,
                         $2,
                         '2009 - 2013',
@@ -792,14 +743,18 @@ target_cols := Array[
         ), percentiles As (
            %s
          FROM  a)
-        SELECT $4, percentiles.*
-          FROM percentiles
-       $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols));
+         SELECT row_to_json(r) FROM 
+         ( SELECT $4 as segment_name, percentiles.*
+          FROM percentiles) r
+       $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols)) results;
 
-    RETURN QUERY
+    
     EXECUTE
       q
+    into result 
     USING geom, target_cols, geometry_level, segment_name;
+    
+    return result;
 
 END;
 $$ LANGUAGE plpgsql;

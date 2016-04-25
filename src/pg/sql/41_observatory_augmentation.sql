@@ -556,7 +556,6 @@ DECLARE
   denominator_id TEXT;
   names TEXT[];
   vals TEXT[];
-  denominator_id TEXT;
 BEGIN
 
   IF boundary_id IS NULL THEN

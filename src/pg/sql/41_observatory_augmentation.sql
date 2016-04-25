@@ -553,6 +553,10 @@ AS $$
 DECLARE
   result NUMERIC;
   measure_ids NUMERIC[];
+  denominator_id TEXT;
+  names TEXT[];
+  vals TEXT[];
+  denominator_id TEXT;
 BEGIN
 
   IF boundary_id IS NULL THEN
@@ -580,7 +584,7 @@ BEGIN
   END IF;
 
   EXECUTE '
-    SELECT names, vals FROM cdb_observatory._OBS_Get($1, $2, $3, $4) LIMIT 1
+    SELECT cdb_observatory._OBS_Get($1, $2, $3, $4)->>''value''::TEXT LIMIT 1
   '
   INTO names, vals
   USING geom, measure_ids, time_span, boundary_id;

@@ -26,49 +26,49 @@ Done.
  9516.27915900609 | 6152.51885204623 | 3363.76030695986 |       28.8 | 5301.51624447348 | 149.500458087105 | 230.000704749392 | 3835.26175169611 |              0 |              0 |                     0 | 5681.01740730998 | 3323.51018362871 |  7107.02177675621 |      1040.753188991 |      69.0002114248176 |      793.502431385402 |  327.751004267883 |  2742.7584041365 | 931.502854235037 |         66304 |     0.3494 |             28291 | 3662.76122313407 |     339.251039505353 |              120.750369993431 |                             0 |        1764 |                         35.3 |             339.251039505353 |                            0 |        224.250687130657 |  6549.27006773893 |     327.751004267883 |    28.750088093674 |   201.250616655718 |   621.001902823358 |   373.751145217762 |    1851.5056732326 |   1414.50433420876 |   1115.50341803455 |     615.251885204623 |                               |   57.500176187348 |                  0 |   212.750651893187 |   408.251250930171 |                  0 |    155.25047570584 |   109.250334755961 |   92.0002818997568 |   63.2501938060828 |   184.000563799514 |   621.001902823358 |   552.001691398541 |     327.751004267883 |     333.501021886618 |     126.500387612166 |                       |          
 (1 row)
 
-test_obsgetcensuswithtestpointand2variables 
+ test_obsgetcensuswithtestpointand2variables 
 ---------------------------------------------
-t
+ t
 (1 row)
 
-test_obsgetcensuswithnullislandarea 
+ test_obsgetcensuswithnullislandarea 
 -------------------------------------
-t
+ t
 (1 row)
 
-test_obsgetcensuswithnullisland 
+ test_obsgetcensuswithnullisland 
 ---------------------------------
-t
+ t
 (1 row)
 
-obs_get_gini_index_at_test_point 
+ obs_get_gini_index_at_test_point 
 ----------------------------------
-t
+ t
 (1 row)
 
-obs_get_gini_index_at_null_island 
+ obs_get_gini_index_at_null_island 
 -----------------------------------
-t
+ t
 (1 row)
 
-obs_getpoints_for_test_point 
+ obs_getpoints_for_test_point 
 ------------------------------
-t
+ t
 (1 row)
 
-obs_getpoints_for_null_island 
+ obs_getpoints_for_null_island 
 -------------------------------
-t
+ t
 (1 row)
 
-obs_getpolygons_for_test_point 
+ obs_getpolygons_for_test_point 
 --------------------------------
-t
+ t
 (1 row)
 
-obs_getpolygons_for_null_island 
+ obs_getpolygons_for_null_island 
 ---------------------------------
-t
+ t
 (1 row)
 
         segment_name         | total_pop_quantile | male_pop_quantile | female_pop_quantile | median_age_quantile | white_pop_quantile | black_pop_quantile | asian_pop_quantile | hispanic_pop_quantile | not_us_citizen_pop_quantile | workers_16_and_over_quantile | commuters_by_car_truck_van_quantile | commuters_by_public_transportation_quantile | commuters_by_bus_quantile | commuters_by_subway_or_elevated_quantile | walked_to_work_quantile | worked_at_home_quantile | children_quantile  | households_quantile | population_3_years_over_quantile | in_school_quantile | in_grades_1_to_4_quantile | in_grades_5_to_8_quantile | in_grades_9_to_12_quantile | in_undergrad_college_quantile | pop_25_years_over_quantile | high_school_diploma_quantile | bachelors_degree_quantile | masters_degree_quantile | pop_5_years_over_quantile | speak_only_english_at_home_quantile | speak_spanish_at_home_quantile | pop_determined_poverty_status_quantile | poverty_quantile  | median_income_quantile | gini_index_quantile | income_per_capita_quantile | housing_units_quantile | vacant_housing_units_quantile | vacant_housing_units_for_rent_quantile | vacant_housing_units_for_sale_quantile | median_rent_quantile | percent_income_spent_on_rent_quantile | owner_occupied_housing_units_quantile | million_dollar_housing_units_quantile 
@@ -81,14 +81,14 @@ t
               |                    |                   |                     |                     |                    |                    |                    |                       |                             |                              |                                     |                                             |                           |                                          |                         |                         |                   |                     |                                  |                    |                           |                           |                            |                               |                            |                              |                           |                         |                           |                                     |                                |                                        |                  |                        |                     |                            |                        |                               |                                        |                                        |                      |                                       |                                       |                                      
 (1 row)
 
-getcategories_at_test_point_1 | getcategories_at_test_point_2 
+ getcategories_at_test_point_1 | getcategories_at_test_point_2 
 -------------------------------+-------------------------------
-t                             | t
+ t                             | t
 (1 row)
 
-getcategories_at_null_island 
+ getcategories_at_null_island 
 ------------------------------
-t
+ t
 (1 row)
 
 

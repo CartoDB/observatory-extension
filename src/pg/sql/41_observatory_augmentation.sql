@@ -552,10 +552,9 @@ RETURNS NUMERIC
 AS $$
 DECLARE
   result NUMERIC;
-  measure_ids NUMERIC[];
+  measure_ids TEXT[];
   denominator_id TEXT;
-  names TEXT[];
-  vals TEXT[];
+  vals NUMERIC[];
 BEGIN
 
   IF boundary_id IS NULL THEN
@@ -583,9 +582,9 @@ BEGIN
   END IF;
 
   EXECUTE '
-    SELECT cdb_observatory._OBS_Get($1, $2, $3, $4)->>''value''::TEXT LIMIT 1
+    SELECT ARRAY_AGG(val) FROM (SELECT (cdb_observatory._OBS_Get($1, $2, $3, $4)->>''value'')::NUMERIC val) b
   '
-  INTO names, vals
+  INTO vals
   USING geom, measure_ids, time_span, boundary_id;
 
   IF normalize ILIKE 'denominator' THEN
@@ -593,9 +592,9 @@ BEGIN
   ELSE
     RETURN (vals)[1];
   END IF;
-
 END;
 $$ LANGUAGE plpgsql;
+
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
   geom GEOMETRY,
@@ -606,7 +605,6 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
 RETURNS TEXT
 AS $$
 DECLARE
-  names TEXT[];
   denominator_id TEXT;
   categories TEXT[];
 BEGIN
@@ -622,9 +620,9 @@ BEGIN
   END IF;
 
   EXECUTE '
-    SELECT names, categories FROM cdb_observatory._OBS_GetCategories($1, $2, $3, $4) LIMIT 1
+    SELECT ARRAY_AGG(val) FROM (SELECT (cdb_observatory._OBS_GetCategories($1, $2, $3, $4))->>''category'' val LIMIT 1) b
   '
-  INTO names, categories
+  INTO categories
   USING geom, ARRAY[category_id], boundary_id, time_span;
 
   RETURN (categories)[1];

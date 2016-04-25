@@ -2,9 +2,9 @@
 --
 WITH result as(
   Select count(OBS_GetDemographicSnapshot->>'value') expected_columns
-  FROM cdb_observatory.OBS_GetDemographicSnapshot(_test_point())
+  FROM cdb_observatory.OBS_GetDemographicSnapshot(cdb_observatory._TestPoint())
 ) select expected_columns ='58' as OBS_GetDemographicSnapshot_test_no_returns
-FROM result
+FROM result;
 --
 -- dimension | dimension_value
 -- ----------|----------------

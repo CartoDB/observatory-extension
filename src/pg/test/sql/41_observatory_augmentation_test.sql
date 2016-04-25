@@ -1,12 +1,10 @@
 \i test/sql/load_fixtures.sql
 --
-SELECT * FROM
-  cdb_observatory._OBS_GetDemographicSnapshot(
-      cdb_observatory._TestPoint(),
-      '2009 - 2013',
-      '"us.census.tiger".block_group'
-  ) As snapshot;
-
+WITH result as(
+  Select count(OBS_GetDemographicSnapshot->>'value') expected_columns
+  FROM cdb_observatory.OBS_GetDemographicSnapshot(_test_point())
+) select expected_columns ='58' as OBS_GetDemographicSnapshot_test_no_returns
+FROM result
 --
 -- dimension | dimension_value
 -- ----------|----------------

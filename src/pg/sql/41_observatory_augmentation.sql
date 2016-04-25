@@ -552,6 +552,7 @@ RETURNS NUMERIC
 AS $$
 DECLARE
   result NUMERIC;
+  measure_ids NUMERIC[];
 BEGIN
 
   IF boundary_id IS NULL THEN
@@ -603,7 +604,6 @@ RETURNS TEXT
 AS $$
 DECLARE
   names TEXT[];
-  category_ids TEXT[];
   denominator_id TEXT;
   categories TEXT[];
 BEGIN

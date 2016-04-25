@@ -710,7 +710,7 @@ BEGIN
   END IF;
 
   execute'
-  select array_agg( _obs_getcolumndatajson)  from cdb_observatory._OBS_GetColumnDataJSON($1,
+  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnDataJSON($1,
                                        $2,
                                        $3);'
   INTO   data_table_info

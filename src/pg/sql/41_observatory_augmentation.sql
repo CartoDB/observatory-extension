@@ -247,7 +247,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCensus(
   time_span text DEFAULT '2009 - 2013',
   geometry_level text DEFAULT '"us.census.tiger".block_group'
 )
-RETURNS TABLE(dimension text[], dimension_value NUMERIC[])
+RETURNS SETOF JSON
 AS $$
 DECLARE
   ids text[];
@@ -256,10 +256,35 @@ BEGIN
   ids := cdb_observatory._OBS_LookupCensusHuman(dimension_names);
 
   RETURN QUERY
-    SELECT names, vals FROM cdb_observatory._OBS_Get(geom, ids, time_span, geometry_level);
+    SELECT * FROM cdb_observatory._OBS_Get(geom, ids, time_span, geometry_level);
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCensus(
+  geom geometry,
+  dimension_name text,
+  time_span text DEFAULT '2009 - 2013',
+  geometry_level text DEFAULT '"us.census.tiger".block_group'
+)
+RETURNS NUMERIC
+AS $$
+DECLARE
+  ids Text[];
+  result_json json;
+  result Numeric;
+BEGIN
+
+  ids := cdb_observatory._OBS_LookupCensusHuman(Array[dimension_name]);
+  result_json := (SELECT a FROM cdb_observatory._OBS_Get(geom, ids, time_span, geometry_level) as a limit 1);
+  EXECUTE
+    format('select $1::numeric as "%s"', result_json->>'name')
+  INTO result
+  USING
+    result_json->>'value';
+    
+  return result;
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Base augmentation fucntion.
@@ -710,7 +735,7 @@ BEGIN
   END IF;
 
   execute'
-  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnDataJSON($1,
+  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnData($1,
                                        $2,
                                        $3);'
   INTO   data_table_info

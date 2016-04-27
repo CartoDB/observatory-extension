@@ -4,7 +4,7 @@
 --   First, the Spanish Census, and so on
 
 
--- OBS_GetGeometry
+-- OBS_GetBoundary
 --
 -- Returns the boundary polygon(s) that overlap with the input point geometry.
 -- From an input point geometry, find the boundary which intersects with the
@@ -21,7 +21,7 @@
 --                      resolution requested with boundary_id, and time_span
 --
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometry(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundary(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL)
@@ -84,7 +84,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- OBS_GetGeometryId
+-- OBS_GetBoundaryId
 --
 -- retrieves the boundary identifier (e.g., '36047' = Kings County/Brooklyn, NY)
 --   corresponding to the location geom and boundary types (e.g.,
@@ -103,7 +103,7 @@ $$ LANGUAGE plpgsql;
 --                     time_span
 --
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometryId(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundaryId(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL
@@ -163,7 +163,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- OBS_GetGeometryById
+-- OBS_GetBoundaryById
 --
 -- Given a geometry reference (e.g., geoid for US Census), and it's geometry
 --  level (see OBS_ListGeomColumns() for all available boundary ids), give back
@@ -182,7 +182,7 @@ $$ LANGUAGE plpgsql;
 --                      resolution requested with boundary_id, and time_span
 --
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetGeometryById(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundaryById(
   geometry_id text,            -- ex: '36047'
   boundary_id text,            -- ex: '"us.census.tiger".county'
   time_span text DEFAULT NULL  --ex: '2009'

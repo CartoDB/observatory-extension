@@ -58,12 +58,12 @@ BEGIN
     select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a
   )
  SELECT row_to_json(a) from (
-   select  colname, 
-            tablename, 
-            aggregate, 
-            name, 
+   select  colname,
+            tablename,
+            aggregate,
+            name,
             type,
-            c.description 
+            c.description
            FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
            WHERE column_ids.column_id  = c.id
              AND c.id = ct.column_id
@@ -116,7 +116,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._TestPoint()
 AS $$
 BEGIN
   -- new york city
-  RETURN CDB_LatLng(40.704512, -73.936669);
+  RETURN ST_SetSRID(ST_Point( -73.936669, 40.704512), 4326);
 END;
 $$ LANGUAGE plpgsql;
 

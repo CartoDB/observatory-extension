@@ -7,7 +7,7 @@
 -- should give back a table like obs_{hex hash}
 SELECT
   cdb_observatory._OBS_GeomTable(
-    CDB_LatLng(40.7128,-74.0059),
+    ST_SetSRID(ST_Point(-74.0059, 40.7128), 4326),
     '"us.census.tiger".census_tract'
   );
 
@@ -15,14 +15,14 @@ SELECT
 -- should give back null
 SELECT
   cdb_observatory._OBS_GeomTable(
-    CDB_LatLng(40.7128,-74.0059),
+    ST_SetSRID(ST_Point(-74.0059, 40.7128), 4326),
     '"us.census.tiger".nonexistant_id' -- not in catalog
   );
 
 -- future test: give back nulls when geometry doesn't intersect
 -- SELECT
 --   cdb_observatory._OBS_GeomTable(
---     CDB_LatLng(0,0), -- should give back null since it's in the ocean?
+--     ST_SetSRID(ST_Point(0,0)), -- should give back null since it's in the ocean?
 --     '"us.census.tiger".census_tract'
 --   );
 
@@ -37,7 +37,7 @@ SELECT
   array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
     '"us.census.tiger".census_tract',
     Array['"us.census.tiger".census_tract_geoid', '"us.census.acs".B01001001'],
-    '2009 - 2013') a 
+    '2009 - 2013') a
 )
 select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_1,
        (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_2
@@ -50,7 +50,7 @@ SELECT
   array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
     '"us.census.tiger".census_tract',
     Array['"us.census.tiger".baloney'],
-    '2009 - 2013') a 
+    '2009 - 2013') a
 )
 select expected is null as OBS_GetColumnData_missing_measure
 from result;

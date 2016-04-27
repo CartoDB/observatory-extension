@@ -33,7 +33,7 @@ SELECT cdb_observatory.OBS_GetGeometry(
 -- expect null geometry since there are no census tracts at null island
 -- timespan implictly null
 SELECT cdb_observatory.OBS_GetGeometry(
-  CDB_LatLng(0, 0),
+  ST_SetSRID(ST_Point(0, 0), 4326),
   '"us.census.tiger".census_tract'
 ) IS NULL As OBS_GetGeometry_null_island_census_tract;
 
@@ -77,7 +77,7 @@ SELECT cdb_observatory.OBS_GetGeometryId(
 
 -- should give back null since there is not a census tract at null island
 SELECT cdb_observatory.OBS_GetGeometryId(
-  CDB_LatLng(0, 0),
+  ST_SetSRID(ST_Point(0, 0), 4326),
   '"us.census.tiger".census_tract'
 ) IS NULL As OBS_GetGeometryId_null_island;
 

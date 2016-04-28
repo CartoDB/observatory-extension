@@ -242,3 +242,178 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- OBS_GetBoundariesByBBox
+--
+-- Given a bounding box (or a polygon), and it's geometry level (see
+--  OBS_ListGeomColumns() for all available boundary ids), give back the
+--  boundaries that are contained within the bounding box polygon and the
+--  associated geometry ids
+
+-- Inputs:
+--   geom geometry: bounding box (or polygon) of the region of interest
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   table with the following columns
+--     boundary geometry: geometry boundary that is contained within the input
+--                          bounding box at the requested geometry level
+--                          with boundary_id, and time_span
+--     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
+--
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByBBox(
+  geom geometry(Geometry, 4326),
+  boundary_id text,
+  time_span text DEFAULT NULL)
+RETURNS TABLE(boundary geometry, geom_refs text)
+AS $$
+DECLARE
+  boundary geometry(Geometry, 4326);
+  geom_colname text;
+  geoid_colname text;
+  target_table text;
+BEGIN
+
+-- TODO: add timespan in search
+EXECUTE
+format(
+  $string$
+  SELECT geoid_ct.colname As geoid_colname,
+         tablename,
+         geom_ct.colname As geom_colname
+  FROM observatory.obs_column_table As geoid_ct,
+       observatory.obs_table As geom_t,
+       observatory.obs_column_table As geom_ct,
+       observatory.obs_column As geom_c
+  WHERE geoid_ct.column_id
+     IN (
+       SELECT source_id
+       FROM observatory.obs_column_to_column
+       WHERE reltype = 'geom_ref'
+         AND target_id = '%s'
+       )
+    AND geoid_ct.table_id = geom_t.id and
+        geom_t.id = geom_ct.table_id and
+        geom_ct.column_id = geom_c.id and
+        geom_c.type ILIKE 'geometry'
+  $string$, boundary_id
+) INTO geoid_colname, target_table, geom_colname;
+
+  -- if not a point, raise error
+  IF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
+  THEN
+    RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_MultiPolygon'' or ''ST_Polygon''', ST_GeometryType(geom);
+  END IF;
+
+  -- if no tables are found, raise notice and return null
+  IF target_table IS NULL
+  THEN
+    RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
+    RETURN QUERY SELECT NULL::geometry, NULL::text;
+  END IF;
+
+  RAISE NOTICE 'target_table: %', target_table;
+
+  -- return first boundary in intersections
+  RETURN QUERY
+  EXECUTE format(
+    'SELECT t.%s, t.%s
+     FROM observatory.%s As t
+     WHERE ST_Contains($1, t.the_geom)
+     ', geom_colname, geoid_colname, target_table)
+  USING geom;
+
+END;
+$$ LANGUAGE plpgsql;
+
+-- OBS_GetPointsByBBox
+--
+-- Given a bounding box (or a polygon), and it's geometry level (see
+--  OBS_ListGeomColumns() for all available boundary ids), give back a point
+--  which lies in a boundary from the requested geometry level that is contained
+--  within the bounding box polygon and the associated geometry ids
+--
+-- Inputs:
+--   geom geometry: bounding box (or polygon) of the region of interest
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   table with the following columns
+--     boundary geometry: point that lies on a boundary that is contained within
+--                          the input bounding box at the requested geometry
+--                          level with boundary_id, and time_span
+--     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
+--
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByBBox(
+  geom geometry(Geometry, 4326),
+  boundary_id text,
+  time_span text DEFAULT NULL)
+RETURNS TABLE(boundary geometry, geom_refs text)
+AS $$
+DECLARE
+  boundary geometry(Geometry, 4326);
+  geom_colname text;
+  geoid_colname text;
+  target_table text;
+BEGIN
+
+-- TODO: add timespan in search
+EXECUTE
+format(
+  $string$
+  SELECT geoid_ct.colname As geoid_colname,
+         tablename,
+         geom_ct.colname As geom_colname
+  FROM observatory.obs_column_table As geoid_ct,
+       observatory.obs_table As geom_t,
+       observatory.obs_column_table As geom_ct,
+       observatory.obs_column As geom_c
+  WHERE geoid_ct.column_id
+     IN (
+       SELECT source_id
+       FROM observatory.obs_column_to_column
+       WHERE reltype = 'geom_ref'
+         AND target_id = '%s'
+       )
+    AND geoid_ct.table_id = geom_t.id and
+        geom_t.id = geom_ct.table_id and
+        geom_ct.column_id = geom_c.id and
+        geom_c.type ILIKE 'geometry'
+  $string$, boundary_id
+) INTO geoid_colname, target_table, geom_colname;
+
+  -- if not a point, raise error
+  IF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
+  THEN
+    RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_MultiPolygon'' or ''ST_Polygon''', ST_GeometryType(geom);
+  END IF;
+
+  -- if no tables are found, raise notice and return null
+  IF target_table IS NULL
+  THEN
+    RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
+    RETURN QUERY SELECT NULL::geometry, NULL::text;
+  END IF;
+
+  RAISE NOTICE 'target_table: %', target_table;
+
+  -- return first boundary in intersections
+  RETURN QUERY
+  EXECUTE format(
+    'SELECT ST_PointOnSurface(t.%s) As %s, t.%s
+     FROM observatory.%s As t
+     WHERE ST_Contains($1, t.the_geom)
+     ', geom_colname, geom_colname, geoid_colname, target_table)
+  USING geom;
+
+END;
+$$ LANGUAGE plpgsql;

@@ -331,6 +331,51 @@ format(
 END;
 $$ LANGUAGE plpgsql;
 
+-- OBS_GetBoundariesByPointAndRadius
+--
+-- Given a point and radius, and it's geometry level (see
+--  OBS_ListGeomColumns() for all available boundary ids), give back the
+--  boundaries that are contained within the point buffered by radius meters and
+--  the associated geometry ids
+
+-- Inputs:
+--   geom geometry: point geometry centered on area of interest
+--   radius numeric: radius (in meters) of a circle centered on geom for
+--                   selecting polygons
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   table with the following columns
+--     boundary geometry: geometry boundary that is contained within the input
+--                          bounding box at the requested geometry level
+--                          with boundary_id, and time_span
+--     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
+--
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByPointAndRadius(
+  geom geometry(Geometry, 4326), -- point
+  radius numeric, -- radius in meters
+  boundary_id text,
+  time_span text DEFAULT NULL)
+RETURNS TABLE(boundary geometry, geom_refs text)
+AS $$
+DECLARE
+  circle_boundary geometry(Geometry, 4326);
+BEGIN
+
+  circle_boundary := ST_Buffer(geom::geography, radius)::geometry;
+
+  RETURN QUERY SELECT *
+               FROM cdb_observatory.OBS_GetBoundariesByBBox(
+                        circle_boundary,
+                        boundary_id,
+                        time_span);
+END;
+$$ LANGUAGE plpgsql;
+
 -- OBS_GetPointsByBBox
 --
 -- Given a bounding box (or a polygon), and it's geometry level (see
@@ -415,5 +460,50 @@ format(
      ', geom_colname, geom_colname, geoid_colname, target_table)
   USING geom;
 
+END;
+$$ LANGUAGE plpgsql;
+
+-- OBS_GetBoundariesByPointAndRadius
+--
+-- Given a point and radius, and it's geometry level (see
+--  OBS_ListGeomColumns() for all available boundary ids), give back the
+--  boundaries that are contained within the point buffered by radius meters and
+--  the associated geometry ids
+
+-- Inputs:
+--   geom geometry: point geometry centered on area of interest
+--   radius numeric: radius (in meters) of a circle centered on geom for
+--                   selecting polygons
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   table with the following columns
+--     boundary geometry: geometry boundary that is contained within the input
+--                          bounding box at the requested geometry level
+--                          with boundary_id, and time_span
+--     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
+--
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByPointAndRadius(
+  geom geometry(Geometry, 4326), -- point
+  radius numeric, -- radius in meters
+  boundary_id text,
+  time_span text DEFAULT NULL)
+RETURNS TABLE(boundary geometry, geom_refs text)
+AS $$
+DECLARE
+  circle_boundary geometry(Geometry, 4326);
+BEGIN
+
+  circle_boundary := ST_Buffer(geom::geography, radius)::geometry;
+
+  RETURN QUERY SELECT *
+               FROM cdb_observatory.OBS_GetPointsByBBox(
+                        circle_boundary,
+                        boundary_id,
+                        time_span);
 END;
 $$ LANGUAGE plpgsql;

@@ -248,7 +248,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByBBox(
   geom geometry(Geometry, 4326),
   boundary_id text,
-  time_span text DEFAULT NULL)
+  time_span text DEFAULT NULL,
+  overlap_type text DEFAULT 'contains')
 RETURNS TABLE(boundary geometry, geom_refs text)
 AS $$
 DECLARE
@@ -290,8 +291,8 @@ BEGIN
   EXECUTE format(
     'SELECT t.%s, t.%s
      FROM observatory.%s As t
-     WHERE ST_Contains($1, t.the_geom)
-     ', geom_colname, geoid_colname, target_table)
+     WHERE ST_%s($1, t.the_geom)
+     ', geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
 
 END;
@@ -325,7 +326,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByPointAndRadius(
   geom geometry(Geometry, 4326), -- point
   radius numeric, -- radius in meters
   boundary_id text,
-  time_span text DEFAULT NULL)
+  time_span text DEFAULT NULL,
+  overlap_type text DEFAULT 'contains')
 RETURNS TABLE(boundary geometry, geom_refs text)
 AS $$
 DECLARE
@@ -367,7 +369,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByBBox(
   geom geometry(Geometry, 4326),
   boundary_id text,
-  time_span text DEFAULT NULL)
+  time_span text DEFAULT NULL,
+  overlap_type text DEFAULT 'contains')
 RETURNS TABLE(boundary geometry, geom_refs text)
 AS $$
 DECLARE
@@ -379,7 +382,7 @@ BEGIN
 
   IF lower(overlap_type) NOT IN ('contains', 'within', 'intersects')
   THEN
-    RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose contains, within, intersects)', overlap_type;
+    RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose contains, within, or intersects)', overlap_type;
   ELSIF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
       RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_MultiPolygon'' or ''ST_Polygon''', ST_GeometryType(geom);
@@ -387,9 +390,6 @@ BEGIN
 
   SELECT * INTO geoid_colname, target_table, geom_colname
   FROM cdb_observatory._OBS_GetGeometryMetadata(boundary_id);
-
-  RAISE NOTICE 'geoid_colname: %, target_table: %, geom_colname: %',
-               geoid_colname, target_table, geom_colname;
 
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
@@ -405,8 +405,8 @@ BEGIN
   EXECUTE format(
     'SELECT ST_PointOnSurface(t.%s) As %s, t.%s
      FROM observatory.%s As t
-     WHERE ST_Contains($1, t.the_geom)
-     ', geom_colname, geom_colname, geoid_colname, target_table)
+     WHERE ST_%s($1, t.the_geom)
+     ', geom_colname, geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
 
 END;
@@ -440,7 +440,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByPointAndRadius(
   geom geometry(Geometry, 4326), -- point
   radius numeric, -- radius in meters
   boundary_id text,
-  time_span text DEFAULT NULL)
+  time_span text DEFAULT NULL,
+  overlap_type text DEFAULT 'contains')
 RETURNS TABLE(boundary geometry, geom_refs text)
 AS $$
 BEGIN
@@ -449,7 +450,8 @@ BEGIN
                FROM cdb_observatory.OBS_GetPointsByBBox(
                         ST_Buffer(geom::geography, radius)::geometry,
                         boundary_id,
-                        time_span);
+                        time_span,
+                        overlap_type);
 END;
 $$ LANGUAGE plpgsql;
 

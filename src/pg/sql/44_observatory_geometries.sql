@@ -196,29 +196,8 @@ DECLARE
   geom_colname text;
 BEGIN
 
-  EXECUTE
-  format(
-    $string$
-    SELECT geoid_ct.colname As geoid_colname,
-           tablename,
-           geom_ct.colname As geom_colname
-    FROM observatory.obs_column_table As geoid_ct,
-         observatory.obs_table As geom_t,
-         observatory.obs_column_table As geom_ct,
-         observatory.obs_column As geom_c
-    WHERE geoid_ct.column_id
-       IN (
-         SELECT source_id
-         FROM observatory.obs_column_to_column
-         WHERE reltype = 'geom_ref'
-           AND target_id = '%s'
-         )
-      AND geoid_ct.table_id = geom_t.id and
-          geom_t.id = geom_ct.table_id and
-          geom_ct.column_id = geom_c.id and
-          geom_c.type ILIKE 'geometry'
-    $string$, boundary_id
-  ) INTO geoid_colname, target_table, geom_colname;
+SELECT * INTO geoid_colname, target_table, geom_colname
+FROM cdb_observatory._OBS_GetGeometryMetadata(boundary_id);
 
   RAISE NOTICE '%', target_table;
 
@@ -279,36 +258,23 @@ DECLARE
   target_table text;
 BEGIN
 
--- TODO: add timespan in search
-EXECUTE
-format(
-  $string$
-  SELECT geoid_ct.colname As geoid_colname,
-         tablename,
-         geom_ct.colname As geom_colname
-  FROM observatory.obs_column_table As geoid_ct,
-       observatory.obs_table As geom_t,
-       observatory.obs_column_table As geom_ct,
-       observatory.obs_column As geom_c
-  WHERE geoid_ct.column_id
-     IN (
-       SELECT source_id
-       FROM observatory.obs_column_to_column
-       WHERE reltype = 'geom_ref'
-         AND target_id = '%s'
-       )
-    AND geoid_ct.table_id = geom_t.id and
-        geom_t.id = geom_ct.table_id and
-        geom_ct.column_id = geom_c.id and
-        geom_c.type ILIKE 'geometry'
-  $string$, boundary_id
-) INTO geoid_colname, target_table, geom_colname;
-
-  -- if not a point, raise error
-  IF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
-  THEN
+-- check inputs
+IF lower(overlap_type) NOT IN ('contains', 'intersects', 'within')
+THEN
+  -- recognized overlap type (map to ST_Contains, ST_Intersects, and ST_Within)
+  RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose contains, within, intersects)', overlap_type;
+ELSIF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
+THEN
     RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_MultiPolygon'' or ''ST_Polygon''', ST_GeometryType(geom);
-  END IF;
+END IF;
+
+-- TODO: add timespan in search
+-- TODO: add overlap info in search
+-- TODO: turn this into a function _OBS_GetGeometryMetadata(geo_ref_name, tablename, and geom_colname)
+--   SELECT geo_ref_name, tablename, geom_colname INTO a, b, c
+--     FROM _OBS_GetGeometryMetadata
+SELECT * INTO geoid_colname, target_table, geom_colname
+FROM cdb_observatory._OBS_GetGeometryMetadata(boundary_id);
 
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
@@ -411,36 +377,19 @@ DECLARE
   target_table text;
 BEGIN
 
--- TODO: add timespan in search
-EXECUTE
-format(
-  $string$
-  SELECT geoid_ct.colname As geoid_colname,
-         tablename,
-         geom_ct.colname As geom_colname
-  FROM observatory.obs_column_table As geoid_ct,
-       observatory.obs_table As geom_t,
-       observatory.obs_column_table As geom_ct,
-       observatory.obs_column As geom_c
-  WHERE geoid_ct.column_id
-     IN (
-       SELECT source_id
-       FROM observatory.obs_column_to_column
-       WHERE reltype = 'geom_ref'
-         AND target_id = '%s'
-       )
-    AND geoid_ct.table_id = geom_t.id and
-        geom_t.id = geom_ct.table_id and
-        geom_ct.column_id = geom_c.id and
-        geom_c.type ILIKE 'geometry'
-  $string$, boundary_id
-) INTO geoid_colname, target_table, geom_colname;
-
-  -- if not a point, raise error
-  IF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
-  THEN
+IF lower(overlap_type) NOT IN ('contains', 'within', 'intersects')
+THEN
+  RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose contains, within, intersects)', overlap_type;
+ELSIF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
+THEN
     RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_MultiPolygon'' or ''ST_Polygon''', ST_GeometryType(geom);
-  END IF;
+END IF;
+
+SELECT * INTO geoid_colname, target_table, geom_colname
+FROM cdb_observatory._OBS_GetGeometryMetadata(boundary_id);
+
+RAISE NOTICE 'geoid_colname: %, target_table: %, geom_colname: %',
+             geoid_colname, target_table, geom_colname;
 
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
@@ -494,16 +443,49 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByPointAndRadius(
   time_span text DEFAULT NULL)
 RETURNS TABLE(boundary geometry, geom_refs text)
 AS $$
-DECLARE
-  circle_boundary geometry(Geometry, 4326);
 BEGIN
-
-  circle_boundary := ST_Buffer(geom::geography, radius)::geometry;
 
   RETURN QUERY SELECT *
                FROM cdb_observatory.OBS_GetPointsByBBox(
-                        circle_boundary,
+                        ST_Buffer(geom::geography, radius)::geometry,
                         boundary_id,
                         time_span);
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- _OBS_GetGeometryMetadata()
+-- TODO: add timespan in search
+-- TODO: add choice of clipped versus not clipped
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryMetadata(boundary_id text)
+RETURNS table(geoid_colname text, target_table text, geom_colname text)
+AS $$
+BEGIN
+
+RETURN QUERY
+EXECUTE
+format($string$
+  SELECT geoid_ct.colname As geoid_colname,
+         tablename,
+         geom_ct.colname As geom_colname
+  FROM observatory.obs_column_table As geoid_ct,
+       observatory.obs_table As geom_t,
+       observatory.obs_column_table As geom_ct,
+       observatory.obs_column As geom_c
+  WHERE geoid_ct.column_id
+     IN (
+       SELECT source_id
+       FROM observatory.obs_column_to_column
+       WHERE reltype = 'geom_ref'
+         AND target_id = '%s'
+       )
+    AND geoid_ct.table_id = geom_t.id and
+        geom_t.id = geom_ct.table_id and
+        geom_ct.column_id = geom_c.id and
+        geom_c.type ILIKE 'geometry'
+    -- TODO: filter by clipped vs. not so appropriate tablename are unique
+    --       so the limit 1 can be removed
+    LIMIT 1
+  $string$, boundary_id);
 END;
 $$ LANGUAGE plpgsql;

@@ -18,6 +18,14 @@ SET client_min_messages TO WARNING;
 \i test/fixtures/obs_column_to_column.sql
 \echo Done.
 
+\echo Loading obs_column_tag.sql fixture file...
+\i test/fixtures/obs_column_tag.sql
+\echo Done.
+
+\echo Loading obs_tag.sql fixture file...
+\i test/fixtures/obs_tag.sql
+\echo Done.
+
 -- data
 \echo Loading obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1.sql fixture file...
 \i test/fixtures/obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1.sql
@@ -42,5 +50,11 @@ SET client_min_messages TO WARNING;
 \echo Loading obs_d34555209878e8c4b37cf0b2b3d072ff129ec470.sql fixture file...
 \i test/fixtures/obs_d34555209878e8c4b37cf0b2b3d072ff129ec470.sql
 \echo Done.
+
+\echo Loading obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4.sql fixture file...
+\i test/fixtures/obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4.sql
+\echo Done.
+
+\i test/fixtures/obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d.sql
 
 \unset ECHO

@@ -250,7 +250,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByBBox(
   boundary_id text,
   time_span text DEFAULT NULL,
   overlap_type text DEFAULT 'intersects')
-RETURNS TABLE(boundary geometry, geom_refs text)
+RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 DECLARE
   boundary geometry(Geometry, 4326);
@@ -328,7 +328,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByPointAndRadius(
   boundary_id text,
   time_span text DEFAULT NULL,
   overlap_type text DEFAULT 'intersects')
-RETURNS TABLE(boundary geometry, geom_refs text)
+RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 DECLARE
   circle_boundary geometry(Geometry, 4326);
@@ -371,7 +371,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByBBox(
   boundary_id text,
   time_span text DEFAULT NULL,
   overlap_type text DEFAULT 'intersects')
-RETURNS TABLE(boundary geometry, geom_refs text)
+RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 DECLARE
   boundary geometry(Geometry, 4326);
@@ -442,7 +442,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByPointAndRadius(
   boundary_id text,
   time_span text DEFAULT NULL,
   overlap_type text DEFAULT 'intersects')
-RETURNS TABLE(boundary geometry, geom_refs text)
+RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 BEGIN
 

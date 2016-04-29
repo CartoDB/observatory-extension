@@ -84,7 +84,7 @@ Should add the SQL API call here too
 
 ## OBS_GetUSCensusCategory(point_geometry, measure_name);
 
-The ```OBS_GetUSCensusCategory(point_geometry, category_name)``` method returns a categorical measure based on a subset of the US Census variables at a point location. It requires a different function from ```OBS_GetUSCensusMeasure``` because this function will always return TEXT, whereas ```OBS_GetUSCensusMeasure``` will always returna  NUMERIC value. 
+The ```OBS_GetUSCensusCategory(point_geometry, category_name)``` method returns a categorical measure based on a subset of the US Census variables at a point location. It requires a different function from ```OBS_GetUSCensusMeasure``` because this function will always return TEXT, whereas ```OBS_GetUSCensusMeasure``` will always returna  NUMERIC value.
 
 #### Arguments
 
@@ -202,9 +202,9 @@ Should add the SQL API call here too
 # Boundaries
 
 
-## OBS_GetGeometry(point_geometry, boundary_id)
+## OBS_GetBoundary(point_geometry, boundary_id)
 
-The ```OBS_GetGeometry(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary table below](below). This is a useful method for performing aggregations of points.
+The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary table below](below). This is a useful method for performing aggregations of points.
 
 #### Arguments
 
@@ -224,22 +224,22 @@ geom | WKB geometry
 Overwrite a point geometry with a boundary geometry that contains it in your table
 
 ```SQL
-UPDATE tablename SET the_geom = OBS_GetGeometry(the_geom, ' "us.census.tiger".block_group')
+UPDATE tablename SET the_geom = OBS_GetBoundary(the_geom, ' "us.census.tiger".block_group')
 ```
 
 <!--
 Should add the SQL API call here too
 -->
 
-## OBS_GetGeometryId(point_geometry, boundary_id)
+## OBS_GetBoundaryId(point_geometry, boundary_id)
 
-The ```OBS_GetGeometryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary table below](below). The method can be combined with ```OBS_GetGeometryById(geometry_id)``` to create a point aggregation workflow.
+The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary table below](below). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
 
 #### Arguments
 
 Name |Description
 --- | ---
-point_geometry | a WGS84 polygon geometry (the_geom)
+point_geometry | a WGS84 point geometry (the_geom)
 boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)  
 
 #### Returns
@@ -253,12 +253,13 @@ geometry_id | a string identifier of a geometry in the Boundaries
 Write the geometry_id that contains the point geometry for every row as a new column in your table
 
 ```SQL
-UPDATE tablename SET new_column_name = OBS_GetGeometryId(the_geom, ' "us.census.tiger".block_group')
+UPDATE tablename
+SET new_column_name = OBS_GetBoundaryId(the_geom, ' "us.census.tiger".block_group')
 ```
 
-## OBS_GetGeometryById(geometry_id)
+## OBS_GetBoundaryById(geometry_id)
 
-The ```OBS_GetGeometryById(geometry_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetGeometryId(point_geometry, boundary_id)``` method described above.
+The ```OBS_GetBoundaryById(geometry_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetBoundaryId(point_geometry, boundary_id)``` method described above.
 
 #### Arguments
 
@@ -279,7 +280,181 @@ geom | a WGS84 polygon geometry
 Use a table of geometry_id to select the unique boundaries. Useful with the ```Table from query``` option in CartoDB.
 
 ```SQL
-SELECT OBS_GetGeometryById(geometry_id) the_geom, geometry_id FROM tablename GROUP BY geometry_id
+SELECT OBS_GetBoundaryById(geometry_id) the_geom, geometry_id FROM tablename GROUP BY geometry_id
+```
+
+## OBS_GetBoundariesByBBox(geometry, geometry_id)
+
+The ```OBS_GetBoundariesByBBox(geometry, geometry_id)``` method returns the boundary geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon.
+
+#### Arguments
+
+Name |Description
+--- | ---
+geometry | a bounding box
+geometry_id | a string identifier for a boundary geometry
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html) or [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html) for more
+
+#### Returns
+
+A table with the following columns:
+
+Column Name | Description
+--- | ---
+the_geom | a boundary geometry (e.g., US Census tracts)
+geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+
+#### Example
+
+Get all Census Tracts in Lower Manhattan (geoids beginning with `36061`) without getting Brooklyn or New Jersey
+
+```sql
+SELECT *
+FROM OBS_GetBoundariesByBBox(
+  ST_MakeEnvelope(-74.0251922607,40.6945658517,
+                  -73.9651107788,40.7377626342,
+                  4326),
+  '"us.census.tiger".census_tract')
+WHERE geom_ref like '36061%'
+```
+
+#### API Example
+
+Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
+
+```text
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetBoundariesByBBox(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
+```
+
+## OBS_GetPointsByBBox(geometry, geometry_id)
+
+The ```OBS_GetPointsByBBox(geometry, geometry_id)``` method returns point geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon and lie on the surface of a boundary corresponding to the boundary with same geographical identifiers (e.g., a point that is on a census tract with the same geoid).
+
+#### Arguments
+
+Name |Description
+--- | ---
+geometry | a bounding box
+geometry_id | a string identifier for a boundary geometry
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html) or [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html) for more
+
+#### Returns
+
+A table with the following columns:
+
+Column Name | Description
+--- | ---
+the_geom | a point geometry on a boundary (e.g., a point that lies on a US Census tract)
+geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+
+#### Example
+
+Get points in all Census Tracts in Lower Manhattan (geoids beginning with `36061`) without getting Brooklyn or New Jersey
+
+```sql
+SELECT *
+FROM OBS_GetPointsByBBox(
+  ST_MakeEnvelope(-74.0251922607,40.6945658517,
+                  -73.9651107788,40.7377626342,
+                  4326),
+  '"us.census.tiger".census_tract')
+WHERE geom_ref like '36061%'
+```
+
+#### API Example
+
+Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
+
+```text
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetPointsByBBox(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
+```
+
+## OBS_GetBoundariesByPointAndRadius(geometry, radius, boundary_id)
+
+The ```OBS_GetBoundariesByPointAndRadius(geometry, radius, boundary_id)``` method returns boundary geometries and their geographical identifiers that intersect (or are contained by) a circle centered on a point with a radius.
+
+#### Arguments
+
+Name |Description
+--- | ---
+geometry | a point geometry
+radius | a radius (in meters) from the center point
+geometry_id | a string identifier for a boundary geometry
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html), [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html), or [ST_Within](http://postgis.net/docs/manual-2.2/ST_Within.html) for more
+
+#### Returns
+
+A table with the following columns:
+
+Column Name | Description
+--- | ---
+the_geom | a boundary geometry (e.g., a US Census tract)
+geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+
+#### Example
+
+Get Census tracts which intersect within 10 miles of Downtown, Colorado.
+
+```sql
+SELECT *
+FROM OBS_GetBoundariesByPointAndRadius(
+  CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
+  10000 * 1.609, -- 10 miles (10km * conversion to miles)
+  '"us.census.tiger".census_tract')
+```
+
+#### API Example
+
+Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
+
+```text
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetBoundariesByPointAndRadius(CDB_LatLng(39.7392,-104.9903),10000*1609),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
+```
+
+## OBS_GetPointsByPointAndRadius(geometry, radius, boundary_id)
+
+The ```OBS_GetPointsByPointAndRadius(geometry, radius, boundary_id)``` method returns point geometries on boundaries (e.g., a point that lies on a Census tract) and their geographical identifiers that intersect (or are contained by) a circle centered on a point with a radius.
+
+#### Arguments
+
+Name |Description
+--- | ---
+geometry | a point geometry
+radius | radius (in meters)
+geometry_id | a string identifier for a boundary geometry
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html), [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html), or [ST_Within](http://postgis.net/docs/manual-2.2/ST_Within.html) for more
+
+#### Returns
+
+A table with the following columns:
+
+Column Name | Description
+--- | ---
+the_geom | a point geometry (e.g., a point on a US Census tract)
+geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+
+#### Example
+
+Get Census tracts which intersect within 10 miles of Downtown, Colorado.
+
+```sql
+SELECT *
+FROM OBS_GetPointsByPointAndRadius(
+  CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
+  10000 * 1.609, -- 10 miles (10km * conversion to miles)
+  '"us.census.tiger".census_tract')
+```
+
+#### API Example
+
+Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
+
+```text
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetPointsByPointAndRadius(CDB_LatLng(39.7392,-104.9903),10000*1609),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
 ```
 
 # Discovery
@@ -299,7 +474,7 @@ boundary_id | a string identifier for a Boundary geometry (optional)
 
 Key | Description
 --- | ---
-measure_id | the unique id of the measue for use with the ```OBS_GetMeasure``` method
+measure_id | the unique id of the measure for use with the ```OBS_GetMeasure``` method
 name | the human readable name of the measure
 description | a brief description of the measure
 aggregate_type | **sum** are raw count values, **median** are statistical medians, **average** are statistical averages, **undefined** other (e.g. an index value)

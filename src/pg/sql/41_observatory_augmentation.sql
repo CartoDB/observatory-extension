@@ -409,9 +409,13 @@ RETURNS NUMERIC[]
 AS $$
 DECLARE
   result NUMERIC[];
+  geoids TEXT[];
   q_select text;
   q_sum text;
   q text;
+  overlaps_q text;
+  drop_overlaps_q text;
+  geoids_q text;
   i NUMERIC;
 BEGIN
 
@@ -436,29 +440,41 @@ BEGIN
     END IF;
  END LOOP;
 
-  q = format('
-    WITH _overlaps As (
-      SELECT ST_Area(
-        ST_Intersection($1, a.the_geom)
-      ) / ST_Area(a.the_geom) As overlap_fraction,
-      geoid
-      FROM observatory.%I As a
-      WHERE $1 && a.the_geom
-    ),
-    values As (
-    ', geom_table_name);
+  overlaps_q = format('CREATE TEMPORARY TABLE _overlaps ON COMMIT DROP As
+	SELECT ST_Area(
+	ST_Intersection($1, a.the_geom)
+	) / ST_Area(a.the_geom) As overlap_fraction,
+	geoid
+	FROM observatory.%I As a
+	WHERE $1 && a.the_geom;', geom_table_name);
 
+  EXECUTE overlaps_q USING geom;
+
+  geoids_q = 'SELECT array_agg(geoid) FROM _overlaps';
+
+  EXECUTE geoids_q INTO geoids;
+
+  --q = format(' WITH _overlaps As ( SELECT ST_Area( ST_Intersection($1, a.the_geom)) / ST_Area(a.the_geom) As overlap_fraction, geoid FROM observatory.%I As a WHERE $1 && a.the_geom), geoids As ( SELECT geoid FROM _overlaps;), values As ( ', geom_table_name);
+
+  q = format('WITH values As ( ', geom_table_name);
   q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1].tablename));
 
-  q := q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
+  q := q || ' WHERE geoid = ANY($1) ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
   WHERE values.geoid = _overlaps.geoid';
+
+  RAISE NOTICE '%', q;
 
   EXECUTE
     q
   INTO result
-  USING geom;
+  USING geoids;
+
+  drop_overlaps_q = format('DROP TABLE _overlaps;');
+  EXECUTE drop_overlaps_q;
 
   RETURN result;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Erroracoooooo';
 END;
 $$ LANGUAGE plpgsql;
 

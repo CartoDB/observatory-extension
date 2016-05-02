@@ -211,7 +211,8 @@ The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary
 Name | Description
 --- | ---
 point_geometry | a WGS84 polygon geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)  
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns
 
@@ -224,7 +225,8 @@ geom | WKB geometry
 Overwrite a point geometry with a boundary geometry that contains it in your table
 
 ```SQL
-UPDATE tablename SET the_geom = OBS_GetBoundary(the_geom, ' "us.census.tiger".block_group')
+UPDATE tablename
+SET the_geom = OBS_GetBoundary(the_geom, '"us.census.tiger".block_group')
 ```
 
 <!--
@@ -240,7 +242,8 @@ The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geomet
 Name |Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)  
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns
 
@@ -257,15 +260,17 @@ UPDATE tablename
 SET new_column_name = OBS_GetBoundaryId(the_geom, ' "us.census.tiger".block_group')
 ```
 
-## OBS_GetBoundaryById(geometry_id)
+## OBS_GetBoundaryById(geometry_id, boundary_id)
 
-The ```OBS_GetBoundaryById(geometry_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetBoundaryId(point_geometry, boundary_id)``` method described above.
+The ```OBS_GetBoundaryById(geometry_id, boundary_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetBoundaryId(point_geometry, boundary_id)``` method described above.
 
 #### Arguments
 
-Name |Description
+Name | Description
 --- | ---
 geometry_id | a string identifier for a Boundary geometry
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns
 
@@ -277,10 +282,12 @@ geom | a WGS84 polygon geometry
 
 #### Example
 
-Use a table of geometry_id to select the unique boundaries. Useful with the ```Table from query``` option in CartoDB.
+Use a table of geometry_id to select the unique boundaries. Useful with the ```Create Dataset from Query``` option in CartoDB.
 
 ```SQL
-SELECT OBS_GetBoundaryById(geometry_id) the_geom, geometry_id FROM tablename GROUP BY geometry_id
+SELECT OBS_GetBoundaryById(geometry_id) As the_geom, geometry_id
+FROM tablename
+GROUP BY geometry_id
 ```
 
 ## OBS_GetBoundariesByBBox(geometry, geometry_id)

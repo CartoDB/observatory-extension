@@ -290,9 +290,9 @@ FROM tablename
 GROUP BY geometry_id
 ```
 
-## OBS_GetBoundariesByBBox(geometry, geometry_id)
+## OBS_GetBoundariesByGeometry(geometry, geometry_id)
 
-The ```OBS_GetBoundariesByBBox(geometry, geometry_id)``` method returns the boundary geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon.
+The ```OBS_GetBoundariesByGeometry(geometry, geometry_id)``` method returns the boundary geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon.
 
 #### Arguments
 
@@ -301,7 +301,7 @@ Name |Description
 geometry | a bounding box
 geometry_id | a string identifier for a boundary geometry
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
-overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html) or [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html) for more
+overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html), [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html), or [ST_Within](http://postgis.net/docs/manual-2.2/ST_Within.html) for more
 
 #### Returns
 
@@ -318,7 +318,7 @@ Get all Census Tracts in Lower Manhattan (geoids beginning with `36061`) without
 
 ```sql
 SELECT *
-FROM OBS_GetBoundariesByBBox(
+FROM OBS_GetBoundariesByGeometry(
   ST_MakeEnvelope(-74.0251922607,40.6945658517,
                   -73.9651107788,40.7377626342,
                   4326),
@@ -331,12 +331,12 @@ WHERE geom_ref like '36061%'
 Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
 
 ```text
-http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetBoundariesByBBox(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetBoundariesByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
 ```
 
-## OBS_GetPointsByBBox(geometry, geometry_id)
+## OBS_GetPointsByGeometry(geometry, geometry_id)
 
-The ```OBS_GetPointsByBBox(geometry, geometry_id)``` method returns point geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon and lie on the surface of a boundary corresponding to the boundary with same geographical identifiers (e.g., a point that is on a census tract with the same geoid).
+The ```OBS_GetPointsByGeometry(geometry, geometry_id)``` method returns point geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon and lie on the surface of a boundary corresponding to the boundary with same geographical identifiers (e.g., a point that is on a census tract with the same geoid).
 
 #### Arguments
 
@@ -345,7 +345,7 @@ Name |Description
 geometry | a bounding box
 geometry_id | a string identifier for a boundary geometry
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
-overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html) or [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html) for more
+overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html), [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html), or [ST_Within](http://postgis.net/docs/manual-2.2/ST_Within.html) for more
 
 #### Returns
 
@@ -362,7 +362,7 @@ Get points in all Census Tracts in Lower Manhattan (geoids beginning with `36061
 
 ```sql
 SELECT *
-FROM OBS_GetPointsByBBox(
+FROM OBS_GetPointsByGeometry(
   ST_MakeEnvelope(-74.0251922607,40.6945658517,
                   -73.9651107788,40.7377626342,
                   4326),
@@ -375,7 +375,7 @@ WHERE geom_ref like '36061%'
 Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
 
 ```text
-http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetPointsByBBox(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetPointsByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
 ```
 
 ## OBS_GetBoundariesByPointAndRadius(geometry, radius, boundary_id)

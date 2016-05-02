@@ -253,9 +253,6 @@ BEGIN
 
   -- TODO: add timespan in search
   -- TODO: add overlap info in search
-  -- TODO: turn this into a function _OBS_GetGeometryMetadata(geo_ref_name, tablename, and geom_colname)
-  --   SELECT geo_ref_name, tablename, geom_colname INTO a, b, c
-  --     FROM _OBS_GetGeometryMetadata
   SELECT * INTO geoid_colname, target_table, geom_colname
   FROM cdb_observatory._OBS_GetGeometryMetadata(boundary_id);
 
@@ -495,6 +492,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByPointAndRadius(
   overlap_type text DEFAULT 'intersects')
 RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
+DECLARE
+  circle_boundary geometry(Geometry, 4326);
 BEGIN
 
   IF ST_GeometryType(geom) != 'ST_Point'
@@ -543,11 +542,11 @@ BEGIN
           geom_t.id = geom_ct.table_id AND
           geom_ct.column_id = geom_c.id AND
           geom_c.type ILIKE 'geometry'
-      --  AND geom_t.timespan = '%s' <-- put in requested year
-      -- TODO: filter by clipped vs. not so appropriate tablename are unique
-      --       so the limit 1 can be removed
       LIMIT 1
     $string$, boundary_id);
+    --  AND geom_t.timespan = '%s' <-- put in requested year
+    -- TODO: filter by clipped vs. not so appropriate tablename are unique
+    --       so the limit 1 can be removed
 
 END;
 $$ LANGUAGE plpgsql;

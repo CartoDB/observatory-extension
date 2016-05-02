@@ -6,19 +6,19 @@ A list of boundary ids and measure_names for Data Observatory functions.
 
 Boundary name | Boundary ID
 --------------------- | ---
-US Census Block Groups | "us.census.tiger".block_group
-US Census Tracts | "us.census.tiger".census_tract
-US States | "us.census.tiger".state
-US County | "us.census.tiger".county
-US Census Public Use Microdata Areas | "us.census.tiger".puma
-US Census Zip Code Tabulation Areas | "us.census.tiger".zcta5
-Unified School District | "us.census.tiger".school_district_unified
-US Congressional Districts | "us.census.tiger".congressional_district
-Elementary School District | "us.census.tiger".school_district_elementary
-Secondary School District | "us.census.tiger".school_district_secondary
-US Census Blocks | "us.census.tiger".block
+US Census Blocks | us.census.tiger.block
+US Census Block Groups | us.census.tiger.block_group
+US Census Tracts | us.census.tiger.census_tract
+US Census Zip Code Tabulation Areas | us.census.tiger.zcta5
+US Census Public Use Microdata Areas | us.census.tiger.puma
+US States | us.census.tiger.state
+US County | us.census.tiger.county
+US Congressional Districts | us.census.tiger.congressional_district
+Elementary School District | us.census.tiger.school_district_elementary
+Secondary School District | us.census.tiger.school_district_secondary
+Unified School District | us.census.tiger.school_district_unified
 
-## OBS_GetUSCensusMeasure names table
+## OBS_GetUSCensusMeasure Names Table
 
 This list contains human readable names accepted in the ```OBS_GetUSCensusMeasure``` function. For the more comprehensive list of columns available to the ```OBS_GetMeasure``` function, see the [Data Observatory Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
 

@@ -20,7 +20,7 @@ US Census Blocks | "us.census.tiger".block
 
 ## OBS_GetUSCensusMeasure names table
 
-This list contains human readable names accepted in the ```OBS_GetUSCensusMeasure``` function. For the more comprehensive list of columns available to the ```OBS_GetMeasure``` function, see the [Data Observatory Catalog](http://cartodb.github.io/bigmetadata/index.html).
+This list contains human readable names accepted in the ```OBS_GetUSCensusMeasure``` function. For the more comprehensive list of columns available to the ```OBS_GetMeasure``` function, see the [Data Observatory Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
 
 Measure name   |  Measure description
 --- | ---

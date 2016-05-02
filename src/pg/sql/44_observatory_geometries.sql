@@ -263,7 +263,7 @@ BEGIN
   IF lower(overlap_type) NOT IN ('contains', 'intersects', 'within')
   THEN
     -- recognized overlap type (map to ST_Contains, ST_Intersects, and ST_Within)
-    RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose contains, within, intersects)', overlap_type;
+    RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose intersects, within, or contains)', overlap_type;
   ELSIF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
       RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_MultiPolygon'' or ''ST_Polygon''', ST_GeometryType(geom);
@@ -321,7 +321,7 @@ $$ LANGUAGE plpgsql;
 --                          with boundary_id, and time_span
 --     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
 --
-
+-- TODO: move to ST_DWithin instead of buffer + intersects?
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByPointAndRadius(
   geom geometry(Geometry, 4326), -- point
   radius numeric, -- radius in meters
@@ -334,7 +334,12 @@ DECLARE
   circle_boundary geometry(Geometry, 4326);
 BEGIN
 
-  circle_boundary := ST_Buffer(geom::geography, radius)::geometry;
+  IF ST_GeometryType(geom) != 'ST_Point'
+  THEN
+    RAISE EXCEPTION 'Input geometry ''%'' is not a point', ST_AsText(geom);
+  ELSE
+    circle_boundary := ST_Buffer(geom::geography, radius)::geometry;
+  END IF;
 
   RETURN QUERY SELECT *
                FROM cdb_observatory.OBS_GetBoundariesByBBox(
@@ -382,7 +387,7 @@ BEGIN
 
   IF lower(overlap_type) NOT IN ('contains', 'within', 'intersects')
   THEN
-    RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose contains, within, or intersects)', overlap_type;
+    RAISE EXCEPTION 'Overlap type ''%'' is not an accepted type (choose intersects, within, or contains)', overlap_type;
   ELSIF ST_GeometryType(geom) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
       RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_MultiPolygon'' or ''ST_Polygon''', ST_GeometryType(geom);
@@ -446,6 +451,13 @@ RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 BEGIN
 
+  IF ST_GeometryType(geom) != 'ST_Point'
+  THEN
+    RAISE EXCEPTION 'Input geometry ''%'' is not a point', ST_AsText(geom);
+  ELSE
+    circle_boundary := ST_Buffer(geom::geography, radius)::geometry;
+  END IF;
+
   RETURN QUERY SELECT *
                FROM cdb_observatory.OBS_GetPointsByBBox(
                         ST_Buffer(geom::geography, radius)::geometry,
@@ -481,10 +493,11 @@ BEGIN
          WHERE reltype = 'geom_ref'
            AND target_id = '%s'
          )
-      AND geoid_ct.table_id = geom_t.id and
-          geom_t.id = geom_ct.table_id and
-          geom_ct.column_id = geom_c.id and
+      AND geoid_ct.table_id = geom_t.id AND
+          geom_t.id = geom_ct.table_id AND
+          geom_ct.column_id = geom_c.id AND
           geom_c.type ILIKE 'geometry'
+      --  AND geom_t.timespan = '%s' <-- put in requested year
       -- TODO: filter by clipped vs. not so appropriate tablename are unique
       --       so the limit 1 can be removed
       LIMIT 1

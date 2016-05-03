@@ -13,34 +13,34 @@
 -- timespan implictly null
 SELECT cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".census_tract'
+  'us.census.tiger.census_tract'
 ) = :'cartodb_census_tract_geometry' As OBS_GetBoundary_cartodb_census_tract;
 
 -- expect most recent census county boundary (brooklyn) at cartodb nyc
 -- timespan implictly null
 SELECT cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".county'
+  'us.census.tiger.county'
 ) = :'cartodb_county_geometry' As OBS_GetBoundary_cartodb_county;
 
 -- expect null geometry since boundary_id is null
 -- timespan implictly null
 SELECT cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".non_existent'
+  'us.census.tiger.non_existent'
 ) IS NULL As OBS_GetBoundary_non_existent_boundary_id;
 
 -- expect null geometry since there are no census tracts at null island
 -- timespan implictly null
 SELECT cdb_observatory.OBS_GetBoundary(
   CDB_LatLng(0, 0),
-  '"us.census.tiger".census_tract'
+  'us.census.tiger.census_tract'
 ) IS NULL As OBS_GetBoundary_null_island_census_tract;
 
 -- expect census tract boundary at cartodb nyc from 2013
 SELECT cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".census_tract',
+  'us.census.tiger.census_tract',
   '2013'
 ) = :'cartodb_census_tract_geometry' As OBS_GetBoundary_year_census_tract;
 
@@ -48,7 +48,7 @@ SELECT cdb_observatory.OBS_GetBoundary(
 -- look for census tracts a year before census released them
 SELECT cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".census_tract',
+  'us.census.tiger.census_tract',
   '1988'
 ) IS NULL As OBS_GetBoundary_unlisted_year;
 
@@ -57,13 +57,13 @@ SELECT cdb_observatory.OBS_GetBoundary(
 -- should give back '36047048500', the geoid of cartodb's census tract
 SELECT cdb_observatory.OBS_GetBoundaryId(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".census_tract'
+  'us.census.tiger.census_tract'
 ) = '36047048500'::text As OBS_GetBoundaryId_cartodb_census_tract;
 
 -- should give back '36047048500', the geoid of cartodb's census tract
 SELECT cdb_observatory.OBS_GetBoundaryId(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".census_tract',
+  'us.census.tiger.census_tract',
   '2013'
 ) = '36047048500'::text As OBS_GetBoundaryId_cartodb_census_tract_with_year;
 
@@ -71,14 +71,14 @@ SELECT cdb_observatory.OBS_GetBoundaryId(
 --  Brooklyn, NY)
 SELECT cdb_observatory.OBS_GetBoundaryId(
   cdb_observatory._TestPoint(),
-  '"us.census.tiger".county',
+  'us.census.tiger.county',
   '2013'
 ) = '36047'::text As OBS_GetBoundaryId_cartodb_county_with_year;
 
 -- should give back null since there is not a census tract at null island
 SELECT cdb_observatory.OBS_GetBoundaryId(
   CDB_LatLng(0, 0),
-  '"us.census.tiger".census_tract'
+  'us.census.tiger.census_tract'
 ) IS NULL As OBS_GetBoundaryId_null_island;
 
 -- OBS_GetBoundaryById
@@ -87,29 +87,29 @@ SELECT cdb_observatory.OBS_GetBoundaryId(
 
 SELECT cdb_observatory.OBS_GetBoundaryById(
   '36047',
-  '"us.census.tiger".county'
+  'us.census.tiger.county'
 ) = :'cartodb_county_geometry' As OBS_GetBoundaryById_cartodb_county;
 
 -- Should match output of GetBoundary on similar inputs
 SELECT cdb_observatory.OBS_GetBoundaryById(
   '36047', -- cartodb's county
-  '"us.census.tiger".county'
+  'us.census.tiger.county'
 ) = cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(), -- CartoDB's office
-  '"us.census.tiger".county'
+  'us.census.tiger.county'
 ) As OBS_GetBoundaryById_compared_with_obs_GetBoundary;
 
 -- should give null since boundary_id does not match geometry reference id
 SELECT cdb_observatory.OBS_GetBoundaryById(
   '36047',
-  '"us.census.tiger".county',
+  'us.census.tiger.county',
   '2013'
 ) = :'cartodb_county_geometry' OBS_GetBoundaryById_boundary_id_mismatch_geom_id;
 
 -- should give null since boundary_id does not match geometry reference id
 SELECT cdb_observatory.OBS_GetBoundaryById(
   '36047',
-  '"us.census.tiger".census_tract'
+  'us.census.tiger.census_tract'
 ) IS NULL As OBS_GetBoundaryById_boundary_id_mismatch_geom_id;
 
 \i test/sql/drop_fixtures.sql

@@ -184,7 +184,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundaryById(
   geometry_id text,            -- ex: '36047'
-  boundary_id text,            -- ex: '"us.census.tiger".county'
+  boundary_id text,            -- ex: 'us.census.tiger.county'
   time_span text DEFAULT NULL  --ex: '2009'
 )
 RETURNS geometry(geometry, 4326)

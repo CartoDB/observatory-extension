@@ -122,9 +122,9 @@ Done.
  Wealthy, urban without Kids
 (1 row)
 
-       obs_getcategory       
------------------------------
- Wealthy, urban without Kids
+        obs_getcategory        
+-------------------------------
+ Low income, mix of minorities
 (1 row)
 
  obs_getpopulation 
@@ -152,9 +152,9 @@ Done.
  Wealthy, urban without Kids
 (1 row)
 
-   obs_getuscensuscategory   
------------------------------
- Wealthy, urban without Kids
+    obs_getuscensuscategory    
+-------------------------------
+ Low income, mix of minorities
 (1 row)
 
 Dropping obs_table.sql fixture table...

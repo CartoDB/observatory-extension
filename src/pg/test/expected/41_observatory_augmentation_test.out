@@ -122,7 +122,7 @@ Done.
  Wealthy, urban without Kids
 (1 row)
 
-       obs_getcategory       
+         obs_getcategory       
 -------------------------------
  Low income, mix of minorities
 (1 row)
@@ -152,7 +152,7 @@ Done.
  Wealthy, urban without Kids
 (1 row)
 
-   obs_getuscensuscategory   
+     obs_getuscensuscategory   
 -------------------------------
  Low income, mix of minorities
 (1 row)

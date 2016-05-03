@@ -100,9 +100,9 @@ SELECT
   cdb_observatory._OBS_LookupCensusHuman(
     Array['gini_index']
   );
-     _obs_lookupcensushuman      
----------------------------------
- {"us.census.acs.B19083001"}
+  _obs_lookupcensushuman   
+---------------------------
+ {us.census.acs.B19083001}
 (1 row)
 
 -- should be empty array
@@ -144,9 +144,9 @@ SELECT cdb_observatory._OBS_GetRelatedColumn(
     ],
      'denominator'
  );
-                _obs_getrelatedcolumn                
------------------------------------------------------
- {"es.ine.total_pop",NULL,"us.census.acs.B01001001"}
+              _obs_getrelatedcolumn              
+-------------------------------------------------
+ {es.ine.total_pop,NULL,us.census.acs.B01001001}
 (1 row)
 
 -- should give back a standardized measure name

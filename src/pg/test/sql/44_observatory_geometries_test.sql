@@ -112,4 +112,219 @@ SELECT cdb_observatory.OBS_GetBoundaryById(
   'us.census.tiger.census_tract'
 ) IS NULL As OBS_GetBoundaryById_boundary_id_mismatch_geom_id;
 
+-- _OBS_GetBoundariesByGeometry
+
+-- check that all census tracts intersecting with the geometry are returned
+-- order them to ensure that the same values are returned
+SELECT
+  array_agg(geom_refs) = Array['36047025700','36047028501','36047038900','36047039100','36047042300','36047042500','36047042700','36047044900','36047045300','36047048500','36047048900','36047049100','36047049300','36047050500','36047050700'] As _OBS_GetBoundariesByGeometry_tracts_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory._OBS_GetBoundariesByGeometry(
+    -- near CartoDB's office
+    ST_MakeEnvelope(-73.9452409744,40.6988851644,-73.9280319214,40.7101254524,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- Null Island area
+SELECT
+  array_length(array_agg(geom_refs), 1) IS NULL As _OBS_GetBoundariesByGeometry_tracts_around_null_island
+FROM (
+  SELECT *
+  FROM cdb_observatory._OBS_GetBoundariesByGeometry(
+    -- around null island
+    ST_MakeEnvelope(-0.1400756836,-0.2114863362,0.1455688477,0.2059932086,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- OBS_GetBoundariesByGeometry
+
+-- check that all census tracts intersecting with the geometry are returned
+-- order them to ensure that the same values are returned
+SELECT
+  array_agg(geom_refs) = Array['36047025700','36047028501','36047038900','36047039100','36047042300','36047042500','36047042700','36047044900','36047045300','36047048500','36047048900','36047049100','36047049300','36047050500','36047050700'] As OBS_GetBoundariesByGeometry_tracts_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByGeometry(
+    -- near CartoDB's office
+    ST_MakeEnvelope(-73.9452409744,40.6988851644,-73.9280319214,40.7101254524,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- Null Island area
+SELECT
+  array_length(array_agg(geom_refs), 1) IS NULL As OBS_GetBoundariesByGeometry_tracts_around_null_island
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByGeometry(
+    -- around null island
+    ST_MakeEnvelope(-0.1400756836,-0.2114863362,0.1455688477,0.2059932086,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- OBS_GetBoundariesByPointAndRadius
+
+-- check that all census tracts intersecting with the geometry are returned
+-- order them to ensure that the same values are returned
+SELECT
+  array_agg(geom_refs) = Array['36047038900','36047039100','36047042500','36047042700','36047045300','36047048500','36047048900','36047049100','36047049300'] As OBS_GetBoundariesByPointAndRadius_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByPointAndRadius(
+    -- 500 meter circle centered on CartoDB's office
+    cdb_observatory._testPoint(),
+    500,
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- Null Island area
+SELECT
+  array_length(array_agg(geom_refs), 1) IS NULL As OBS_GetBoundariesByPointAndRadius_around_null_island
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByPointAndRadius(
+    -- around null island
+    ST_SetSRID(ST_Point(0, 0), 4326),
+    500,
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- _OBS_GetPointsByGeometry
+
+-- check that all census tracts intersecting with the geometry are returned
+-- order them to ensure that the same values are returned
+SELECT
+  array_agg(geom_refs) = Array['36047025700','36047028501','36047038900','36047039100','36047042300','36047042500','36047042700','36047044900','36047045300','36047048500','36047048900','36047049100','36047049300','36047050500','36047050700'] As _OBS_GetPointsByGeometry_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory._OBS_GetPointsByGeometry(
+    -- around CartoDB's Brooklyn office
+    ST_MakeEnvelope(-73.9452409744,40.6988851644,
+                    -73.9280319214,40.7101254524,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- Null Island area
+SELECT
+  array_length(array_agg(geom_refs), 1) IS NULL As _OBS_GetPointsByGeometry_around_null_island
+FROM (
+  SELECT *
+  FROM cdb_observatory._OBS_GetPointsByGeometry(
+    -- around null island
+    ST_MakeEnvelope(-0.1400756836,-0.2114863362,
+                     0.1455688477, 0.2059932086,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+
+-- OBS_GetPointsByGeometry
+
+-- check that all census tracts intersecting with the geometry are returned
+-- order them to ensure that the same values are returned
+SELECT
+  array_agg(geom_refs) = Array['36047025700','36047028501','36047038900','36047039100','36047042300','36047042500','36047042700','36047044900','36047045300','36047048500','36047048900','36047049100','36047049300','36047050500','36047050700'] As OBS_GetPointsByGeometry_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByGeometry(
+    -- around CartoDB's Brooklyn office
+    ST_MakeEnvelope(-73.9452409744,40.6988851644,
+                    -73.9280319214,40.7101254524,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+SELECT
+  array_agg(geom_refs) = Array['36047025700','36047028501','36047038900','36047039100','36047042300','36047042500','36047042700','36047044900','36047045300','36047048500','36047048900','36047049100','36047049300','36047050500','36047050700'] As OBS_GetPointsByGeometry_around_cartodb_2013
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByGeometry(
+    -- around CartoDB's Brooklyn office
+    ST_MakeEnvelope(-73.9452409744,40.6988851644,
+                    -73.9280319214,40.7101254524,
+                    4326),
+    '"us.census.tiger".census_tract',
+    '2013')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- Null Island area
+SELECT
+  array_length(array_agg(geom_refs), 1) IS NULL As OBS_GetPointsByGeometry_around_null_island
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByGeometry(
+    -- around null island
+    ST_MakeEnvelope(-0.1400756836,-0.2114863362,
+                     0.1455688477, 0.2059932086,
+                    4326),
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- OBS_GetPointsByPointAndRadius
+
+-- check that all census tracts intersecting with the geometry are returned
+-- order them to ensure that the same values are returned
+SELECT
+  array_agg(geom_refs) = Array['36047038900','36047039100','36047042500','36047042700','36047045300','36047048500','36047048900','36047049100','36047049300'] As OBS_GetPointsByPointAndRadius_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetPointsByPointAndRadius(
+    -- around CartoDB's Brooklyn office
+    cdb_observatory._testpoint(),
+    500,
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+SELECT
+  array_agg(geom_refs) = Array['36047038900','36047039100','36047042500','36047042700','36047045300','36047048500','36047048900','36047049100','36047049300'] As OBS_GetPointsByPointAndRadius_around_cartodb_2013
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetPointsByPointAndRadius(
+    -- around CartoDB's Brooklyn office
+    cdb_observatory._testpoint(),
+    500,
+    '"us.census.tiger".census_tract',
+    '2013')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- Null Island area
+SELECT
+  array_length(array_agg(geom_refs), 1) IS NULL As OBS_GetPointsByPointAndRadius_around_null_island
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetPointsByPointAndRadius(
+    -- around null island
+    ST_SetSRID(ST_Point(0, 0), 4326),
+    500,
+    '"us.census.tiger".census_tract')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+-- _OBS_GetGeometryMetadata
+
+SELECT
+  geoid_colname = 'geoid' As geoid_name_matches,
+  target_table = 'obs_a92e1111ad3177676471d66bb8036e6d057f271b' As table_name_matches,
+  geom_colname = 'the_geom' As geom_name_matches
+FROM cdb_observatory._OBS_GetGeometryMetadata('"us.census.tiger".census_tract')
+     As m(geoid_colname, target_table, geom_colname);
+
 \i test/sql/drop_fixtures.sql

@@ -87,7 +87,7 @@ SELECT
     cdb_observatory._TestPoint(),
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
     (Array['{"colname":"total_pop","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  ))[1]::text  = '{"value":4809.33511352425,"name":"Total Population","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
+  ))[1]::text = '{"value":4809.07989821893,"name":"Total Population","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
   as OBS_GetPoints_for_test_point;
 -- what happens at null island
 
@@ -109,7 +109,7 @@ SELECT
     cdb_observatory._TestArea(),
     'obs_a92e1111ad3177676471d66bb8036e6d057f271b'::text, -- see example in obs_geomtable
     Array['{"colname":"total_pop","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json]
-))[1]::text = '{"value":1570.72353789469,"name":"Total Population","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
+))[1]::text = '{"value":1570.78845496678,"name":"Total Population","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
   as OBS_GetPolygons_for_test_point;
 
 -- see what happens around null island

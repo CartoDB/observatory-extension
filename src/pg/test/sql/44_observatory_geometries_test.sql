@@ -124,7 +124,7 @@ FROM (
     -- near CartoDB's office
     ST_MakeEnvelope(-73.9452409744,40.6988851644,-73.9280319214,40.7101254524,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -137,7 +137,7 @@ FROM (
     -- around null island
     ST_MakeEnvelope(-0.1400756836,-0.2114863362,0.1455688477,0.2059932086,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -153,7 +153,7 @@ FROM (
     -- near CartoDB's office
     ST_MakeEnvelope(-73.9452409744,40.6988851644,-73.9280319214,40.7101254524,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -166,7 +166,7 @@ FROM (
     -- around null island
     ST_MakeEnvelope(-0.1400756836,-0.2114863362,0.1455688477,0.2059932086,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -182,7 +182,7 @@ FROM (
     -- 500 meter circle centered on CartoDB's office
     cdb_observatory._testPoint(),
     500,
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -195,7 +195,7 @@ FROM (
     -- around null island
     ST_SetSRID(ST_Point(0, 0), 4326),
     500,
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -212,7 +212,7 @@ FROM (
     ST_MakeEnvelope(-73.9452409744,40.6988851644,
                     -73.9280319214,40.7101254524,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -226,7 +226,7 @@ FROM (
     ST_MakeEnvelope(-0.1400756836,-0.2114863362,
                      0.1455688477, 0.2059932086,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -244,7 +244,7 @@ FROM (
     ST_MakeEnvelope(-73.9452409744,40.6988851644,
                     -73.9280319214,40.7101254524,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -257,7 +257,7 @@ FROM (
     ST_MakeEnvelope(-73.9452409744,40.6988851644,
                     -73.9280319214,40.7101254524,
                     4326),
-    '"us.census.tiger".census_tract',
+    'us.census.tiger.census_tract',
     '2013')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
@@ -272,7 +272,7 @@ FROM (
     ST_MakeEnvelope(-0.1400756836,-0.2114863362,
                      0.1455688477, 0.2059932086,
                     4326),
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -288,7 +288,7 @@ FROM (
     -- around CartoDB's Brooklyn office
     cdb_observatory._testpoint(),
     500,
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -300,7 +300,7 @@ FROM (
     -- around CartoDB's Brooklyn office
     cdb_observatory._testpoint(),
     500,
-    '"us.census.tiger".census_tract',
+    'us.census.tiger.census_tract',
     '2013')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
@@ -314,7 +314,7 @@ FROM (
     -- around null island
     ST_SetSRID(ST_Point(0, 0), 4326),
     500,
-    '"us.census.tiger".census_tract')
+    'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -324,7 +324,7 @@ SELECT
   geoid_colname = 'geoid' As geoid_name_matches,
   target_table = 'obs_a92e1111ad3177676471d66bb8036e6d057f271b' As table_name_matches,
   geom_colname = 'the_geom' As geom_name_matches
-FROM cdb_observatory._OBS_GetGeometryMetadata('"us.census.tiger".census_tract')
+FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract')
      As m(geoid_colname, target_table, geom_colname);
 
 \i test/sql/drop_fixtures.sql

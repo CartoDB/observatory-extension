@@ -32,7 +32,7 @@ AS $$
   BEGIN
 
   IF time_span IS NULL THEN
-    time_span = '2009 - 2013';
+    time_span = '2010 - 2014';
   END IF;
 
   IF boundary_id IS NULL THEN
@@ -318,7 +318,7 @@ BEGIN
 
   IF time_span IS NULL THEN
     -- TODO we should determine latest timespan for this measure
-    time_span := '2009 - 2013';
+    time_span := '2010 - 2014';
   END IF;
 
   IF normalize ILIKE 'area' THEN
@@ -370,7 +370,7 @@ BEGIN
 
   IF time_span IS NULL THEN
     -- TODO we should determine latest timespan for this measure
-    time_span := '2009 - 2013';
+    time_span := '2010 - 2014';
   END IF;
 
   EXECUTE '
@@ -640,7 +640,7 @@ target_cols := Array[
              array_agg(_OBS_GET->>'value') As vals
            FROM cdb_observatory._OBS_Get($1,
                         $2,
-                        '2009 - 2013',
+                        '2010 - 2014',
                         $3)
 
         ), percentiles As (
@@ -681,7 +681,7 @@ DECLARE
 BEGIN
 
   IF time_span IS NULL THEN
-    time_span = '2009 - 2013';
+    time_span = '2010 - 2014';
   END IF;
 
   IF boundary_id IS NULL THEN

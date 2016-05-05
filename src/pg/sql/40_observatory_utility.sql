@@ -5,7 +5,8 @@
 -- geometries.
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GeomTable(
   geom geometry,
-  geometry_id text
+  geometry_id text,
+  time_span text DEFAULT NULL
 )
   RETURNS TEXT
 AS $$
@@ -22,10 +23,12 @@ BEGIN
       WHERE type ILIKE ''geometry''
         AND coltable.column_id = col.id
         AND coltable.table_id = tab.id
-        AND col.id = $1
+        AND col.id = $1,
+        AND CASE WHEN $2 IS NOT NULL THEN timespan = $2 ELSE TRUE END
+      ORDER BY timespan DESC LIMIT 1
     )
     '
-  USING geometry_id, geom
+  USING geometry_id, geom, time_span
   INTO result;
 
   return result;

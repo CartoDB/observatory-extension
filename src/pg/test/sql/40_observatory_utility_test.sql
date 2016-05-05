@@ -1,6 +1,6 @@
-\i test/sql/load_fixtures.sql
-
+\pset format unaligned
 \set ECHO all
+\i test/fixtures/load_fixtures.sql
 
 -- OBS_GeomTable
 -- get table with known geometry_id
@@ -8,7 +8,8 @@
 SELECT
   cdb_observatory._OBS_GeomTable(
     ST_SetSRID(ST_Point(-74.0059, 40.7128), 4326),
-    'us.census.tiger.census_tract'
+    'us.census.tiger.census_tract',
+    '2014'
   );
 
 -- get null for unknown geometry_id
@@ -39,10 +40,9 @@ SELECT
     Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01001001'],
     '2009 - 2013') a
 )
-select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_1,
-       (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_2
+select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null}' as test_get_obs_column_with_geoid_and_census_1,
+       (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null}' as test_get_obs_column_with_geoid_and_census_2
 from result;
-
 
 -- should be null-valued
 WITH result as (
@@ -80,4 +80,4 @@ SELECT cdb_observatory._OBS_GetRelatedColumn(
 -- should give back a standardized measure name
 SELECT cdb_observatory._OBS_StandardizeMeasureName('test 343 %% 2 qqq }}{{}}');
 
-\i test/sql/drop_fixtures.sql
+\i test/fixtures/drop_fixtures.sql

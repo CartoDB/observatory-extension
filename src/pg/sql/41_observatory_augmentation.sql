@@ -32,7 +32,7 @@ AS $$
   BEGIN
 
   IF time_span IS NULL THEN
-    time_span = '2010 - 2014';
+    time_span = '2009 - 2013';
   END IF;
 
   IF boundary_id IS NULL THEN

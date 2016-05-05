@@ -85,7 +85,8 @@ SELECT
 SELECT cdb_observatory.OBS_GetSegmentSnapshot(
     cdb_observatory._TestPoint(),
     'us.census.tiger.census_tract'
-)::text = '{"segment_name":"SS_segment_10_clusters","us.census.acs.B01001001_quantile":"0.234783783783784","us.census.acs.B01001002_quantile":"0.422405405405405","us.census.acs.B01001026_quantile":"0.0987567567567568","us.census.acs.B01002001_quantile":"0.0715","us.census.acs.B03002003_quantile":"0.295310810810811","us.census.acs.B03002004_quantile":"0.407189189189189","us.census.acs.B03002006_quantile":"0.625608108108108","us.census.acs.B03002012_quantile":"0.795202702702703","us.census.acs.B05001006_quantile":"0.703797297297297","us.census.acs.B08006001_quantile":"0.59227027027027","us.census.acs.B08006002_quantile":"0.0180540540540541","us.census.acs.B08006008_quantile":"0.993756756756757","us.census.acs.B08006009_quantile":"0.728162162162162","us.census.acs.B08006011_quantile":"0.995972972972973","us.census.acs.B08006015_quantile":"0.929135135135135","us.census.acs.B08006017_quantile":"0.625432432432432","us.census.acs.B09001001_quantile":"0.0386081081081081","us.census.acs.B11001001_quantile":"0.157121621621622","us.census.acs.B14001001_quantile":"0.241878378378378","us.census.acs.B14001002_quantile":"0.173783783783784","us.census.acs.B14001005_quantile":"0.0380675675675676","us.census.acs.B14001006_quantile":"0.0308108108108108","us.census.acs.B14001007_quantile":"0.0486216216216216","us.census.acs.B14001008_quantile":"0.479743243243243","us.census.acs.B15003001_quantile":"0.297675675675676","us.census.acs.B15003017_quantile":"0.190351351351351","us.census.acs.B15003022_quantile":"0.802513513513514","us.census.acs.B15003023_quantile":"0.757148648648649","us.census.acs.B16001001_quantile":"0.255405405405405","us.census.acs.B16001002_quantile":"0.196094594594595","us.census.acs.B16001003_quantile":"0.816851351351351","us.census.acs.B17001001_quantile":"0.252513513513514","us.census.acs.B17001002_quantile":"0.560054054054054","us.census.acs.B19013001_quantile":"0.777472972972973","us.census.acs.B19083001_quantile":"0.336932432432432","us.census.acs.B19301001_quantile":"0.655378378378378","us.census.acs.B25001001_quantile":"0.141810810810811","us.census.acs.B25002003_quantile":"0.362824324324324","us.census.acs.B25004002_quantile":"0.463837837837838","us.census.acs.B25004004_quantile":"0","us.census.acs.B25058001_quantile":"0.939040540540541","us.census.acs.B25071001_quantile":"0.419445945945946","us.census.acs.B25075001_quantile":"0.0387972972972973","us.census.acs.B25075025_quantile":"0"}' as test_point_segmentation;
+)::text =
+ '{"segment_name":"Spielman-Singleton Segments: 10 Clusters","us.census.acs.B01001001_quantile":"0.234783783783784","us.census.acs.B01001002_quantile":"0.422405405405405","us.census.acs.B01001026_quantile":"0.0987567567567568","us.census.acs.B01002001_quantile":"0.0715","us.census.acs.B03002003_quantile":"0.295310810810811","us.census.acs.B03002004_quantile":"0.407189189189189","us.census.acs.B03002006_quantile":"0.625608108108108","us.census.acs.B03002012_quantile":"0.795202702702703","us.census.acs.B05001006_quantile":"0.703797297297297","us.census.acs.B08006001_quantile":"0.59227027027027","us.census.acs.B08006002_quantile":"0.0180540540540541","us.census.acs.B08006008_quantile":"0.993756756756757","us.census.acs.B08006009_quantile":"0.728162162162162","us.census.acs.B08006011_quantile":"0.995972972972973","us.census.acs.B08006015_quantile":"0.929135135135135","us.census.acs.B08006017_quantile":"0.625432432432432","us.census.acs.B09001001_quantile":"0.0386081081081081","us.census.acs.B11001001_quantile":"0.157121621621622","us.census.acs.B14001001_quantile":"0.241878378378378","us.census.acs.B14001002_quantile":"0.173783783783784","us.census.acs.B14001005_quantile":"0.0380675675675676","us.census.acs.B14001006_quantile":"0.0308108108108108","us.census.acs.B14001007_quantile":"0.0486216216216216","us.census.acs.B14001008_quantile":"0.479743243243243","us.census.acs.B15003001_quantile":"0.297675675675676","us.census.acs.B15003017_quantile":"0.190351351351351","us.census.acs.B15003022_quantile":"0.802513513513514","us.census.acs.B15003023_quantile":"0.757148648648649","us.census.acs.B16001001_quantile":"0.255405405405405","us.census.acs.B16001002_quantile":"0.196094594594595","us.census.acs.B16001003_quantile":"0.816851351351351","us.census.acs.B17001001_quantile":"0.252513513513514","us.census.acs.B17001002_quantile":"0.560054054054054","us.census.acs.B19013001_quantile":"0.777472972972973","us.census.acs.B19083001_quantile":"0.336932432432432","us.census.acs.B19301001_quantile":"0.655378378378378","us.census.acs.B25001001_quantile":"0.141810810810811","us.census.acs.B25002003_quantile":"0.362824324324324","us.census.acs.B25004002_quantile":"0.463837837837838","us.census.acs.B25004004_quantile":"0","us.census.acs.B25058001_quantile":"0.939040540540541","us.census.acs.B25071001_quantile":"0.419445945945946","us.census.acs.B25075001_quantile":"0.0387972972972973","us.census.acs.B25075025_quantile":"0"}' as test_point_segmentation;
 
 -- segmentation around null island
 SELECT cdb_observatory.OBS_GetSegmentSnapshot(
@@ -101,8 +102,9 @@ WITH result as (
       'us.census.tiger.census_tract'
   )
 )
-  select (expected)[1]::text = '{"category":"Wealthy, urban without Kids","name":"SS_segment_10_clusters","tablename":"obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_1,
-  (expected)[2]::text ='{"category":"Wealthy, urban without Kids","name":"SS_segment_10_clusters","tablename":"obs_11ee8b82c877c073438bc935a91d3dfccef875d1","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_2
+  select (expected)[1]::text = '{"category":"Wealthy, urban without Kids","name":"Spielman-Singleton Segments: 10 Clusters","tablename":"obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_1,
+  (expected)[2]::text = '{"category":"Wealthy, urban without Kids","name":"Spielman-Singleton Segments: 10 Clusters","tablename":"obs_11ee8b82c877c073438bc935a91d3dfccef875d1","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_2,
+  array_length(expected, 1)
   from result;
 
 WITH result as (
@@ -170,11 +172,11 @@ SELECT cdb_observatory.obs_getuscensusmeasure(
 
 -- Point-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
-  cdb_observatory._testpoint(), 'SS Segment, 10 clusters');
+  cdb_observatory._testpoint(), 'Spielman-Singleton Segments: 10 Clusters');
 
 -- Area-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
-  cdb_observatory._testarea(), 'SS Segment, 10 clusters');
+  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters');
 
 
 \i test/fixtures/drop_fixtures.sql

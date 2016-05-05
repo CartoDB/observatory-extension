@@ -24,7 +24,7 @@ BEGIN
         AND coltable.column_id = col.id
         AND coltable.table_id = tab.id
         AND col.id = $1
-        AND CASE WHEN $2::TEXT IS NOT NULL THEN timespan ILIKE $2::TEXT ELSE TRUE END
+        AND CASE WHEN $3::TEXT IS NOT NULL THEN timespan ILIKE $3::TEXT ELSE TRUE END
       ORDER BY timespan DESC LIMIT 1
     )
     '

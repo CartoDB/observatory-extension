@@ -156,11 +156,10 @@ DECLARE
 BEGIN
 
   geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
-  RAISE NOTICE 'geom_table_name: %', geom_table_name;
 
   IF geom_table_name IS NULL
   THEN
-     RAISE NOTICE 'Point % is outside of the data region', geom;
+     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
      RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
   END IF;
 
@@ -170,15 +169,13 @@ BEGIN
                                        $3);'
   INTO   data_table_info
   using geometry_level, column_ids, time_span;
-  
-  RAISE NOTICE 'data_table_info: %', data_table_info::text;
-    
+
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
+    RAISE NOTICE 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
     results := cdb_observatory._OBS_GetPoints(geom,
                              geom_table_name,
                              data_table_info);
-    RAISE NOTICE 'results: %', results;
 
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
@@ -187,14 +184,14 @@ BEGIN
                                geom_table_name,
                                data_table_info);
   END IF;
-  
+
   RETURN QUERY
   EXECUTE
   $query$
     SELECT unnest($1)
   $query$
   USING results;
-  
+
 END;
 $$ LANGUAGE plpgsql;
 
@@ -273,27 +270,27 @@ BEGIN
   ((data_table_info)[1])->>'tablename',
   geoid
   );
-  
+
   EXECUTE
     query
   INTO result
   USING geom;
-  
-  EXECUTE 
+
+  EXECUTE
     $query$
-     select array_agg(row_to_json(t)) from(
-      select values as value,
-              meta->>'name'  as name, 
-              meta->>'tablename' as tablename,
-              meta->>'aggregate' as aggregate,
-              meta->>'type'  as type,
-              meta->>'description' as description
-             from (select unnest($1) as values, unnest($2) as meta) b
+     SELECT array_agg(row_to_json(t)) FROM (
+      SELECT values As value,
+              meta->>'name' As name,
+              meta->>'tablename' As tablename,
+              meta->>'aggregate' As aggregate,
+              meta->>'type'  As type,
+              meta->>'description' As description
+             FROM (SELECT unnest($1) As values, unnest($2) As meta) b
       ) t
     $query$
     INTO json_result
     USING result, data_table_info;
-  
+
   RETURN json_result;
 END;
 $$ LANGUAGE plpgsql;
@@ -374,7 +371,7 @@ BEGIN
 
   IF time_span IS NULL THEN
     -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
+    time_span := '2009 - 2013';
   END IF;
 
   EXECUTE '
@@ -533,27 +530,27 @@ BEGIN
 
   q := q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
   WHERE values.geoid = _overlaps.geoid';
-  
+
   EXECUTE
     q
   INTO result
   USING geom;
-  
-  EXECUTE 
+
+  EXECUTE
     $query$
-     select array_agg(row_to_json(t)) from(
-      select values as value,
-              meta->>'name'  as name, 
-              meta->>'tablename' as tablename,
-              meta->>'aggregate' as aggregate,
-              meta->>'type'  as type,
-              meta->>'description' as description
-             from (select unnest($1) as values, unnest($2) as meta) b
+     SELECT array_agg(row_to_json(t)) FROM (
+      SELECT values As value,
+              meta->>'name' As name,
+              meta->>'tablename' As tablename,
+              meta->>'aggregate' As aggregate,
+              meta->>'type' As type,
+              meta->>'description' As description
+             FROM (SELECT unnest($1) As values, unnest($2) As meta) b
       ) t
     $query$
     INTO json_result
     USING result, data_table_info;
-  
+
   RETURN json_result;
 END;
 $$ LANGUAGE plpgsql;
@@ -564,7 +561,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
   geom geometry,
   boundary_id text DEFAULT NULL
 )
-RETURNS JSON 
+RETURNS JSON
 AS $$
 DECLARE
   target_cols text[];
@@ -644,23 +641,23 @@ target_cols := Array[
              array_agg(_OBS_GET->>'value') As vals
            FROM cdb_observatory._OBS_Get($1,
                         $2,
-                        '2010 - 2014',
+                        '2009 - 2013',
                         $3)
 
         ), percentiles As (
            %s
          FROM  a)
-         SELECT row_to_json(r) FROM 
+         SELECT row_to_json(r) FROM
          ( SELECT $4 as segment_name, percentiles.*
           FROM percentiles) r
        $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols)) results;
 
-    
+
     EXECUTE
       q
-    into result 
+    into result
     USING geom, target_cols, boundary_id, segment_name;
-    
+
     return result;
 
 END;
@@ -685,7 +682,7 @@ DECLARE
 BEGIN
 
   IF time_span IS NULL THEN
-    time_span = '2010 - 2014';
+    time_span = '2009 - 2013';
   END IF;
 
   IF boundary_id IS NULL THEN
@@ -700,13 +697,18 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
   END IF;
 
-  execute'
-  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnData($1,
-                                       $2,
-                                       $3);'
-  INTO   data_table_info
+  EXECUTE '
+    SELECT array_agg(_obs_getcolumndata)
+    FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);
+    '
+  INTO data_table_info
   USING boundary_id, dimension_names, time_span;
 
+  IF data_table_info IS NULL
+  THEN
+    RAISE NOTICE 'No data table found for this location';
+    RETURN QUERY SELECT NULL::json;
+  END IF;
 
   EXECUTE
     format('SELECT geoid
@@ -716,8 +718,15 @@ BEGIN
   USING geom
   INTO geoid;
 
+  IF geoid IS NULL
+  THEN
+    RAISE NOTICE 'No geometry id for this location';
+    RETURN QUERY SELECT NULL::json;
+  END IF;
+
   query := 'SELECT ARRAY[';
-  FOR i IN 1..coalesce(array_upper(data_table_info, 1), 1)
+
+  FOR i IN 1..array_upper(data_table_info, 1)
   LOOP
     query = query || format('%I ', lower(((data_table_info)[i])->>'colname'));
     IF i <  array_upper(data_table_info, 1)
@@ -739,18 +748,19 @@ BEGIN
     query
   INTO results
   USING geom;
-  
+
   RETURN QUERY
-  EXECUTE 
+  EXECUTE
     $query$
-     select row_to_json(t) from(
-      select categories as category,
-              meta->>'name'  as name, 
-              meta->>'tablename' as tablename,
-              meta->>'aggregate' as aggregate,
-              meta->>'type'  as type,
-              meta->>'description' as description
-             from (select unnest($1) as categories, unnest($2) as meta) b
+     SELECT row_to_json(t) FROM (
+      SELECT categories As category,
+              meta->>'name' As name,
+              meta->>'tablename' As tablename,
+              meta->>'aggregate' As aggregate,
+              meta->>'type' As type,
+              meta->>'description' As description
+      FROM (SELECT unnest($1) As categories,
+                   unnest($2) As meta) As b
       ) t
     $query$
     USING results, data_table_info;

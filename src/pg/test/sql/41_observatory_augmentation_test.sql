@@ -5,48 +5,6 @@ WITH result as(
   FROM cdb_observatory.OBS_GetDemographicSnapshot(cdb_observatory._TestPoint())
 ) select expected_columns ='58' as OBS_GetDemographicSnapshot_test_no_returns
 FROM result;
---
--- dimension | dimension_value
--- ----------|----------------
--- total_pop | 9516.27915900609
--- male_pop  | 6152.51885204623
-
-WITH result as (
-  SELECT array_agg(_obs_getcensus->>'value') as b
-  FROM( select * from
-    cdb_observatory._OBS_GetCensus(
-      cdb_observatory._TestPoint(),
-      Array['total_pop','male_pop']::text[]
-    )) a
-)
-select b='{9516.27915900609,6152.51885204623}'
-  as test_obsGetCensusWithTestPointAnd2Variables
-  from result;
--- what happens on null island?
--- expect nulls back: {female_pop, male_pop} | {NULL, NULL}
-
-WITH result as (
-  SELECT count(vals) non_null
-  FROM( select _OBS_GetCensus->>'value' vals from
-    cdb_observatory._OBS_GetCensus(
-      ST_Buffer(ST_SetSRID(ST_Point(0, 0), 4326)::geography, 5000)::geometry,
-      Array['total_pop','male_pop']::text[]
-    )) a
-)
-SELECT non_null = 0 as test_obsGetCensusWithNullIslandArea
-FROM result;
-
--- expect nulls back {female_pop, male_pop} | {NULL, NULL}
-WITH result as (
-  SELECT count(vals) non_null
-  FROM( select _OBS_GetCensus->>'value' vals from
-    cdb_observatory._OBS_GetCensus(
-      ST_SetSRID(ST_Point(0, 0), 4326),
-      Array['total_pop','male_pop']::text[]
-    )) a
-)
-SELECT non_null = 0 as test_obsGetCensusWithNullIsland
-FROM result;
 
 --
 -- names      | vals

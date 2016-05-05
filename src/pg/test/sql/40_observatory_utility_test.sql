@@ -1,6 +1,6 @@
-\i test/sql/load_fixtures.sql
-
+\pset format unaligned
 \set ECHO all
+\i test/fixtures/load_fixtures.sql
 
 -- OBS_GeomTable
 -- get table with known geometry_id
@@ -80,4 +80,4 @@ SELECT cdb_observatory._OBS_GetRelatedColumn(
 -- should give back a standardized measure name
 SELECT cdb_observatory._OBS_StandardizeMeasureName('test 343 %% 2 qqq }}{{}}');
 
-\i test/sql/drop_fixtures.sql
+\i test/fixtures/drop_fixtures.sql

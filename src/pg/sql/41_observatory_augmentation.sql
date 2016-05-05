@@ -156,6 +156,7 @@ DECLARE
 BEGIN
 
   geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
+  RAISE NOTICE 'geom_table_name: %', geom_table_name;
 
   IF geom_table_name IS NULL
   THEN
@@ -169,12 +170,15 @@ BEGIN
                                        $3);'
   INTO   data_table_info
   using geometry_level, column_ids, time_span;
+  
+  RAISE NOTICE 'data_table_info: %', data_table_info::text;
     
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
     results := cdb_observatory._OBS_GetPoints(geom,
                              geom_table_name,
                              data_table_info);
+    RAISE NOTICE 'results: %', results;
 
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
@@ -713,7 +717,7 @@ BEGIN
   INTO geoid;
 
   query := 'SELECT ARRAY[';
-  FOR i IN 1..array_upper(data_table_info, 1)
+  FOR i IN 1..coalesce(array_upper(data_table_info, 1), 1)
   LOOP
     query = query || format('%I ', lower(((data_table_info)[i])->>'colname'));
     IF i <  array_upper(data_table_info, 1)

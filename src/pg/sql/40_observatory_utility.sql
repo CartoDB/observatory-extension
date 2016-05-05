@@ -79,37 +79,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
---Gets the column id for a census variable given a human readable version of it
--- Old: OBS_LOOKUP_CENSUS_HUMAN
-
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_LookupCensusHuman(
-  column_names text[],
-  -- TODO: change variable name table_name to table_id
-  table_name text DEFAULT 'us.census.acs.extract_block_group_5yr_2013_69b156927c'
-)
-RETURNS text[] as $$
-DECLARE
-  column_id text;
-  result text;
-BEGIN
-    EXECUTE format('
-      WITH col_names AS (
-        select row_number() over() as no, a.column_name as column_name from(
-          select unnest($1) as column_name
-        ) a
-      )
-      select array_agg(column_id order by col_names.no)
-      FROM observatory.OBS_column_table,col_names
-      where colname = col_names.column_name
-      and table_id = %L limit 1
-    ', table_name)
-    INTO result
-    using column_names;
-    RETURN result;
-END
-$$ LANGUAGE plpgsql;
-
-
 --Test point cause Stuart always seems to make random points in the water
 CREATE OR REPLACE FUNCTION cdb_observatory._TestPoint()
   RETURNS geometry

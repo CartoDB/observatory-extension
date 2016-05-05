@@ -55,19 +55,6 @@ SELECT
 select expected is null as OBS_GetColumnData_missing_measure
 from result;
 
--- OBS_LookupCensusHuman
--- should give back: {"us.census.acs.B19083001"}
-SELECT
-  cdb_observatory._OBS_LookupCensusHuman(
-    Array['gini_index']
-  );
-
--- should be empty array
-SELECT
-  cdb_observatory._OBS_LookupCensusHuman(
-    Array['cookies']
-  );
-
 -- OBS_BuildSnapshotQuery
 -- Should give back: SELECT  vals[1] As total_pop, vals[2] As male_pop, vals[3] As female_pop, vals[4] As median_age
 SELECT

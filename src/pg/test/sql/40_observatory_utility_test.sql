@@ -8,7 +8,8 @@
 SELECT
   cdb_observatory._OBS_GeomTable(
     ST_SetSRID(ST_Point(-74.0059, 40.7128), 4326),
-    'us.census.tiger.census_tract'
+    'us.census.tiger.census_tract',
+    '2013'
   );
 
 -- get null for unknown geometry_id
@@ -32,6 +33,17 @@ SELECT
 -- -----------|-----------------|-----------
 --  geoid     | obs_{hex table} | null
 --  total_pop | obs_{hex table} | sum
+--WITH result as (
+--SELECT
+--  array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
+--    'us.census.tiger.census_tract',
+--    Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01001001'],
+--    '2009 - 2013') a
+--)
+--select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_1,
+--       (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_2
+--from result;
+
 WITH result as (
 SELECT
   array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
@@ -39,8 +51,8 @@ SELECT
     Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01001001'],
     '2009 - 2013') a
 )
-select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_1,
-       (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_2
+select (expected)[1]::text as test_get_obs_column_with_geoid_and_census_1,
+       (expected)[2]::text as test_get_obs_column_with_geoid_and_census_2
 from result;
 
 

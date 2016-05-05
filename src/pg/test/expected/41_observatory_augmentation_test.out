@@ -32,21 +32,6 @@ Done.
  t
 (1 row)
 
- test_obsgetcensuswithtestpointand2variables 
----------------------------------------------
- t
-(1 row)
-
- test_obsgetcensuswithnullislandarea 
--------------------------------------
- t
-(1 row)
-
- test_obsgetcensuswithnullisland 
----------------------------------
- t
-(1 row)
-
  obs_get_gini_index_at_test_point 
 ----------------------------------
  t

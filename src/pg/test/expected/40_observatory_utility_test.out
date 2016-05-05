@@ -2,7 +2,7 @@
 SET client_min_messages TO WARNING;
 \set ECHO none
 _obs_geomtable
-obs_a92e1111ad3177676471d66bb8036e6d057f271b
+obs_fc050f0b8673cfe3c6aa1040f749eb40975691b7
 (1 row)
 _obs_geomtable
 

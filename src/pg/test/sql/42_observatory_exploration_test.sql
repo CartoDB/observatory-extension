@@ -1,4 +1,4 @@
-\i test/sql/load_fixtures.sql
+\i test/fixtures/load_fixtures.sql
 \pset format unaligned
 
 -- set up variables for use in testing
@@ -9,12 +9,11 @@
 
 -- _OBS_SearchTables tests
 SELECT 
-  t.table_name IN ('obs_b0ef6dd68d5faddbf231fd7f02916b3d00ec43c4', 
-                   'obs_23da37d4e66e9de2f525572967f8618bde99a8c0') As _OBS_SearchTables_tables_match,
-  t.timespan = '2013' As _OBS_SearchTables_timespan_matches
+  t.table_name As _OBS_SearchTables_tables_match,
+  t.timespan = '2014' As _OBS_SearchTables_timespan_matches
 FROM cdb_observatory._OBS_SearchTables(
   'us.census.tiger.county',
-  '2013'
+  '2014'
 ) As t(table_name, timespan);
 
 -- _OBS_SearchTables tests
@@ -29,4 +28,4 @@ SELECT cdb_observatory.OBS_Search('total_pop');
 
 SELECT * from cdb_observatory.OBS_GetAvailableBoundaries(cdb_observatory._TestPoint());
 
-\i test/sql/drop_fixtures.sql
+\i test/fixtures/drop_fixtures.sql

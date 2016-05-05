@@ -23,7 +23,7 @@ BEGIN
       WHERE type ILIKE ''geometry''
         AND coltable.column_id = col.id
         AND coltable.table_id = tab.id
-        AND col.id = $1,
+        AND col.id = $1
         AND CASE WHEN $2 IS NOT NULL THEN timespan = $2 ELSE TRUE END
       ORDER BY timespan DESC LIMIT 1
     )

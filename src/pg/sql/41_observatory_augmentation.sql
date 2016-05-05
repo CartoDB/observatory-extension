@@ -22,12 +22,23 @@
 
 -- Creates a table of demographic snapshot
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default 'us.census.tiger.block_group')
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry,
+  time_span text DEFAULT NULL,
+  boundary_id text DEFAULT NULL)
 RETURNS SETOF JSON
 AS $$
-  DECLARE 
+  DECLARE
   target_cols text[];
   BEGIN
+
+  IF time_span IS NULL THEN
+    time_span = '2009 - 2013';
+  END IF;
+
+  IF boundary_id IS NULL THEN
+    boundary_id = 'us.census.tiger.block_group';
+  END IF;
+
   target_cols := Array['us.census.acs.B01001001',
                   'us.census.acs.B01001002',
                   'us.census.acs.B01001026',
@@ -114,12 +125,11 @@ AS $$
                   'us.census.acs.B19001014',
                   'us.census.acs.B19001015',
                   'us.census.acs.B19001016',
-                  'us.census.acs.B19001017',
-                  NULL]; -- land_area
-    RETURN QUERY 
+                  'us.census.acs.B19001017'];
+    RETURN QUERY
     EXECUTE
     'select * from cdb_observatory._OBS_Get($1, $2, $3, $4 )'
-    USING geom, target_cols, time_span, geometry_level
+    USING geom, target_cols, time_span, boundary_id
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
@@ -548,7 +558,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
   geom geometry,
-  geometry_level text DEFAULT 'us.census.tiger.census_tract'
+  boundary_id text DEFAULT NULL
 )
 RETURNS JSON 
 AS $$
@@ -560,6 +570,9 @@ DECLARE
   q            Text;
   segment_name Text;
 BEGIN
+IF boundary_id IS NULL THEN
+ boundary_id = 'us.census.tiger.census_tract';
+END IF;
 target_cols := Array[
           'us.census.acs.B01001001_quantile',
           'us.census.acs.B01001002_quantile',
@@ -617,7 +630,7 @@ target_cols := Array[
       LIMIT 1
       $query$
     INTO segment_name
-    USING geom, geometry_level;
+    USING geom, boundary_id;
 
     q :=
       format($query$
@@ -642,7 +655,7 @@ target_cols := Array[
     EXECUTE
       q
     into result 
-    USING geom, target_cols, geometry_level, segment_name;
+    USING geom, target_cols, boundary_id, segment_name;
     
     return result;
 
@@ -654,8 +667,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCategories(
   geom geometry,
   dimension_names text[],
-  geometry_level text DEFAULT 'us.census.tiger.block_group',
-  time_span text DEFAULT '2009 - 2013'
+  boundary_id text DEFAULT NULL,
+  time_span text DEFAULT NULL
 )
 RETURNS SETOF JSON as $$
 DECLARE
@@ -667,7 +680,15 @@ DECLARE
   data_table_info json[];
 BEGIN
 
-  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
+  IF time_span IS NULL THEN
+    time_span = '2009 - 2013';
+  END IF;
+
+  IF boundary_id IS NULL THEN
+    boundary_id = 'us.census.tiger.block_group';
+  END IF;
+
+  geom_table_name := cdb_observatory._OBS_GeomTable(geom, boundary_id);
 
   IF geom_table_name IS NULL
   THEN
@@ -680,7 +701,7 @@ BEGIN
                                        $2,
                                        $3);'
   INTO   data_table_info
-  using geometry_level, dimension_names, time_span;
+  USING boundary_id, dimension_names, time_span;
 
 
   EXECUTE

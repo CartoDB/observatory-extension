@@ -46,9 +46,9 @@ WITH result as (
 SELECT
   (cdb_observatory._OBS_GetPoints(
     cdb_observatory._TestPoint(),
-    'obs_1a098da56badf5f32e336002b0a81708c40d29cd'::text, -- see example in obs_geomtable
+    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- block groups (see _obs_geomtable)
     (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  ))[1]::text = '{"value":4809.07989821893,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
+  ))[1]::text = '{"value":10923.093200390833950,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
   as OBS_GetPoints_for_test_point;
 -- what happens at null island
 
@@ -68,9 +68,9 @@ SELECT
 SELECT
   (cdb_observatory._OBS_GetPolygons(
     cdb_observatory._TestArea(),
-    'obs_1a098da56badf5f32e336002b0a81708c40d29cd'::text, -- see example in obs_geomtable
+    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
     Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json]
-))[1]::text = '{"value":1570.78845496678,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
+))[1]::text = '{"value":12327.3133495107,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
   as OBS_GetPolygons_for_test_point;
 
 -- see what happens around null island
@@ -102,9 +102,7 @@ WITH result as (
       'us.census.tiger.census_tract'
   )
 )
-  select (expected)[1]::text = '{"category":"Wealthy, urban without Kids","name":"Spielman-Singleton Segments: 10 Clusters","tablename":"obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_1,
-  (expected)[2]::text = '{"category":"Wealthy, urban without Kids","name":"Spielman-Singleton Segments: 10 Clusters","tablename":"obs_11ee8b82c877c073438bc935a91d3dfccef875d1","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_2,
-  array_length(expected, 1)
+  select (expected)[1]::text = '{"category":"Wealthy, urban without Kids","name":"Spielman-Singleton Segments: 10 Clusters","tablename":"obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_1
   from result;
 
 WITH result as (
@@ -115,7 +113,7 @@ WITH result as (
       'us.census.tiger.census_tract'
   )
 )
-  select expected is null as GetCategories_at_null_island
+  select expected[0] is NULL as GetCategories_at_null_island
   from result;
 
 -- Point-based OBS_GetMeasure, default normalization (area)
@@ -123,32 +121,32 @@ SELECT * FROM
   cdb_observatory.OBS_GetMeasure(
     cdb_observatory._TestPoint(),
     'us.census.acs.B01001001'
-);
+) As t(OBS_GetMeasure_total_pop_point);
 
 -- Poly-based OBS_GetMeasure, default normalization (none)
 SELECT * FROM
   cdb_observatory.OBS_GetMeasure(
     cdb_observatory._TestArea(),
     'us.census.acs.B01001001'
-);
+) As t(OBS_GetMeasure_total_pop_polygon);
 
 -- Point-based OBS_GetMeasure with denominator normalization
 SELECT cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestPoint(),
-  'us.census.acs.B01001002', 'denominator');
+  'us.census.acs.B01001002', 'denominator') As OBS_GetMeasure_total_male_point_denominator;
 
 -- Poly-based OBS_GetMeasure with denominator normalization
 SELECT cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestArea(),
-  'us.census.acs.B01001002', 'denominator');
+  'us.census.acs.B01001002', 'denominator') As OBS_GetMeasure_total_male_poly_denominator;
 
 -- Point-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
-  cdb_observatory._TestPoint(), 'us.census.spielman_singleton_segments.X10');
+  cdb_observatory._TestPoint(), 'us.census.spielman_singleton_segments.X10') As OBS_GetCategory_point;
 
 -- Poly-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
-  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10');
+  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') As obs_getcategory_polygon;
 
 -- Point-based OBS_GetPopulation, default normalization (area)
 SELECT * FROM
@@ -160,11 +158,11 @@ SELECT * FROM
 SELECT * FROM
   cdb_observatory.OBS_GetPopulation(
     cdb_observatory._TestArea()
-  );
+  ) As obs_getpopulation_polygon;
 
 -- Point-based OBS_GetUSCensusMeasure, default normalization (area)
 SELECT cdb_observatory.obs_getuscensusmeasure(
-  cdb_observatory._testpoint(), 'male population');
+  cdb_observatory._testpoint(), 'male population') As obs_getuscensusmeasure_point_male_pop;
 
 -- Poly-based OBS_GetUSCensusMeasure, default normalization (none)
 SELECT cdb_observatory.obs_getuscensusmeasure(

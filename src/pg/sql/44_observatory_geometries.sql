@@ -541,9 +541,9 @@ BEGIN
       AND geoid_ct.table_id = geom_t.id AND
           geom_t.id = geom_ct.table_id AND
           geom_ct.column_id = geom_c.id AND
-          geom_c.type ILIKE 'geometry'
-      LIMIT 1
-    $string$, boundary_id);
+          geom_c.type ILIKE 'geometry' AND
+          geom_c.id = '%s'
+    $string$, boundary_id, boundary_id);
     --  AND geom_t.timespan = '%s' <-- put in requested year
     -- TODO: filter by clipped vs. not so appropriate tablename are unique
     --       so the limit 1 can be removed

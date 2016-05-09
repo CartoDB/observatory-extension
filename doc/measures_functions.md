@@ -126,7 +126,7 @@ The ```OBS_GetMeasure(point_geometry, measure_id)``` function returns any Data O
 Name |Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
-measure_id | a measure identifier from the Data Observatory ([see available measures](http://cartodb.github.io/bigmetadata/index.html))  
+measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf))  
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) and 'none' which will return a raw value. (optional)
 
 #### Returns
@@ -165,7 +165,7 @@ The ```OBS_GetMeasure(polygon_geometry, measure_id)``` function returns any Data
 Name |Description
 --- | ---
 polygon_geometry | a WGS84 polygon geometry (the_geom)
-measure_id | a measure identifier from the Data Observatory ([see available measures](http://cartodb.github.io/bigmetadata/index.html))  
+measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf))  
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
 
 #### Returns

@@ -1,6 +1,6 @@
 # Measures Functions
 
-[Data Observatory Measures](/dataobservatory/overview/#measures-methods) allow you to access geospatial measures for analysis workflows. Measures are used by sending an identifier or a geometry (Point or Polygon) and receiving back a measure or absolute value for that location. Every measure contained in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) can be accessed through the CartoDB Editor.
+[Data Observatory Measures](/cartodb-platform/dataobservatory/overview/#measures-methods) allow you to access geospatial measures for analysis workflows. Measures are used by sending an identifier or a geometry (Point or Polygon) and receiving back a measure or absolute value for that location. Every measure contained in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) can be accessed through the CartoDB Editor.
 
 ## OBS_GetUSCensusMeasure(point_geometry, measure_name);
 
@@ -11,7 +11,7 @@ The ```OBS_GetUSCensusMeasure(point_geometry, measure_name)``` function returns 
 Name |Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
-measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
+measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the
 
 #### Returns
@@ -50,7 +50,7 @@ The ```OBS_GetUSCensusMeasure(point_geometry, measure_name)``` function returns 
 Name |Description
 --- | ---
 point_geometry | a WGS84 polygon geometry (the_geom)
-measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
+measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
 
 #### Returns
@@ -89,7 +89,7 @@ The ```OBS_GetUSCensusCategory(point_geometry, category_name)``` function return
 Name | Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
-measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
+measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
 
 #### Returns
 

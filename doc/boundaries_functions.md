@@ -1,17 +1,17 @@
 # Boundaries Functions
 
-If you are using the [boundary methods](/dataobservatory/overview/#boundary-methods) from the Data Observatory, use the following functions to retrieve [Boundary](/dataobservatory/overview/#boundary-data) data. You can get global boundary geometries by point or polygon geometries.
+If you are using the [boundary methods](/cartodb-platform/dataobservatory/overview/#boundary-methods) from the Data Observatory, use the following functions to retrieve [Boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) data. You can get global boundary geometries by point or polygon geometries.
 
 ## OBS_GetGeometry(point_geometry, boundary_id)
 
-The ```OBS_GetGeometry(point_geometry, boundary_id)``` function returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary](/dataobservatory/glossary/#boundary-ids). This is useful for performing aggregations of points.
+The ```OBS_GetGeometry(point_geometry, boundary_id)``` function returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids). This is useful for performing aggregations of points.
 
 #### Arguments
 
 Name | Description
 --- | ---
 point_geometry | a WGS84 polygon geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary](/dataobservatory/glossary/#boundary-ids)  
+boundary_id | a boundary identifier from the [Boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids)  
 
 #### Returns
 
@@ -33,14 +33,14 @@ Should add the SQL API call here too
 
 ## OBS_GetGeometryId(point_geometry, boundary_id)
 
-The ```OBS_GetGeometryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary](/dataobservatory/glossary/#boundary-ids). The function can be combined with ```OBS_GetGeometryById(geometry_id)``` to create a point aggregation workflow.
+The ```OBS_GetGeometryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids). The function can be combined with ```OBS_GetGeometryById(geometry_id)``` to create a point aggregation workflow.
 
 #### Arguments
 
 Name |Description
 --- | ---
 point_geometry | a WGS84 polygon geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary](/dataobservatory/glossary/#boundary-ids)  
+boundary_id | a boundary identifier from the [Boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids)  
 
 #### Returns
 

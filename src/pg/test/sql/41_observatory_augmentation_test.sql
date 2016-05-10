@@ -43,13 +43,30 @@ WITH result as (
 -- --------------------
 -- {4809.33511352425}
 
+-- SELECT
+--   (cdb_observatory._OBS_GetPoints(
+--     cdb_observatory._TestPoint(),
+--     'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- block groups (see _obs_geomtable)
+--     (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
+--   ))[1]::text = '{"value":10923.093200390833950,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
+--   as OBS_GetPoints_for_test_point;
+WITH cte As (
 SELECT
   (cdb_observatory._OBS_GetPoints(
     cdb_observatory._TestPoint(),
     'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- block groups (see _obs_geomtable)
     (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  ))[1]::text = '{"value":10923.093200390833950,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
-  as OBS_GetPoints_for_test_point;
+  ))[1]
+  as OBS_GetPoints_for_test_point)
+SELECT
+  (abs((OBS_GetPoints_for_test_point ->> 'value')::numeric - 10923.093200390833950) / 10923.093200390833950) < 0.001 As OBS_GetPoints_for_test_point_value,
+  (OBS_GetPoints_for_test_point ->> 'name') = 'Total Population' As OBS_GetPoints_for_test_point_name,
+  (OBS_GetPoints_for_test_point ->> 'tablename') = 'obs_1a098da56badf5f32e336002b0a81708c40d29cd' As OBS_GetPoints_for_test_point_tablename,
+  (OBS_GetPoints_for_test_point ->> 'aggregate') = 'sum' As OBS_GetPoints_for_test_point_aggregate,
+  (OBS_GetPoints_for_test_point ->> 'type') = 'Numeric' As OBS_GetPoints_for_test_point_type,
+  (OBS_GetPoints_for_test_point ->> 'description') = 'The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.' As OBS_GetPoints_for_test_point_description
+FROM cte;
+
 -- what happens at null island
 
 SELECT
@@ -117,64 +134,67 @@ WITH result as (
   from result;
 
 -- Point-based OBS_GetMeasure, default normalization (area)
-SELECT * FROM
+-- is result within 0.1% of expected
+SELECT abs(OBS_GetMeasure_total_pop_point - 10923.093200390833950) / 10923.093200390833950 < 0.001 As OBS_GetMeasure_total_pop_point_test FROM
   cdb_observatory.OBS_GetMeasure(
     cdb_observatory._TestPoint(),
     'us.census.acs.B01001001'
 ) As t(OBS_GetMeasure_total_pop_point);
 
 -- Poly-based OBS_GetMeasure, default normalization (none)
-SELECT * FROM
+-- is result within 0.1% of expected
+SELECT abs(OBS_GetMeasure_total_pop_polygon - 12327.3133495107) / 12327.3133495107 < 0.001 As OBS_GetMeasure_total_pop_polygon_test FROM
   cdb_observatory.OBS_GetMeasure(
     cdb_observatory._TestArea(),
     'us.census.acs.B01001001'
 ) As t(OBS_GetMeasure_total_pop_polygon);
 
 -- Point-based OBS_GetMeasure with denominator normalization
-SELECT cdb_observatory.OBS_GetMeasure(
+SELECT (abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestPoint(),
-  'us.census.acs.B01001002', 'denominator') As OBS_GetMeasure_total_male_point_denominator;
+  'us.census.acs.B01001002', 'denominator') - 0.62157894736842105263) / 0.62157894736842105263) < 0.001 As OBS_GetMeasure_total_male_point_denominator;
 
 -- Poly-based OBS_GetMeasure with denominator normalization
-SELECT cdb_observatory.OBS_GetMeasure(
+SELECT abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestArea(),
-  'us.census.acs.B01001002', 'denominator') As OBS_GetMeasure_total_male_poly_denominator;
+  'us.census.acs.B01001002', 'denominator') - 0.49026340444793965457) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
 
 -- Point-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
-  cdb_observatory._TestPoint(), 'us.census.spielman_singleton_segments.X10') As OBS_GetCategory_point;
+  cdb_observatory._TestPoint(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As OBS_GetCategory_point;
 
 -- Poly-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
-  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') As obs_getcategory_polygon;
+  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Low income, mix of minorities' As obs_getcategory_polygon;
 
 -- Point-based OBS_GetPopulation, default normalization (area)
-SELECT * FROM
+SELECT (abs(OBS_GetPopulation - 10923.093200390833950) / 10923.093200390833950) < 0.001 As OBS_GetPopulation FROM
   cdb_observatory.OBS_GetPopulation(
     cdb_observatory._TestPoint()
-  );
+  ) As m(OBS_GetPopulation);
 
 -- Poly-based OBS_GetPopulation, default normalization (none)
-SELECT * FROM
+SELECT (abs(obs_getpopulation_polygon - 12327.3133495107) / 12327.3133495107) < 0.001 As obs_getpopulation_polygon_test
+FROM
   cdb_observatory.OBS_GetPopulation(
     cdb_observatory._TestArea()
-  ) As obs_getpopulation_polygon;
+  ) As m(obs_getpopulation_polygon);
 
 -- Point-based OBS_GetUSCensusMeasure, default normalization (area)
-SELECT cdb_observatory.obs_getuscensusmeasure(
-  cdb_observatory._testpoint(), 'male population') As obs_getuscensusmeasure_point_male_pop;
+SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
+  cdb_observatory._testpoint(), 'male population') - 6789.5647735060920500) / 6789.5647735060920500) < 0.001 As obs_getuscensusmeasure_point_male_pop;
 
 -- Poly-based OBS_GetUSCensusMeasure, default normalization (none)
-SELECT cdb_observatory.obs_getuscensusmeasure(
-  cdb_observatory._testarea(), 'male population');
+SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
+  cdb_observatory._testarea(), 'male population') - 6043.63061042765) / 6043.63061042765) < 0.001 As obs_getuscensusmeasure;
 
 -- Point-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
-  cdb_observatory._testpoint(), 'Spielman-Singleton Segments: 10 Clusters');
+  cdb_observatory._testpoint(), 'Spielman-Singleton Segments: 10 Clusters') = 'Wealthy, urban without Kids' As OBS_GetUSCensusCategory_point;
 
 -- Area-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
-  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters');
+  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Low income, mix of minorities' As OBS_GetUSCensusCategory_polygon;
 
 
 \i test/fixtures/drop_fixtures.sql

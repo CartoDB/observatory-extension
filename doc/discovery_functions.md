@@ -1,6 +1,6 @@
 # Discovery Functions
 
-If you are using the [discovery methods](/dataobservatory/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [Boundary](/dataobservatory/overview/#boundary-data) and [Measures](/dataobservatory/overview/#measures-data) data.
+If you are using the [discovery methods](/cartodb-platform/dataobservatory/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [Boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) and [Measures](/cartodb-platform/dataobservatory/overview/#measures-data) data.
 
 ## OBS_Search(search_term)
 
@@ -43,7 +43,7 @@ point_geometry |  a WGS84 point geometry (e.g. the_geom)
 
 Key | Description
 --- | ---
-boundary_id | a boundary identifier from the [Boundary ID glossary](/dataobservatory/glossary/#boundary-ids) 
+boundary_id | a boundary identifier from the [Boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids) 
 description | a brief description of the boundary dataset
 timespan | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
 

@@ -82,7 +82,7 @@ $$ LANGUAGE plpgsql;
 -- TODO add test response
 
 CREATE OR REPLACE FUNCTION OBS_GetAvailableBoundaries(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   timespan text DEFAULT null)
 RETURNS TABLE(boundary_id text, description text, time_span text, tablename text)  as $$
 DECLARE

@@ -22,7 +22,7 @@
 --
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundary(
-  geom geometry(Geometry, 4326),
+  geom geometry(Point, 4326),
   boundary_id text,
   time_span text DEFAULT NULL)
 RETURNS geometry(Geometry, 4326)
@@ -104,7 +104,7 @@ $$ LANGUAGE plpgsql;
 --
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundaryId(
-  geom geometry(Geometry, 4326),
+  geom geometry(Point, 4326),
   boundary_id text,
   time_span text DEFAULT NULL
 )

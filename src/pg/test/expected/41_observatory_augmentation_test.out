@@ -10,8 +10,8 @@ t
 obs_get_median_income_at_null_island
 t
 (1 row)
-obs_getpoints_for_test_point
-t
+obs_getpoints_for_test_point_value|obs_getpoints_for_test_point_name|obs_getpoints_for_test_point_tablename|obs_getpoints_for_test_point_aggregate|obs_getpoints_for_test_point_type|obs_getpoints_for_test_point_description
+t|t|t|t|t|t
 (1 row)
 obs_getpoints_for_null_island
 t
@@ -34,39 +34,39 @@ t
 getcategories_at_null_island
 t
 (1 row)
-obs_getmeasure_total_pop_point
-10923.093200390833950
+obs_getmeasure_total_pop_point_test
+t
 (1 row)
-obs_getmeasure_total_pop_polygon
-12327.3133495107
+obs_getmeasure_total_pop_polygon_test
+t
 (1 row)
 obs_getmeasure_total_male_point_denominator
-0.62157894736842105263
+t
 (1 row)
 obs_getmeasure_total_male_poly_denominator
-0.49026340444793965457
+t
 (1 row)
 obs_getcategory_point
-Wealthy, urban without Kids
+t
 (1 row)
 obs_getcategory_polygon
-Low income, mix of minorities
+t
 (1 row)
 obs_getpopulation
-10923.093200390833950
+t
 (1 row)
-obs_getpopulation_polygon
-12327.3133495107
+obs_getpopulation_polygon_test
+t
 (1 row)
 obs_getuscensusmeasure_point_male_pop
-6789.5647735060920500
+t
 (1 row)
 obs_getuscensusmeasure
-6043.63061042765
+t
 (1 row)
-obs_getuscensuscategory
-Wealthy, urban without Kids
+obs_getuscensuscategory_point
+t
 (1 row)
-obs_getuscensuscategory
-Low income, mix of minorities
+obs_getuscensuscategory_polygon
+t
 (1 row)

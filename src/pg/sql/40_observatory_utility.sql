@@ -71,9 +71,9 @@ BEGIN
            AND CASE WHEN $1 IS NULL THEN True ELSE $1 = geom_c.id END
       ORDER BY geom_c.weight DESC,
                data_t.timespan DESC
-      LIMIT 1;
+      LIMIT 1
     ' INTO timespan, geometry_id
-    USING geometry_id, column_ids[1], timespan;
+    USING geometry_id, (column_ids)[1], timespan;
   END IF;
 
   RETURN QUERY

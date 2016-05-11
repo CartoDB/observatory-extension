@@ -79,7 +79,7 @@ BEGIN
   RETURN QUERY
   EXECUTE '
   WITH geomref AS (
-    SELECT t.table_id id
+    SELECT ct.table_id id
     FROM observatory.OBS_column_to_column c2c,
          observatory.OBS_column_table ct
     WHERE c2c.reltype = ''geom_ref''

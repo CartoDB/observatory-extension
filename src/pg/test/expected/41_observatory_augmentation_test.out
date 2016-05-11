@@ -37,6 +37,9 @@ t
 obs_getmeasure_zhvi_point_test
 t
 (1 row)
+obs_getmeasure_zhvi_point_default_latest_test
+t
+(1 row)
 obs_getmeasure_total_pop_point_test
 t
 (1 row)

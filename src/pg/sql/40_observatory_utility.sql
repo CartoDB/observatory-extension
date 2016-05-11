@@ -95,7 +95,8 @@ BEGIN
             aggregate,
             name,
             type,
-            c.description
+            c.description,
+            $1 AS boundary_id
            FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
            WHERE column_ids.column_id  = c.id
              AND c.id = ct.column_id

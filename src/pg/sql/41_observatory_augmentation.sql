@@ -155,19 +155,24 @@ DECLARE
   data_table_info json[];
 BEGIN
 
-  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
-
-  IF geom_table_name IS NULL
-  THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
-     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
-  END IF;
-
   EXECUTE
   'SELECT array_agg(_obs_getcolumndata)
    FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);'
   INTO data_table_info
   USING geometry_level, column_ids, time_span;
+
+  IF geometry_level IS NULL THEN
+    geometry_level = data_table_info[1]->>'boundary_id';
+  END IF;
+
+  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
+
+  IF geom_table_name IS NULL
+  THEN
+     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+      -- TODO this should return JSON
+     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
+  END IF;
 
   IF data_table_info IS NULL THEN
     RAISE NOTICE 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;

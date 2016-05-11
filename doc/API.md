@@ -5,6 +5,6 @@ This file is for reference purposes only. It is intended for tracking the Data O
 ## Documentation
 
 * [Measures Functions](measures_functions.md)
-* [Boundaries Functions](boundaries_functions.md)
+* [Boundary Functions](boundary_functions.md)
 * [Discovery Functions](discovery_functions.md)
 * [Glossary](glossary.md)

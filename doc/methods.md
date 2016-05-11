@@ -14,7 +14,9 @@ Name |Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The glossary of measure_names is [available below]('measure_name table').
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the
+normalize | for measures that are are **sums** (e.g., population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
@@ -29,7 +31,8 @@ value | the raw or normalized measure
 Add a Measure to an empty column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
+UPDATE tablename
+SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
 Get a measure at a single point location
@@ -54,6 +57,8 @@ Name |Description
 point_geometry | a WGS84 polygon geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The glossary of measure_names is [available below]('measure_name table').
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
@@ -68,13 +73,18 @@ value | the raw or normalized measure
 Add a Measure to an empty column based on polygons in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
+UPDATE tablename
+SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
 Get a measure at a single polygon
 
 ```SQL
-SELECT OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), 'Male Population')
+SELECT OBS_GetMeasure(
+         ST_Buffer(
+           CDB_LatLng(40.7, -73.9)::geography,
+           1000)::geometry,
+        'Male Population')
 ```
 
 <!--
@@ -92,20 +102,24 @@ Name |Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The glossary of measure_names is [available below]('measure_name table').
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
+
 #### Returns
 
-A NUMERIC value containing the following properties
+A TEXT value containing the following properties
 
 Key | Description
 --- | ---
-value | the raw or normalized measure
+value | description of the segment at the location of the input geometry
 
 #### Example
 
 Add a Measure to an empty column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetUSCensusCategory(the_geom, 'Spielman Singleton Category 10')
+UPDATE tablename
+SET local_male_population = OBS_GetUSCensusCategory(the_geom, 'Spielman Singleton Category 10')
 ```
 
 Get a measure at a single point location
@@ -129,6 +143,8 @@ Name |Description
 point_geometry | a WGS84 point geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](http://cartodb.github.io/bigmetadata/index.html))  
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) and 'none' which will return a raw value. (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
@@ -143,13 +159,16 @@ value | the raw or normalized measure
 Add a Measure to an empty column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006')
+UPDATE tablename
+SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
 ```
 
 Get a measure at a single point location
 
 ```SQL
-SELECT OBS_GetMeasure(CDB_LatLng(40.7, -73.9), '"us.census.acs".B08134006')
+SELECT OBS_GetMeasure(
+         CDB_LatLng(40.7, -73.9),
+         'us.census.acs.B08134006')
 ```
 
 <!--
@@ -168,6 +187,8 @@ Name |Description
 polygon_geometry | a WGS84 polygon geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](http://cartodb.github.io/bigmetadata/index.html))  
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
@@ -182,15 +203,18 @@ value | the raw or normalized measure
 Add a Measure to an empty column based on polygons in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, '"us.census.acs".B08134006')
+UPDATE tablename
+SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
 ```
 
 Get a measure within a polygon
 
 ```SQL
-SELECT OBS_GetMeasure(ST_Buffer(CDB_LatLng(40.7, -73.9),0.001), '"us.census.acs".B08134006')
-
-
+SELECT OBS_GetMeasure(
+         ST_Buffer(
+           CDB_LatLng(40.7, -73.9)::geography,
+           1000)::geometry,
+         'us.census.acs.B08134006')
 ```
 
 <!--
@@ -226,7 +250,7 @@ Overwrite a point geometry with a boundary geometry that contains it in your tab
 
 ```SQL
 UPDATE tablename
-SET the_geom = OBS_GetBoundary(the_geom, '"us.census.tiger".block_group')
+SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
 ```
 
 <!--
@@ -257,7 +281,7 @@ Write the geometry_id that contains the point geometry for every row as a new co
 
 ```SQL
 UPDATE tablename
-SET new_column_name = OBS_GetBoundaryId(the_geom, ' "us.census.tiger".block_group')
+SET boundary_id = OBS_GetBoundaryId(the_geom, ' us.census.tiger.block_group')
 ```
 
 ## OBS_GetBoundaryById(geometry_id, boundary_id)
@@ -274,7 +298,7 @@ timespan (optional) | year(s) to request from (`NULL` (default) gives most recen
 
 #### Returns
 
-A JSON object containing the following properties
+A table containing the following properties
 
 Key | Description
 --- | ---
@@ -285,7 +309,10 @@ geom | a WGS84 polygon geometry
 Use a table of geometry_id to select the unique boundaries. Useful with the ```Create Dataset from Query``` option in CartoDB.
 
 ```SQL
-SELECT OBS_GetBoundaryById(geometry_id) As the_geom, geometry_id
+SELECT
+  OBS_GetBoundaryById(geometry_id, 'us.census.tiger.county') As the_geom,
+  geometry_id,
+  count(*)
 FROM tablename
 GROUP BY geometry_id
 ```
@@ -314,15 +341,16 @@ geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census 
 
 #### Example
 
-Get all Census Tracts in Lower Manhattan (geoids beginning with `36061`) without getting Brooklyn or New Jersey
+Get all Census Block Groups in Lower Manhattan (geoids beginning with `36061`) without getting Brooklyn or New Jersey into an existing table with a geometry column `the_geom` and text column `geoid`.
 
 ```sql
-SELECT *
+INSERT INTO lowermanhattan_census_tracts(the_geom, geoid)
+SELECT the_geom, geom_ref
 FROM OBS_GetBoundariesByGeometry(
   ST_MakeEnvelope(-74.0251922607,40.6945658517,
                   -73.9651107788,40.7377626342,
                   4326),
-  '"us.census.tiger".census_tract')
+  'us.census.tiger.block_group')
 WHERE geom_ref like '36061%'
 ```
 
@@ -332,50 +360,6 @@ Retrieve all Census tracts contained in a bounding box around Denver, CO as a JS
 
 ```text
 http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetBoundariesByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
-```
-
-## OBS_GetPointsByGeometry(geometry, geometry_id)
-
-The ```OBS_GetPointsByGeometry(geometry, geometry_id)``` method returns point geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon and lie on the surface of a boundary corresponding to the boundary with same geographical identifiers (e.g., a point that is on a census tract with the same geoid).
-
-#### Arguments
-
-Name |Description
---- | ---
-geometry | a bounding box
-geometry_id | a string identifier for a boundary geometry
-timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
-overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html), [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html), or [ST_Within](http://postgis.net/docs/manual-2.2/ST_Within.html) for more
-
-#### Returns
-
-A table with the following columns:
-
-Column Name | Description
---- | ---
-the_geom | a point geometry on a boundary (e.g., a point that lies on a US Census tract)
-geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
-
-#### Example
-
-Get points in all Census Tracts in Lower Manhattan (geoids beginning with `36061`) without getting Brooklyn or New Jersey
-
-```sql
-SELECT *
-FROM OBS_GetPointsByGeometry(
-  ST_MakeEnvelope(-74.0251922607,40.6945658517,
-                  -73.9651107788,40.7377626342,
-                  4326),
-  '"us.census.tiger".census_tract')
-WHERE geom_ref like '36061%'
-```
-
-#### API Example
-
-Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
-
-```text
-http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetPointsByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
 ```
 
 ## OBS_GetBoundariesByPointAndRadius(geometry, radius, boundary_id)
@@ -410,7 +394,7 @@ SELECT *
 FROM OBS_GetBoundariesByPointAndRadius(
   CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
-  '"us.census.tiger".census_tract')
+  'us.census.tiger.census_tract')
 ```
 
 #### API Example
@@ -419,6 +403,50 @@ Retrieve all Census tracts contained in a bounding box around Denver, CO as a JS
 
 ```text
 http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetBoundariesByPointAndRadius(CDB_LatLng(39.7392,-104.9903),10000*1609),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
+```
+
+## OBS_GetPointsByGeometry(geometry, geometry_id)
+
+The ```OBS_GetPointsByGeometry(geometry, geometry_id)``` method returns point geometries and their geographical identifiers that intersect (or are contained by) a bounding box polygon and lie on the surface of a boundary corresponding to the boundary with same geographical identifiers (e.g., a point that is on a census tract with the same geoid).
+
+#### Arguments
+
+Name |Description
+--- | ---
+geometry | a bounding box
+geometry_id | a string identifier for a boundary geometry
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+overlap_type (optional) | one of 'intersects' (default), 'contains', or 'within'. See [ST_Intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html), [ST_Contains](http://postgis.net/docs/manual-2.2/ST_Contains.html), or [ST_Within](http://postgis.net/docs/manual-2.2/ST_Within.html) for more
+
+#### Returns
+
+A table with the following columns:
+
+Column Name | Description
+--- | ---
+the_geom | a point geometry on a boundary (e.g., a point that lies on a US Census tract)
+geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+
+#### Example
+
+Get points in all Census Tracts in Lower Manhattan (geoids beginning with `36061`) without getting Brooklyn or New Jersey
+
+```sql
+SELECT *
+FROM OBS_GetPointsByGeometry(
+  ST_MakeEnvelope(-74.0251922607,40.6945658517,
+                  -73.9651107788,40.7377626342,
+                  4326),
+  'us.census.tiger.census_tract')
+WHERE geom_ref like '36061%'
+```
+
+#### API Example
+
+Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
+
+```text
+http://observatory.cartodb.com/api/v2/sql?q=SELECT%20*%20FROM%20OBS_GetPointsByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),%27%22us.census.tiger%22.census_tract%27,%272009%27,%27contains%27)
 ```
 
 ## OBS_GetPointsByPointAndRadius(geometry, radius, boundary_id)
@@ -453,7 +481,7 @@ SELECT *
 FROM OBS_GetPointsByPointAndRadius(
   CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
-  '"us.census.tiger".census_tract')
+  'us.census.tiger.census_tract')
 ```
 
 #### API Example
@@ -523,17 +551,17 @@ SELECT * FROM OBS_GetAvailableBoundaries(CDB_LatLng(40.7, -73.9))
 
 Boundary name   |  Boundary ID
 --------------------- | ---
-US Census Block Groups  |  "us.census.tiger".block_group
-US Census Tracts  |  "us.census.tiger".census_tract
-US States  |  "us.census.tiger".state
-US County  |  "us.census.tiger".county
-US Census Public Use Microdata Areas  |  "us.census.tiger".puma
-US Census Zip Code Tabulation Areas  |  "us.census.tiger".zcta5
-Unified School District  |  "us.census.tiger".school_district_unified
-US Congressional Districts  |  "us.census.tiger".congressional_district
-Elementary School District  |  "us.census.tiger".school_district_elementary
-Secondary School District  |  "us.census.tiger".school_district_secondary
-US Census Blocks  |  "us.census.tiger".block
+US Census Block Groups  |  us.census.tiger.block_group
+US Census Tracts  |  us.census.tiger.census_tract
+US States  |  us.census.tiger.state
+US County  |  us.census.tiger.county
+US Census Public Use Microdata Areas  |  us.census.tiger.puma
+US Census Zip Code Tabulation Areas  |  us.census.tiger.zcta5
+Unified School District  |  us.census.tiger.school_district_unified
+US Congressional Districts  |  us.census.tiger.congressional_district
+Elementary School District  |  us.census.tiger.school_district_elementary
+Secondary School District  |  us.census.tiger.school_district_secondary
+US Census Blocks  |  us.census.tiger.block
 
 #### OBS_GetUSCensusMeasure names table
 

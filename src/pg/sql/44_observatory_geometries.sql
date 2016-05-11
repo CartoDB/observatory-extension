@@ -22,7 +22,7 @@
 --
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundary(
-  geom geometry(Geometry, 4326),
+  geom geometry(Point, 4326),
   boundary_id text,
   time_span text DEFAULT NULL)
 RETURNS geometry(Geometry, 4326)
@@ -104,7 +104,7 @@ $$ LANGUAGE plpgsql;
 --
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundaryId(
-  geom geometry(Geometry, 4326),
+  geom geometry(Point, 4326),
   boundary_id text,
   time_span text DEFAULT NULL
 )
@@ -344,7 +344,7 @@ $$ LANGUAGE plpgsql;
 --
 -- TODO: move to ST_DWithin instead of buffer + intersects?
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByPointAndRadius(
-  geom geometry(Geometry, 4326), -- point
+  geom geometry(Point, 4326), -- point
   radius numeric, -- radius in meters
   boundary_id text,
   time_span text DEFAULT NULL,
@@ -485,7 +485,7 @@ $$ LANGUAGE plpgsql;
 --
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByPointAndRadius(
-  geom geometry(Geometry, 4326), -- point
+  geom geometry(Point, 4326), -- point
   radius numeric, -- radius in meters
   boundary_id text,
   time_span text DEFAULT NULL,

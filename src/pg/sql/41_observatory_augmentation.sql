@@ -22,7 +22,7 @@
 
 -- Creates a table of demographic snapshot
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry,
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry(Geometry, 4326),
   time_span text DEFAULT NULL,
   boundary_id text DEFAULT NULL)
 RETURNS SETOF JSON
@@ -140,7 +140,7 @@ $$ LANGUAGE plpgsql;
 
 -- Base augmentation fucntion.
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_Get(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   column_ids text[],
   time_span text,
   geometry_level text
@@ -163,26 +163,24 @@ BEGIN
      RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
   END IF;
 
-  execute'
-  select array_agg( _obs_getcolumndata)  from cdb_observatory._OBS_GetColumnData($1,
-                                       $2,
-                                       $3);'
-  INTO   data_table_info
-  using geometry_level, column_ids, time_span;
+  EXECUTE
+  'SELECT array_agg(_obs_getcolumndata)
+   FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);'
+  INTO data_table_info
+  USING geometry_level, column_ids, time_span;
 
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
     RAISE NOTICE 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
     results := cdb_observatory._OBS_GetPoints(geom,
-                             geom_table_name,
-                             data_table_info);
+                                              geom_table_name,
+                                              data_table_info);
 
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
   THEN
-    -- RAISE EXCEPTION 'polygons not supported for now';
     results := cdb_observatory._OBS_GetPolygons(geom,
-                               geom_table_name,
-                               data_table_info);
+                                                geom_table_name,
+                                                data_table_info);
   END IF;
 
   RETURN QUERY
@@ -199,7 +197,7 @@ $$ LANGUAGE plpgsql;
 -- If the variable of interest is just a rate return it as such,
 --  otherwise normalize it to the census block area and return that
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   geom_table_name text,
   data_table_info json[]
 )
@@ -208,17 +206,17 @@ AS $$
 DECLARE
   result NUMERIC[];
   json_result json[];
-  query  text;
+  query text;
   i int;
   geoid text;
-  area  NUMERIC;
+  area NUMERIC;
 BEGIN
 
   -- TODO: does 'geoid' need to be generalized to geom_ref??
   EXECUTE
     format('SELECT geoid
             FROM observatory.%I
-            WHERE ST_WITHIN($1, the_geom)',
+            WHERE ST_Within($1, the_geom)',
             geom_table_name)
   USING geom
   INTO geoid;
@@ -283,7 +281,7 @@ BEGIN
               meta->>'name' As name,
               meta->>'tablename' As tablename,
               meta->>'aggregate' As aggregate,
-              meta->>'type'  As type,
+              meta->>'type' As type,
               meta->>'description' As description
              FROM (SELECT unnest($1) As values, unnest($2) As meta) b
       ) t
@@ -297,7 +295,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
-  geom GEOMETRY,
+  geom geometry(Geometry, 4326),
   measure_id TEXT,
   normalize TEXT DEFAULT 'area', -- TODO none/null
   boundary_id TEXT DEFAULT NULL,
@@ -352,7 +350,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
-  geom GEOMETRY,
+  geom geometry(Geometry, 4326),
   category_id TEXT,
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
@@ -386,7 +384,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
-   geom GEOMETRY,
+   geom geometry(Geometry, 4326),
    name TEXT,
    normalize TEXT DEFAULT 'area',
    boundary_id TEXT DEFAULT NULL,
@@ -419,7 +417,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusCategory(
-   geom GEOMETRY,
+   geom geometry(Geometry, 4326),
    name TEXT,
    boundary_id TEXT DEFAULT NULL,
    time_span TEXT DEFAULT NULL
@@ -453,7 +451,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   normalize TEXT DEFAULT 'area',
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
@@ -478,7 +476,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   geom_table_name text,
   data_table_info json[]
 )
@@ -558,7 +556,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   boundary_id text DEFAULT NULL
 )
 RETURNS JSON
@@ -666,7 +664,7 @@ $$ LANGUAGE plpgsql;
 --Get categorical variables from point
 
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCategories(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   dimension_names text[],
   boundary_id text DEFAULT NULL,
   time_span text DEFAULT NULL

@@ -4,7 +4,7 @@
 -- table where there is multiple sources for a column from multiple
 -- geometries.
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GeomTable(
-  geom geometry,
+  geom geometry(Geometry, 4326),
   geometry_id text,
   time_span text DEFAULT NULL
 )
@@ -84,7 +84,7 @@ $$ LANGUAGE plpgsql;
 
 --Test point cause Stuart always seems to make random points in the water
 CREATE OR REPLACE FUNCTION cdb_observatory._TestPoint()
-  RETURNS geometry
+  RETURNS geometry(Point, 4326)
 AS $$
 BEGIN
   -- new york city
@@ -95,7 +95,7 @@ $$ LANGUAGE plpgsql;
 --Test polygon cause Stuart always seems to make random points in the water
 -- TODO: remove as it's not used anywhere?
 CREATE OR REPLACE FUNCTION cdb_observatory._TestArea()
-  RETURNS geometry
+  RETURNS geometry(Geometry, 4326)
 AS $$
 BEGIN
   -- Buffer NYC point by 500 meters

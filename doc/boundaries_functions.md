@@ -2,6 +2,97 @@
 
 Use the following functions to retrieve [Boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
+## OBS_GetBoundary(point_geometry, boundary_id)
+
+The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary table below](below). This is a useful method for performing aggregations of points.
+
+#### Arguments
+
+Name | Description
+--- | ---
+point_geometry | a WGS84 polygon geometry (the_geom)
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+
+#### Returns
+
+Value | Description
+--- | ---
+geom | WKB geometry
+
+#### Example
+
+Overwrite a point geometry with a boundary geometry that contains it in your table
+
+```SQL
+UPDATE tablename
+SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
+```
+
+<!--
+Should add the SQL API call here too
+-->
+
+## OBS_GetBoundaryId(point_geometry, boundary_id)
+
+The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary table below](below). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
+
+#### Arguments
+
+Name |Description
+--- | ---
+point_geometry | a WGS84 point geometry (the_geom)
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+
+#### Returns
+
+Value | Description
+--- | ---
+geometry_id | a string identifier of a geometry in the Boundaries
+
+#### Example
+
+Write the geometry_id that contains the point geometry for every row as a new column in your table
+
+```SQL
+UPDATE tablename
+SET boundary_id = OBS_GetBoundaryId(the_geom, 'us.census.tiger.block_group')
+```
+
+## OBS_GetBoundaryById(geometry_id, boundary_id)
+
+The ```OBS_GetBoundaryById(geometry_id, boundary_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetBoundaryId(point_geometry, boundary_id)``` method described above.
+
+#### Arguments
+
+Name | Description
+--- | ---
+geometry_id | a string identifier for a Boundary geometry
+boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
+
+#### Returns
+
+A table containing the following properties
+
+Key | Description
+--- | ---
+geom | a WGS84 polygon geometry
+
+#### Example
+
+Use a table of geometry_id to select the unique boundaries. Useful with the ```Create Dataset from Query``` option in CartoDB.
+
+```SQL
+SELECT
+  OBS_GetBoundaryById(geometry_id, 'us.census.tiger.county') As the_geom,
+  geometry_id,
+  count(*)
+FROM tablename
+GROUP BY geometry_id
+```
+
 ## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
 
 The ```OBS_GetBoundariesByGeometry(geometry, geometry_id)``` method returns a set of boundary geometries that intersect a supplied geometry. This can be used to find all boundaries that are within or overlap a bounding box. You have the ability to choose whether to retrieve all boundaries that intersect your supplied bounding box or only those that fall entirely inside of your bounding box.

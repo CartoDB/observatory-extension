@@ -16,7 +16,9 @@ Name |Description
 --- | ---
 point | a WGS84 point geometry (the_geom)
 measure_name | a human readable name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the
+normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
@@ -28,7 +30,7 @@ value | the raw or normalized measure
 
 #### Example
 
-Add a Measure to an empty column based on point locations in your table
+Add a Measure to an empty numeric column based on point locations in your table
 
 ```SQL
 UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
@@ -50,6 +52,8 @@ Name |Description
 polygon | a WGS84 polygon geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
@@ -61,10 +65,11 @@ value | the raw or normalized measure
 
 #### Example
 
-Add a Measure to an empty column based on polygons in your table
+Add a measure to an empty numeric column based on polygons in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
+UPDATE tablename
+SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
 <!--
@@ -82,6 +87,8 @@ Name |Description
 point | a WGS84 point geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf)). It is important to note that these are different than 'measure_name' used in the Census based functions above.
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) and 'none' which will return a raw value. (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
@@ -93,10 +100,11 @@ value | the raw or normalized measure
 
 #### Example
 
-Add a Measure to an empty column based on point locations in your table
+Add a measure to an empty numeric column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
+UPDATE tablename
+SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
 ```
 
 ## OBS_GetMeasure(polygon geometry, measure_id text);
@@ -110,6 +118,8 @@ Name |Description
 polygon_geometry | a WGS84 polygon geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf))  
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 

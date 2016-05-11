@@ -24,6 +24,8 @@ Column Name | Description
 the_geom | a boundary geometry (e.g., US Census tract boundaries)
 geom_refs | a string identifier for the geometry (e.g., geoids of US Census tracts)
 
+If geometries are not found for the requested `polygon`, `geometry_id`, `timespan`, or `overlap_type`, then null values are returned.
+
 #### Example
 
 Get all Census Tracts in Lower Manhattan plus nearby areas within the supplied bounding box.
@@ -44,6 +46,11 @@ Retrieve all Census tracts contained in a bounding box around Denver, CO as a JS
 ```text
 http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM OBS_GetBoundariesByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),'us.census.tiger.census_tract',  NULL, 'contains')
 ```
+
+#### Errors
+
+* If a geometry other than a point is passed as the first argument, an error is thrown: `Invalid geometry type (ST_Polygon), expecting 'ST_Point'`
+* If an `overlap_type` other than the valid ones listed above is entered, then an error is thrown
 
 ## OBS_GetPointsByGeometry(polygon geometry, geometry_id text)
 
@@ -67,6 +74,8 @@ Column Name | Description
 the_geom | a point geometry on a boundary (e.g., a point that lies on a US Census tract)
 geom_refs| a string identifier for the geometry (e.g., the geoid of a US Census tract)
 
+If geometries are not found for the requested geometry, `geometry_id`, `timespan`, or `overlap_type`, then null values are returned.
+
 #### Example
 
 Get all Census Tracts in Lower Manhattan plus nearby areas within the supplied bounding box.
@@ -88,6 +97,10 @@ Retrieve all Census tracts intersecting a bounding box around Denver, CO as a JS
 http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM OBS_GetPointsByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326), 'us.census.tiger.census_tract', NULL ,'contains')
 ```
 
+#### Errors
+
+* If a geometry other than a point is passed as the first argument, an error is thrown: `Invalid geometry type (ST_Point), expecting 'ST_MultiPolygon' or 'ST_Polygon'`
+
 ## OBS_GetBoundary(point_geometry, boundary_id)
 
 The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary table below](below). This is a useful method for performing aggregations of points.
@@ -102,7 +115,7 @@ timespan (optional) | year(s) to request from (`NULL` (default) gives most recen
 
 #### Returns
 
-A boundary geometry
+A boundary geometry. If no value is found at the requested `boundary_id` or `timespan`, a null value is returned.
 
 Value | Description
 --- | ---
@@ -121,6 +134,10 @@ SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
 Should add the SQL API call here too
 -->
 
+#### Errors
+
+* If a geometry other than a point is passed, an error is thrown: `Invalid geometry type (ST_Line), expecting 'ST_Point'`
+
 ## OBS_GetBoundaryId(point_geometry, boundary_id)
 
 The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary table below](below). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
@@ -135,7 +152,7 @@ timespan (optional) | year(s) to request from (`NULL` (default) gives most recen
 
 #### Returns
 
-A TEXT boundary geometry id
+A TEXT boundary geometry id. If no value is found at the requested `boundary_id` or `timespan`, a null value is returned.
 
 Value | Description
 --- | ---
@@ -149,6 +166,14 @@ Write the geometry_id that contains the point geometry for every row as a new co
 UPDATE tablename
 SET boundary_id = OBS_GetBoundaryId(the_geom, 'us.census.tiger.block_group')
 ```
+
+<!--
+Include API examples
+-->
+
+#### Errors
+
+* If a geometry other than a point is passed, an error is thrown: `Invalid geometry type (ST_Line), expecting 'ST_Point'`
 
 ## OBS_GetBoundaryById(geometry_id, boundary_id)
 
@@ -164,7 +189,7 @@ timespan (optional) | year(s) to request from (`NULL` (default) gives most recen
 
 #### Returns
 
-A boundary geometry
+A boundary geometry. If a geometry is not found for the requested `geometry_id`, `boundary_id`, or `timespan`, then a null value is returned.
 
 Key | Description
 --- | ---
@@ -206,6 +231,8 @@ Column Name | Description
 the_geom | a boundary geometry (e.g., a US Census tract)
 geom_refs| a string identifier for the geometry (e.g., the geoid of a US Census tract)
 
+If geometries are not found for the requested point and radius, `geometry_id`, `timespan`, or `overlap_type`, then null values are returned.
+
 #### Example
 
 Get Census tracts which intersect within 10 miles of Downtown, Colorado. In the Editor, you can simple use "Table from Query" to turn the result into a new dataset.
@@ -217,6 +244,10 @@ FROM OBS_GetBoundariesByPointAndRadius(
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
   'us.census.tiger.census_tract')
 ```
+
+#### Errors
+
+* If a geometry other than a point is passed, an error is thrown. E.g., `Invalid geometry type (ST_Line), expecting 'ST_Point'`
 
 ## OBS_GetPointsByPointAndRadius(point geometry, radius numeric, boundary_id text)
 
@@ -241,6 +272,8 @@ Column Name | Description
 the_geom | a point geometry (e.g., a point on a US Census tract)
 geom_refs | a string identifier for the geometry (e.g., the geoid of a US Census tract)
 
+If geometries are not found for the requested point and radius, `geometry_id`, `timespan`, or `overlap_type`, then null values are returned.
+
 #### Example
 
 Get Census tracts which intersect within 10 miles of Downtown, Colorado. In the Editor, you can simple use "Table from Query" to turn the result into a new dataset.
@@ -252,3 +285,7 @@ FROM OBS_GetPointsByPointAndRadius(
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
   'us.census.tiger.census_tract')
 ```
+
+#### Errors
+
+* If a geometry other than a point is passed, an error is thrown. E.g., `Invalid geometry type (ST_Line), expecting 'ST_Point'`

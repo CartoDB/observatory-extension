@@ -86,7 +86,7 @@ Name |Description
 --- | ---
 point | a WGS84 point geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf)). It is important to note that these are different than 'measure_name' used in the Census based functions above.
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) and 'none' which will return a raw value. (optional)
+normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. The other option is 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf). (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -137,6 +137,9 @@ Add a Measure to an empty column based on polygons in your table
 UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
 ```
 
+#### Errors
+
+* If an unrecognized normalization type is input, raise an error: `'Only valid inputs for "normalize" are "area" (default) and "denominator".`
 
 ## OBS_GetCategory(point geometry, category_id text);
 

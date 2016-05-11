@@ -169,6 +169,10 @@ BEGIN
   INTO data_table_info
   USING geometry_level, column_ids, time_span;
 
+  IF data_table_info IS NULL THEN
+    RAISE NOTICE 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
+  END IF;
+
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
     RAISE NOTICE 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
@@ -198,7 +202,7 @@ $$ LANGUAGE plpgsql;
 --  otherwise normalize it to the census block area and return that
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
   geom geometry(Geometry, 4326),
-  geom_table_name text,
+  geom_table_name text, -- TODO: change to boundary_id
   data_table_info json[]
 )
 RETURNS json[]
@@ -209,14 +213,31 @@ DECLARE
   query text;
   i int;
   geoid text;
+  geoid_colname text;
   area NUMERIC;
 BEGIN
 
-  -- TODO: does 'geoid' need to be generalized to geom_ref??
+  -- TODO we're assuming our geom_table has only one geom_ref column
+  --      we *really* should pass in both geom_table_name and boundary_id
   EXECUTE
-    format('SELECT geoid
-            FROM observatory.%I
-            WHERE ST_Within($1, the_geom)',
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+    , geom_table_name)
+  INTO geoid_colname;
+  RAISE NOTICE 'geom_table_name: %', geom_table_name;
+  RAISE NOTICE 'colname: %', geoid_colname;
+
+  EXECUTE
+    format('SELECT %I
+              FROM observatory.%I
+             WHERE ST_Within($1, the_geom)',
+            geoid_colname,
             geom_table_name)
   USING geom
   INTO geoid;
@@ -226,8 +247,9 @@ BEGIN
   EXECUTE
     format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
             FROM observatory.%I
-            WHERE geoid = %L',
+            WHERE %I = %L',
             geom_table_name,
+            geoid_colname,
             geoid)
   INTO area;
 

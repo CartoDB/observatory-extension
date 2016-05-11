@@ -284,10 +284,11 @@ BEGIN
 
   query := query || format(' ]::numeric[]
     FROM observatory.%I
-    WHERE %I.geoid  = %L
+    WHERE %I.%I  = %L
   ',
   ((data_table_info)[1])->>'tablename',
   ((data_table_info)[1])->>'tablename',
+  geoid_colname,
   geoid
   );
 

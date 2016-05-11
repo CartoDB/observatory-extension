@@ -89,14 +89,15 @@ DECLARE
   timespan_query TEXT DEFAULT '';
 BEGIN
 
-  IF time_span != null THEN
-    timespan_query = format('AND timespan = %L', time_span);
+  IF timespan != NULL
+  THEN
+    timespan_query = format('AND timespan = %L', timespan);
   END IF;
 
   RETURN QUERY
   EXECUTE
   $string$
-      select
+      SELECT
         column_id,
         obs_column.description,
         timespan,
@@ -109,11 +110,10 @@ BEGIN
         observatory.OBS_column_table.column_id = observatory.obs_column.id AND
         observatory.OBS_column_table.table_id = observatory.obs_table.id
       AND
-        observatory.OBS_column.type='Geometry'
+        observatory.OBS_column.type = 'Geometry'
       AND
         $1 && bounds::box2d
   $string$ || timespan_query
-  USING geom
-  RETURN;
+  USING geom;
 END
 $$ LANGUAGE plpgsql;

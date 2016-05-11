@@ -222,30 +222,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- _OBS_GetBoundariesByGeometry
+-- internal function for retrieving geometries based on an input geometry
+--  see OBS_GetBoundariesByGeometry or OBS_GetBoundariesByPointAndRadius for
+--  more information
 
--- OBS_GetBoundariesByBBox
---
--- Given a bounding box (or a polygon), and it's geometry level (see
---  OBS_ListGeomColumns() for all available boundary ids), give back the
---  boundaries that are contained within the bounding box polygon and the
---  associated geometry ids
-
--- Inputs:
---   geom geometry: bounding box (or polygon) of the region of interest
---   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
---                     see function OBS_ListGeomColumns for all avaiable
---                     boundary ids
---   time_span text: time span that the geometries were collected (optional)
---
--- Output:
---   table with the following columns
---     boundary geometry: geometry boundary that is contained within the input
---                          bounding box at the requested geometry level
---                          with boundary_id, and time_span
---     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
---
-
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByBBox(
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetBoundariesByGeometry(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL,
@@ -298,6 +280,48 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- OBS_GetBoundariesByGeometry
+--
+-- Given a bounding box (or a polygon), and it's geometry level (see
+--  OBS_ListGeomColumns() for all available boundary ids), give back the
+--  boundaries that are contained within the bounding box polygon and the
+--  associated geometry ids
+
+-- Inputs:
+--   geom geometry: bounding box (or polygon) of the region of interest
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   table with the following columns
+--     boundary geometry: geometry boundary that is contained within the input
+--                          bounding box at the requested geometry level
+--                          with boundary_id, and time_span
+--     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
+--
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByGeometry(
+  geom geometry(Geometry, 4326),
+  boundary_id text,
+  time_span text DEFAULT NULL,
+  overlap_type text DEFAULT 'intersects')
+RETURNS TABLE(the_geom geometry, geom_refs text)
+AS $$
+BEGIN
+
+  RETURN QUERY SELECT *
+               FROM cdb_observatory._OBS_GetBoundariesByGeometry(
+                          geom,
+                          boundary_id,
+                          time_span,
+                          overlap_type
+                        );
+
+END;
+$$ LANGUAGE plpgsql;
+
 -- OBS_GetBoundariesByPointAndRadius
 --
 -- Given a point and radius, and it's geometry level (see
@@ -342,36 +366,17 @@ BEGIN
   END IF;
 
   RETURN QUERY SELECT *
-               FROM cdb_observatory.OBS_GetBoundariesByBBox(
+               FROM cdb_observatory._OBS_GetBoundariesByGeometry(
                         circle_boundary,
                         boundary_id,
                         time_span);
 END;
 $$ LANGUAGE plpgsql;
 
--- OBS_GetPointsByBBox
---
--- Given a bounding box (or a polygon), and it's geometry level (see
---  OBS_ListGeomColumns() for all available boundary ids), give back a point
---  which lies in a boundary from the requested geometry level that is contained
---  within the bounding box polygon and the associated geometry ids
---
--- Inputs:
---   geom geometry: bounding box (or polygon) of the region of interest
---   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
---                     see function OBS_ListGeomColumns for all avaiable
---                     boundary ids
---   time_span text: time span that the geometries were collected (optional)
---
--- Output:
---   table with the following columns
---     boundary geometry: point that lies on a boundary that is contained within
---                          the input bounding box at the requested geometry
---                          level with boundary_id, and time_span
---     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
---
+-- _OBS_GetPointsByGeometry
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByBBox(
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPointsByGeometry(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL,
@@ -413,6 +418,47 @@ BEGIN
      WHERE ST_%s($1, t.the_geom)
      ', geom_colname, geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
+
+END;
+$$ LANGUAGE plpgsql;
+
+-- OBS_GetPointsByGeometry
+--
+-- Given a polygon, and it's geometry level (see
+--  OBS_ListGeomColumns() for all available boundary ids), give back a point
+--  which lies in a boundary from the requested geometry level that is contained
+--  within the bounding box polygon and the associated geometry ids
+--
+-- Inputs:
+--   geom geometry: bounding box (or polygon) of the region of interest
+--   boundary_id text: source id of boundaries (e.g., us.census.tiger.county)
+--                     see function OBS_ListGeomColumns for all avaiable
+--                     boundary ids
+--   time_span text: time span that the geometries were collected (optional)
+--
+-- Output:
+--   table with the following columns
+--     boundary geometry: point that lies on a boundary that is contained within
+--                          the input bounding box at the requested geometry
+--                          level with boundary_id, and time_span
+--     geom_refs text: geometry identifiers (e.g., geoid for the US Census)
+--
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByGeometry(
+  geom geometry(Geometry, 4326),
+  boundary_id text,
+  time_span text DEFAULT NULL,
+  overlap_type text DEFAULT 'intersects')
+RETURNS TABLE(the_geom geometry, geom_refs text)
+AS $$
+BEGIN
+
+  RETURN QUERY SELECT *
+               FROM cdb_observatory._OBS_GetPointsByGeometry(
+                      geom,
+                      boundary_id,
+                      time_span,
+                      overlap_type);
 
 END;
 $$ LANGUAGE plpgsql;
@@ -459,7 +505,7 @@ BEGIN
   END IF;
 
   RETURN QUERY SELECT *
-               FROM cdb_observatory.OBS_GetPointsByBBox(
+               FROM cdb_observatory._OBS_GetPointsByGeometry(
                         ST_Buffer(geom::geography, radius)::geometry,
                         boundary_id,
                         time_span,

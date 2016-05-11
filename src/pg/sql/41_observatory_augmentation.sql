@@ -213,7 +213,8 @@ DECLARE
   query text;
   i int;
   geoid text;
-  geoid_colname text;
+  data_geoid_colname text;
+  geom_geoid_colname text;
   area NUMERIC;
 BEGIN
 
@@ -228,16 +229,25 @@ BEGIN
                AND ct.column_id = c2c.source_id
                AND ct.table_id = t.id
                AND t.tablename = %L'
-    , geom_table_name)
-  INTO geoid_colname;
-  RAISE NOTICE 'geom_table_name: %', geom_table_name;
-  RAISE NOTICE 'colname: %', geoid_colname;
+     , (data_table_info)[1]->>'tablename')
+  INTO data_geoid_colname;
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+   , geom_table_name)
+  INTO geom_geoid_colname;
 
   EXECUTE
     format('SELECT %I
               FROM observatory.%I
              WHERE ST_Within($1, the_geom)',
-            geoid_colname,
+            geom_geoid_colname,
             geom_table_name)
   USING geom
   INTO geoid;
@@ -249,7 +259,7 @@ BEGIN
             FROM observatory.%I
             WHERE %I = %L',
             geom_table_name,
-            geoid_colname,
+            geom_geoid_colname,
             geoid)
   INTO area;
 
@@ -288,7 +298,7 @@ BEGIN
   ',
   ((data_table_info)[1])->>'tablename',
   ((data_table_info)[1])->>'tablename',
-  geoid_colname,
+  data_geoid_colname,
   geoid
   );
 

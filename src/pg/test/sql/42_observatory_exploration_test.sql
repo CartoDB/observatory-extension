@@ -13,7 +13,7 @@ SELECT
                    'obs_23da37d4e66e9de2f525572967f8618bde99a8c0') As _OBS_SearchTables_tables_match,
   t.timespan = '2013' As _OBS_SearchTables_timespan_matches
 FROM cdb_observatory._OBS_SearchTables(
-  '"us.census.tiger".county',
+  'us.census.tiger.county',
   '2013'
 ) As t(table_name, timespan);
 
@@ -21,7 +21,7 @@ FROM cdb_observatory._OBS_SearchTables(
 -- should not return tables for year that does not match
 SELECT count(*) = 0 As _OBS_SearchTables_timespan_does_not_match
 FROM cdb_observatory._OBS_SearchTables(
-  '"us.census.tiger".county',
+  'us.census.tiger.county',
   '1988' -- year before first tiger data was collected
 ) As t(table_name, timespan);
 

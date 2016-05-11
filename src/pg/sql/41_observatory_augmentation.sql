@@ -22,7 +22,7 @@
 
 -- Creates a table of demographic snapshot
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group')
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default 'us.census.tiger.block_group')
 RETURNS SETOF JSON
 AS $$
   DECLARE 
@@ -124,7 +124,7 @@ AS $$
 END;
 $$ LANGUAGE plpgsql;
 
--- CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default '"us.census.tiger".block_group' )
+-- CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetDemographicSnapshot(geom geometry, time_span text default '2009 - 2013', geometry_level text default 'us.census.tiger.block_group' )
 -- RETURNS TABLE(
 --   total_pop NUMERIC,
 --   male_pop NUMERIC,
@@ -342,7 +342,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCensus(
   geom geometry,
   dimension_names text[],
   time_span text DEFAULT '2009 - 2013',
-  geometry_level text DEFAULT '"us.census.tiger".block_group'
+  geometry_level text DEFAULT 'us.census.tiger.block_group'
 )
 RETURNS SETOF JSON
 AS $$
@@ -361,7 +361,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCensus(
   geom geometry,
   dimension_name text,
   time_span text DEFAULT '2009 - 2013',
-  geometry_level text DEFAULT '"us.census.tiger".block_group'
+  geometry_level text DEFAULT 'us.census.tiger.block_group'
 )
 RETURNS NUMERIC
 AS $$
@@ -559,7 +559,7 @@ BEGIN
 
   IF boundary_id IS NULL THEN
     -- TODO we should determine best boundary for this geom
-    boundary_id := '"us.census.tiger".block_group';
+    boundary_id := 'us.census.tiger.block_group';
   END IF;
 
   IF time_span IS NULL THEN
@@ -611,7 +611,7 @@ BEGIN
 
   IF boundary_id IS NULL THEN
     -- TODO we should determine best boundary for this geom
-    boundary_id := '"us.census.tiger".census_tract';
+    boundary_id := 'us.census.tiger.census_tract';
   END IF;
 
   IF time_span IS NULL THEN
@@ -651,7 +651,7 @@ BEGIN
        JOIN observatory.obs_column_tag ct
          ON c.id = ct.column_id
        WHERE cdb_observatory._OBS_StandardizeMeasureName(c.name) = $1
-         AND ct.tag_id = '"us.census.acs".demographics'
+         AND ct.tag_id = 'us.census.acs.demographics'
   $string$
   INTO measure_id
   USING standardized_name;
@@ -684,8 +684,8 @@ BEGIN
        --  ON c.id = ct.column_id
        WHERE cdb_observatory._OBS_StandardizeMeasureName(c.name) = $1
          AND c.type ILIKE 'TEXT'
-         AND c.id ILIKE '"us.census%' -- TODO this should be done by tag
-         --AND ct.tag_id = '"us.census.acs".demographics'
+         AND c.id ILIKE 'us.census%' -- TODO this should be done by tag
+         --AND ct.tag_id = 'us.census.acs.demographics'
   $string$
   INTO category_id
   USING standardized_name;
@@ -710,7 +710,7 @@ DECLARE
   result NUMERIC;
 BEGIN
   -- TODO use a super-column for global pop
-  population_measure_id := '"us.census.acs".B01001001';
+  population_measure_id := 'us.census.acs.B01001001';
 
   EXECUTE format('SELECT cdb_observatory.OBS_GetMeasure(
       %L, %L, %L, %L, %L
@@ -804,7 +804,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
   geom geometry,
-  geometry_level text DEFAULT '"us.census.tiger".census_tract'
+  geometry_level text DEFAULT 'us.census.tiger.census_tract'
 )
 RETURNS JSON 
 AS $$
@@ -817,50 +817,50 @@ DECLARE
   segment_name Text;
 BEGIN
 target_cols := Array[
-          '"us.census.acs".B01001001_quantile',
-          '"us.census.acs".B01001002_quantile',
-          '"us.census.acs".B01001026_quantile',
-          '"us.census.acs".B01002001_quantile',
-          '"us.census.acs".B03002003_quantile',
-          '"us.census.acs".B03002004_quantile',
-          '"us.census.acs".B03002006_quantile',
-          '"us.census.acs".B03002012_quantile',
-          '"us.census.acs".B05001006_quantile',--
-          '"us.census.acs".B08006001_quantile',--
-          '"us.census.acs".B08006002_quantile',--
-          '"us.census.acs".B08006008_quantile',--
-          '"us.census.acs".B08006009_quantile',--
-          '"us.census.acs".B08006011_quantile',--
-          '"us.census.acs".B08006015_quantile',--
-          '"us.census.acs".B08006017_quantile',--
-          '"us.census.acs".B09001001_quantile',--
-          '"us.census.acs".B11001001_quantile',
-          '"us.census.acs".B14001001_quantile',--
-          '"us.census.acs".B14001002_quantile',--
-          '"us.census.acs".B14001005_quantile',--
-          '"us.census.acs".B14001006_quantile',--
-          '"us.census.acs".B14001007_quantile',--
-          '"us.census.acs".B14001008_quantile',--
-          '"us.census.acs".B15003001_quantile',
-          '"us.census.acs".B15003017_quantile',
-          '"us.census.acs".B15003022_quantile',
-          '"us.census.acs".B15003023_quantile',
-          '"us.census.acs".B16001001_quantile',--
-          '"us.census.acs".B16001002_quantile',--
-          '"us.census.acs".B16001003_quantile',--
-          '"us.census.acs".B17001001_quantile',--
-          '"us.census.acs".B17001002_quantile',--
-          '"us.census.acs".B19013001_quantile',
-          '"us.census.acs".B19083001_quantile',
-          '"us.census.acs".B19301001_quantile',
-          '"us.census.acs".B25001001_quantile',
-          '"us.census.acs".B25002003_quantile',
-          '"us.census.acs".B25004002_quantile',
-          '"us.census.acs".B25004004_quantile',
-          '"us.census.acs".B25058001_quantile',
-          '"us.census.acs".B25071001_quantile',
-          '"us.census.acs".B25075001_quantile',
-          '"us.census.acs".B25075025_quantile'
+          'us.census.acs.B01001001_quantile',
+          'us.census.acs.B01001002_quantile',
+          'us.census.acs.B01001026_quantile',
+          'us.census.acs.B01002001_quantile',
+          'us.census.acs.B03002003_quantile',
+          'us.census.acs.B03002004_quantile',
+          'us.census.acs.B03002006_quantile',
+          'us.census.acs.B03002012_quantile',
+          'us.census.acs.B05001006_quantile',--
+          'us.census.acs.B08006001_quantile',--
+          'us.census.acs.B08006002_quantile',--
+          'us.census.acs.B08006008_quantile',--
+          'us.census.acs.B08006009_quantile',--
+          'us.census.acs.B08006011_quantile',--
+          'us.census.acs.B08006015_quantile',--
+          'us.census.acs.B08006017_quantile',--
+          'us.census.acs.B09001001_quantile',--
+          'us.census.acs.B11001001_quantile',
+          'us.census.acs.B14001001_quantile',--
+          'us.census.acs.B14001002_quantile',--
+          'us.census.acs.B14001005_quantile',--
+          'us.census.acs.B14001006_quantile',--
+          'us.census.acs.B14001007_quantile',--
+          'us.census.acs.B14001008_quantile',--
+          'us.census.acs.B15003001_quantile',
+          'us.census.acs.B15003017_quantile',
+          'us.census.acs.B15003022_quantile',
+          'us.census.acs.B15003023_quantile',
+          'us.census.acs.B16001001_quantile',--
+          'us.census.acs.B16001002_quantile',--
+          'us.census.acs.B16001003_quantile',--
+          'us.census.acs.B17001001_quantile',--
+          'us.census.acs.B17001002_quantile',--
+          'us.census.acs.B19013001_quantile',
+          'us.census.acs.B19083001_quantile',
+          'us.census.acs.B19301001_quantile',
+          'us.census.acs.B25001001_quantile',
+          'us.census.acs.B25002003_quantile',
+          'us.census.acs.B25004002_quantile',
+          'us.census.acs.B25004004_quantile',
+          'us.census.acs.B25058001_quantile',
+          'us.census.acs.B25071001_quantile',
+          'us.census.acs.B25075001_quantile',
+          'us.census.acs.B25075025_quantile'
                ];
 
     EXECUTE
@@ -868,7 +868,7 @@ target_cols := Array[
       SELECT (_OBS_GetCategories)->>'name'
       FROM cdb_observatory._OBS_GetCategories(
          $1,
-         Array['"us.census.spielman_singleton_segments".X10'],
+         Array['us.census.spielman_singleton_segments.X10'],
          $2)
       LIMIT 1
       $query$
@@ -910,7 +910,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCategories(
   geom geometry,
   dimension_names text[],
-  geometry_level text DEFAULT '"us.census.tiger".block_group',
+  geometry_level text DEFAULT 'us.census.tiger.block_group',
   time_span text DEFAULT '2009 - 2013'
 )
 RETURNS SETOF JSON as $$

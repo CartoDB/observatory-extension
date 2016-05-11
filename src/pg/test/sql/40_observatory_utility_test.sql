@@ -8,7 +8,7 @@
 SELECT
   cdb_observatory._OBS_GeomTable(
     ST_SetSRID(ST_Point(-74.0059, 40.7128), 4326),
-    '"us.census.tiger".census_tract'
+    'us.census.tiger.census_tract'
   );
 
 -- get null for unknown geometry_id
@@ -16,14 +16,14 @@ SELECT
 SELECT
   cdb_observatory._OBS_GeomTable(
     ST_SetSRID(ST_Point(-74.0059, 40.7128), 4326),
-    '"us.census.tiger".nonexistant_id' -- not in catalog
+    'us.census.tiger.nonexistant_id' -- not in catalog
   );
 
 -- future test: give back nulls when geometry doesn't intersect
 -- SELECT
 --   cdb_observatory._OBS_GeomTable(
 --     ST_SetSRID(ST_Point(0,0)), -- should give back null since it's in the ocean?
---     '"us.census.tiger".census_tract'
+--     'us.census.tiger.census_tract'
 --   );
 
 -- OBS_GetColumnData
@@ -35,8 +35,8 @@ SELECT
 WITH result as (
 SELECT
   array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
-    '"us.census.tiger".census_tract',
-    Array['"us.census.tiger".census_tract_geoid', '"us.census.acs".B01001001'],
+    'us.census.tiger.census_tract',
+    Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01001001'],
     '2009 - 2013') a
 )
 select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tract Geoids","type":"Text","description":""}' as test_get_obs_column_with_geoid_and_census_1,
@@ -48,15 +48,15 @@ from result;
 WITH result as (
 SELECT
   array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
-    '"us.census.tiger".census_tract',
-    Array['"us.census.tiger".baloney'],
+    'us.census.tiger.census_tract',
+    Array['us.census.tiger.baloney'],
     '2009 - 2013') a
 )
 select expected is null as OBS_GetColumnData_missing_measure
 from result;
 
 -- OBS_LookupCensusHuman
--- should give back: {"\"us.census.acs\".B19083001"}
+-- should give back: {"us.census.acs.B19083001"}
 SELECT
   cdb_observatory._OBS_LookupCensusHuman(
     Array['gini_index']
@@ -83,9 +83,9 @@ SELECT
 
 SELECT cdb_observatory._OBS_GetRelatedColumn(
     Array[
-    '"es.ine".pop_0_4',
-     '"us.census.acs".B01001001',
-    '"us.census.acs".B01001002'
+     'es.ine.pop_0_4',
+     'us.census.acs.B01001001',
+     'us.census.acs.B01001002'
     ],
      'denominator'
  );

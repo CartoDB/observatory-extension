@@ -66,7 +66,7 @@ BEGIN
               SELECT id, description,
                 name,
                   aggregate,
-                  replace(split_part(id,'".', 1),'"', '') source
+                  NULL source -- TODO use tags
                   FROM observatory.OBS_column
                   where name ilike     '%%' || %L || '%%'
                   or description ilike '%%' || %L || '%%'

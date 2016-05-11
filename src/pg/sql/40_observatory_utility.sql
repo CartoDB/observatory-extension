@@ -85,7 +85,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_LookupCensusHuman(
   column_names text[],
   -- TODO: change variable name table_name to table_id
-  table_name text DEFAULT '"us.census.acs".extract_block_group_5yr_2013_69b156927c'
+  table_name text DEFAULT 'us.census.acs.extract_block_group_5yr_2013_69b156927c'
 )
 RETURNS text[] as $$
 DECLARE

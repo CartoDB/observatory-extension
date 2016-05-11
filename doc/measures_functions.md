@@ -22,7 +22,7 @@ time_span | time span of interest (e.g., 2010 - 2014)
 
 #### Returns
 
-A NUMERIC value containing the following properties
+A NUMERIC value
 
 Key | Description
 --- | ---

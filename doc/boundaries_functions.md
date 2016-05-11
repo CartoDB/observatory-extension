@@ -16,6 +16,8 @@ timespan (optional) | year(s) to request from (`NULL` (default) gives most recen
 
 #### Returns
 
+A boundary geometry
+
 Value | Description
 --- | ---
 geom | WKB geometry
@@ -47,6 +49,8 @@ timespan (optional) | year(s) to request from (`NULL` (default) gives most recen
 
 #### Returns
 
+A TEXT boundary geometry id
+
 Value | Description
 --- | ---
 geometry_id | a string identifier of a geometry in the Boundaries
@@ -74,7 +78,7 @@ timespan (optional) | year(s) to request from (`NULL` (default) gives most recen
 
 #### Returns
 
-A table containing the following properties
+A boundary geometry
 
 Key | Description
 --- | ---
@@ -112,8 +116,8 @@ A table with the following columns:
 
 Column Name | Description
 --- | ---
-the_geom | a boundary geometry (e.g., US Census tracts)
-geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+the_geom | a boundary geometry (e.g., US Census tract boundaries)
+geom_refs | a string identifier for the geometry (e.g., geoids of US Census tracts)
 
 #### Example
 
@@ -156,7 +160,7 @@ A table with the following columns:
 Column Name | Description
 --- | ---
 the_geom | a point geometry on a boundary (e.g., a point that lies on a US Census tract)
-geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+geom_refs| a string identifier for the geometry (e.g., the geoid of a US Census tract)
 
 #### Example
 
@@ -177,94 +181,6 @@ Retrieve all Census tracts intersecting a bounding box around Denver, CO as a JS
 
 ```text
 http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM OBS_GetPointsByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326), 'us.census.tiger.census_tract', NULL ,'contains')
-```
-
-## OBS_GetBoundary(point geometry, boundary_id text)
-
-The ```OBS_GetBoundary(point, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary table below](below).
-
-#### Arguments
-
-Name | Description
---- | ---
-point_geometry | a WGS84 polygon geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
-timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
-
-#### Returns
-
-Value | Description
---- | ---
-geom | WKB geometry
-
-#### Example
-
-Overwrite a point geometry with a boundary geometry that contains it in your table
-
-```SQL
-UPDATE tablename
-SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
-```
-
-<!--
-Should add the SQL API call here too
--->
-
-## OBS_GetBoundaryId(point geometry, boundary_id text)
-
-The ```OBS_GetBoundaryId(point, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary table below](below). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
-
-#### Arguments
-
-Name |Description
---- | ---
-point | a WGS84 point geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
-timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
-
-#### Returns
-
-Value | Description
---- | ---
-geometry_id | a string identifier of a geometry in the Boundaries
-
-#### Example
-
-Write the geometry_id that contains the point geometry for every row as a new column in your table
-
-```SQL
-UPDATE tablename
-SET new_column_name = OBS_GetBoundaryId(the_geom, ' "us.census.tiger".block_group')
-```
-
-## OBS_GetBoundaryById(geometry_id text, boundary_id text)
-
-The ```OBS_GetBoundaryById(geometry_id, boundary_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetBoundaryId(point, boundary_id)``` method described above.
-
-#### Arguments
-
-Name | Description
---- | ---
-geometry_id | a string identifier for a Boundary geometry
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
-timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
-
-#### Returns
-
-A JSON object containing the following properties
-
-Key | Description
---- | ---
-geom | a WGS84 polygon geometry
-
-#### Example
-
-Use a table of geometry_id to select the unique boundaries. Useful with the ```Create Dataset from Query``` option in CartoDB.
-
-```SQL
-SELECT OBS_GetBoundaryById(geometry_id) As the_geom, geometry_id
-FROM tablename
-GROUP BY geometry_id
 ```
 
 ## OBS_GetBoundariesByPointAndRadius(point geometry, radius numeric, boundary_id text)
@@ -288,7 +204,7 @@ A table with the following columns:
 Column Name | Description
 --- | ---
 the_geom | a boundary geometry (e.g., a US Census tract)
-geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+geom_refs| a string identifier for the geometry (e.g., the geoid of a US Census tract)
 
 #### Example
 
@@ -323,7 +239,7 @@ A table with the following columns:
 Column Name | Description
 --- | ---
 the_geom | a point geometry (e.g., a point on a US Census tract)
-geom_ref | a string identifier for the geometry (e.g., the geoid of a US Census tract)
+geom_refs | a string identifier for the geometry (e.g., the geoid of a US Census tract)
 
 #### Example
 

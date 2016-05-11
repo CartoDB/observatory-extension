@@ -1,19 +1,21 @@
 # Discovery Functions
 
-If you are using the [discovery methods](/cartodb-platform/dataobservatory/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [Boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) and [Measures](/cartodb-platform/dataobservatory/overview/#measures-data) data.
+If you are using the [discovery methods](/cartodb-platform/dataobservatory/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) and [measures](/cartodb-platform/dataobservatory/overview/#measures-data) data.
 
 ## OBS_Search(search_term)
 
-Use arbitrary text to search all available Measures
+Use arbitrary text to search all available measures
 
 #### Arguments
 
 Name | Description
 --- | ---
-search_term | a string to search for available Measures
-boundary_id | a string identifier for a Boundary geometry (optional)
+search_term | a string to search for available measures
+boundary_id | a string identifier for a boundary geometry (optional)
 
 #### Returns
+
+A TABLE containing the following properties
 
 Key | Description
 --- | ---
@@ -31,7 +33,7 @@ SELECT * FROM OBS_Search('inequality')
 
 ## OBS_GetAvailableBoundaries(point_geometry)
 
-Returns available boundary_ids at a given point geometry.
+Returns available `boundary_id`s at a given point geometry.
 
 #### Arguments
 
@@ -41,9 +43,11 @@ point_geometry |  a WGS84 point geometry (e.g. the_geom)
 
 #### Returns
 
+A TABLE containing the following properties
+
 Key | Description
 --- | ---
-boundary_id | a boundary identifier from the [Boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids)
+boundary_id | a boundary identifier from the [boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids)
 description | a brief description of the boundary dataset
 timespan | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
 

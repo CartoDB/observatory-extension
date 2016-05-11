@@ -52,10 +52,17 @@ BEGIN
   EXECUTE '
   WITH geomref AS (
     SELECT t.table_id id
-    FROM observatory.OBS_column_to_column c2c, observatory.OBS_column_table t
+    FROM observatory.OBS_column_to_column c2c,
+         observatory.OBS_column c,
+         observatory.OBS_column_table geom_ct,
+         observatory.OBS_column_table data_ct,
+         observatory.OBS_table t
     WHERE c2c.reltype = ''geom_ref''
+      AND c.column_id = c2c.target_id
       AND c2c.target_id = $1
-      AND c2c.source_id = t.column_id
+      AND c2c.source_id = ct.column_id
+    ORDER BY weight DESC
+    LIMIT 1
     ),
   column_ids as (
     select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a

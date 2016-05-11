@@ -219,6 +219,7 @@ BEGIN
 
   -- TODO we're assuming our geom_table has only one geom_ref column
   --      we *really* should pass in both geom_table_name and boundary_id
+  -- TODO tablename should not be passed here (use boundary_id)
   EXECUTE
     format('SELECT ct.colname
               FROM observatory.obs_column_to_column c2c,
@@ -284,10 +285,11 @@ BEGIN
 
   query := query || format(' ]::numeric[]
     FROM observatory.%I
-    WHERE %I.geoid  = %L
+    WHERE %I.%I  = %L
   ',
   ((data_table_info)[1])->>'tablename',
   ((data_table_info)[1])->>'tablename',
+  geoid_colname,
   geoid
   );
 
@@ -331,16 +333,6 @@ DECLARE
   denominator_id TEXT;
   vals NUMERIC[];
 BEGIN
-
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := 'us.census.tiger.block_group';
-  END IF;
-
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
-  END IF;
 
   IF normalize ILIKE 'area' THEN
     measure_ids := ARRAY[measure_id];

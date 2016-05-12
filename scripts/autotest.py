@@ -1,4 +1,4 @@
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_is_not_none
 from nose_parameterized import parameterized
 
 import os
@@ -55,6 +55,9 @@ def test_measure_points(column_id):
 SELECT * FROM cdb_observatory.OBS_GetMeasure({point}, '{column_id}')
                  '''.format(column_id=column_id, point=default_point(column_id)))
     assert_equal(resp.status_code, 200)
+    rows = resp.json()['rows']
+    assert_equal(1, len(rows))
+    assert_is_not_none(rows[0].values()[0])
 
 @parameterized(CATEGORY_COLUMNS)
 def test_category_points(column_id):
@@ -62,6 +65,9 @@ def test_category_points(column_id):
 SELECT * FROM cdb_observatory.OBS_GetCategory({point}, '{column_id}')
                  '''.format(column_id=column_id, point=default_point(column_id)))
     assert_equal(resp.status_code, 200)
+    rows = resp.json()['rows']
+    assert_equal(1, len(rows))
+    assert_is_not_none(rows[0].values()[0])
 
 @parameterized(BOUNDARY_COLUMNS)
 def test_boundary_points(column_id):
@@ -69,3 +75,6 @@ def test_boundary_points(column_id):
 SELECT * FROM cdb_observatory.OBS_GetBoundary({point}, '{column_id}')
                  '''.format(column_id=column_id, point=default_point(column_id)))
     assert_equal(resp.status_code, 200)
+    rows = resp.json()['rows']
+    assert_equal(1, len(rows))
+    assert_is_not_none(rows[0].values()[0])

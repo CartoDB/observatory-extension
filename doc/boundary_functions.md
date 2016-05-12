@@ -28,23 +28,16 @@ If geometries are not found for the requested `polygon`, `geometry_id`, `timespa
 
 #### Example
 
-Get all Census Tracts in Lower Manhattan plus nearby areas within the supplied bounding box.
+Insert all Census Tracts from Lower Manhattan and nearby areas within the supplied bounding box to a table named `manhattan_census_tracts` which has columns `the_geom` (geometry) and `geoid` (text).
 
 ```sql
+INSERT INTO manhattan_census_tracts(the_geom, geoid)
 SELECT *
 FROM OBS_GetBoundariesByGeometry(
-  ST_MakeEnvelope(-74.0251922607,40.6945658517,
-                  -73.9651107788,40.7377626342,
-                  4326),
-  'us.census.tiger.census_tract')
-```
-
-#### API Example
-
-Retrieve all Census tracts contained in a bounding box around Denver, CO as a JSON response:
-
-```text
-http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM OBS_GetBoundariesByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326),'us.census.tiger.census_tract',  NULL, 'contains')
+       ST_MakeEnvelope(-74.0251922607,40.6945658517,
+                      -73.9651107788,40.7377626342,
+                      4326),
+       'us.census.tiger.census_tract')
 ```
 
 #### Errors
@@ -78,23 +71,16 @@ If geometries are not found for the requested geometry, `geometry_id`, `timespan
 
 #### Example
 
-Get all Census Tracts in Lower Manhattan plus nearby areas within the supplied bounding box.
+Insert points that lie on Census Tracts from Lower Manhattan and nearby areas within the supplied bounding box to a table named `manhattan_census_tracts` which has columns `the_geom` (geometry) and `geoid` (text).
 
 ```sql
+INSERT INTO manhattan_census_tract_points(the_geom, geoid)
 SELECT *
 FROM OBS_GetPointsByGeometry(
-  ST_MakeEnvelope(-74.0251922607,40.6945658517,
-                  -73.9651107788,40.7377626342,
-                  4326),
-  'us.census.tiger.census_tract')
-```
-
-#### API Example
-
-Retrieve all Census tracts intersecting a bounding box around Denver, CO as a JSON response:
-
-```text
-http://observatory.cartodb.com/api/v2/sql?q=SELECT * FROM OBS_GetPointsByGeometry(ST_MakeEnvelope(-105.4287704158,39.4600507935,-104.5089737248,40.0901569675,4326), 'us.census.tiger.census_tract', NULL ,'contains')
+       ST_MakeEnvelope(-74.0251922607,40.6945658517,
+                       -73.9651107788,40.7377626342,
+                       4326),
+       'us.census.tiger.census_tract')
 ```
 
 #### Errors
@@ -130,10 +116,6 @@ UPDATE tablename
 SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
 ```
 
-<!--
-Should add the SQL API call here too
--->
-
 #### Errors
 
 * If a geometry other than a point is passed, an error is thrown: `Invalid geometry type (ST_Line), expecting 'ST_Point'`
@@ -160,16 +142,12 @@ geometry_id | a string identifier of a geometry in the Boundaries
 
 #### Example
 
-Write the geometry_id that contains the point geometry for every row as a new column in your table
+Write the US Census block group geoid that contains the point geometry for every row as a new column in your table.
 
 ```SQL
 UPDATE tablename
-SET boundary_id = OBS_GetBoundaryId(the_geom, 'us.census.tiger.block_group')
+SET geometry_id = OBS_GetBoundaryId(the_geom, 'us.census.tiger.block_group')
 ```
-
-<!--
-Include API examples
--->
 
 #### Errors
 
@@ -197,7 +175,7 @@ geom | a WGS84 polygon geometry
 
 #### Example
 
-Use a table of geometry_id to select the unique boundaries. Useful with the ```Create Dataset from Query``` option in CartoDB.
+Use a table of `geometry_id`s (e.g., geoid from the U.S. Census) to select the unique boundaries that they correspond to.
 
 ```SQL
 SELECT
@@ -235,9 +213,10 @@ If geometries are not found for the requested point and radius, `geometry_id`, `
 
 #### Example
 
-Get Census tracts which intersect within 10 miles of Downtown, Colorado. In the Editor, you can simple use "Table from Query" to turn the result into a new dataset.
+Insert into table `denver_census_tracts` the census tract boundaries and geoids of census tracts which intersect within 10 miles of downtown Denver, Colorado.
 
 ```sql
+INSERT INTO denver_census_tracts(the_geom, geoid)
 SELECT *
 FROM OBS_GetBoundariesByPointAndRadius(
   CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
@@ -276,9 +255,10 @@ If geometries are not found for the requested point and radius, `geometry_id`, `
 
 #### Example
 
-Get Census tracts which intersect within 10 miles of Downtown, Colorado. In the Editor, you can simple use "Table from Query" to turn the result into a new dataset.
+Insert into table `denver_census_tracts` points on US census tracts and their corresponding geoids for census tracts which intersect within 10 miles of downtown Denver, Colorado, USA.
 
 ```sql
+INSERT INTO denver_census_tracts(the_geom, geoid)
 SELECT *
 FROM OBS_GetPointsByPointAndRadius(
   CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado

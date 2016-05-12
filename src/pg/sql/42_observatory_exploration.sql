@@ -115,5 +115,6 @@ BEGIN
         $1 && bounds::box2d
   $string$ || timespan_query
   USING geom;
+  RETURN;
 END
 $$ LANGUAGE plpgsql;

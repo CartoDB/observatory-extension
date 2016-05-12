@@ -155,19 +155,24 @@ DECLARE
   data_table_info json[];
 BEGIN
 
-  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
-
-  IF geom_table_name IS NULL
-  THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
-     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
-  END IF;
-
   EXECUTE
   'SELECT array_agg(_obs_getcolumndata)
    FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);'
   INTO data_table_info
   USING geometry_level, column_ids, time_span;
+
+  IF geometry_level IS NULL THEN
+    geometry_level = data_table_info[1]->>'boundary_id';
+  END IF;
+
+  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
+
+  IF geom_table_name IS NULL
+  THEN
+     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+      -- TODO this should return JSON
+     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
+  END IF;
 
   IF data_table_info IS NULL THEN
     RAISE NOTICE 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
@@ -220,6 +225,7 @@ BEGIN
 
   -- TODO we're assuming our geom_table has only one geom_ref column
   --      we *really* should pass in both geom_table_name and boundary_id
+  -- TODO tablename should not be passed here (use boundary_id)
   EXECUTE
     format('SELECT ct.colname
               FROM observatory.obs_column_to_column c2c,
@@ -342,16 +348,6 @@ DECLARE
   denominator_id TEXT;
   vals NUMERIC[];
 BEGIN
-
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := 'us.census.tiger.block_group';
-  END IF;
-
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
-  END IF;
 
   IF normalize ILIKE 'area' THEN
     measure_ids := ARRAY[measure_id];

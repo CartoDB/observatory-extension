@@ -37,30 +37,35 @@ WHERE type ILIKE 'geometry'
 AND weight > 0
 ''').json()['rows']]
 
+def default_point(column_id):
+    '''
+    Returns default test point for the column_id.
+    '''
+    if column_id.startswith('es.ine'):
+        return 'CDB_LatLng(40.39, -3.7)'
+    elif column_id.startswith('us.zillow'):
+        return 'CDB_LatLng(41.76, -73.52)'
+    else:
+        return 'CDB_LatLng(40.7, -73.9)'
+
 
 @parameterized(MEASURE_COLUMNS)
 def test_measure_points(column_id):
     resp = query('''
-SELECT *
-FROM cdb_observatory.OBS_GetMeasure(cdb_observatory._TestPoint(),
-                                    '{column_id}')
-                 '''.format(column_id=column_id))
+SELECT * FROM cdb_observatory.OBS_GetMeasure({point}, '{column_id}')
+                 '''.format(column_id=column_id, point=default_point(column_id)))
     assert_equal(resp.status_code, 200)
 
 @parameterized(CATEGORY_COLUMNS)
 def test_category_points(column_id):
     resp = query('''
-SELECT *
-FROM cdb_observatory.OBS_GetCategory(cdb_observatory._TestPoint(),
-                                    '{column_id}')
-                 '''.format(column_id=column_id))
+SELECT * FROM cdb_observatory.OBS_GetCategory({point}, '{column_id}')
+                 '''.format(column_id=column_id, point=default_point(column_id)))
     assert_equal(resp.status_code, 200)
 
 @parameterized(BOUNDARY_COLUMNS)
 def test_boundary_points(column_id):
     resp = query('''
-SELECT *
-FROM cdb_observatory.OBS_GetBoundary(cdb_observatory._TestPoint(),
-                                    '{column_id}')
-                 '''.format(column_id=column_id))
+SELECT * FROM cdb_observatory.OBS_GetBoundary({point}, '{column_id}')
+                 '''.format(column_id=column_id, point=default_point(column_id)))
     assert_equal(resp.status_code, 200)

@@ -143,7 +143,7 @@ BEGIN
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'Error: No boundaries found for ''%''', boundary_id;
+    RAISE NOTICE 'No boundaries found for ''%''', boundary_id;
     RETURN NULL::text;
   END IF;
 

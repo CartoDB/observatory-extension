@@ -40,8 +40,8 @@ SELECT
     Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01001001'],
     '2009 - 2013') a
 )
-select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null}' as test_get_obs_column_with_geoid_and_census_1,
-       (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null}' as test_get_obs_column_with_geoid_and_census_2
+select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null,"boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_1,
+       (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_ab038198aaab3f3cb055758638ee4de28ad70146","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null,"boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_2
 from result;
 
 -- should be null-valued

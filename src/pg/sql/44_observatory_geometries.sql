@@ -72,9 +72,9 @@ BEGIN
 
   -- return the first boundary in intersections
   EXECUTE format(
-    'SELECT t.the_geom
-     FROM observatory.%s As t
-     WHERE ST_Intersects($1, t.the_geom)
+    'SELECT the_geom
+     FROM observatory.%I
+     WHERE ST_Intersects($1, the_geom)
      LIMIT 1', target_table)
   INTO boundary
   USING geom;
@@ -223,9 +223,9 @@ BEGIN
   -- retrieve boundary
   EXECUTE
     format(
-    'SELECT t.%s
-     FROM observatory.%I As t
-     WHERE t.%s = $1
+    'SELECT %I
+     FROM observatory.%I
+     WHERE %I = $1
      LIMIT 1', geom_colname, target_table, geoid_colname)
   INTO boundary
   USING geometry_id;
@@ -281,9 +281,9 @@ BEGIN
   -- return first boundary in intersections
   RETURN QUERY
   EXECUTE format(
-    'SELECT t.%s, t.%s
-     FROM observatory.%s As t
-     WHERE ST_%s($1, t.the_geom)
+    'SELECT %I, %I
+     FROM observatory.%I
+     WHERE ST_%s($1, the_geom)
      ', geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
 
@@ -423,9 +423,9 @@ BEGIN
   -- return first boundary in intersections
   RETURN QUERY
   EXECUTE format(
-    'SELECT ST_PointOnSurface(t.%s) As %s, t.%s
-     FROM observatory.%s As t
-     WHERE ST_%s($1, t.the_geom)
+    'SELECT ST_PointOnSurface(%I) As %s, %I
+     FROM observatory.%I
+     WHERE ST_%s($1, the_geom)
      ', geom_colname, geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
 

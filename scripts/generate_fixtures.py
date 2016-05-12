@@ -1,11 +1,4 @@
 
-## This script generates all of the fixtures needed for running tests based on
-##   Data Observatory functions. It creates SQL dumps of a small amount of data
-##   and all of the metadata. To add more data, add a new tuple to the fixtures
-##   list
-
-
-## get sqldumpr from https://github.com/talos/carto-sqldumpr
 from sqldumpr import Dumpr
 
 def get_tablename_query(column_id, boundary_id, timespan):
@@ -45,6 +38,7 @@ metadata = ['obs_table', 'obs_column_table', 'obs_column', 'obs_column_tag', 'ob
 fixtures = [
     ('us.census.tiger.census_tract', 'us.census.tiger.census_tract', '2014'),
     ('us.census.tiger.block_group', 'us.census.tiger.block_group', '2014'),
+    ('us.census.tiger.zcta5', 'us.census.tiger.zcta5', '2014'),
     ('us.census.tiger.county', 'us.census.tiger.county', '2014'),
     ('us.census.acs.B01001001', 'us.census.tiger.census_tract', '2009 - 2013'),
     ('us.census.acs.B01001001_quantile', 'us.census.tiger.census_tract', '2009 - 2013'),
@@ -52,15 +46,18 @@ fixtures = [
     ('us.census.acs.B01001001', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.spielman_singleton_segments.X10', 'us.census.tiger.census_tract', '2009 - 2013'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2014-01'),
+    ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2016-03'),
 ]
 
 unique_tables = set()
 
 for f in fixtures:
+    column_id, boundary_id, timespan = f
     tablename_query = get_tablename_query(*f)
-    tablename = cdb.query(tablename_query).json()['rows'][0]['tablename']
-    colname = cdb.query(tablename_query).json()['rows'][0]['colname']
-    table_colname = (tablename, colname, )
+    resp = cdb.query(tablename_query).json()['rows'][0]
+    tablename = resp['tablename']
+    colname = resp['colname']
+    table_colname = (tablename, colname, boundary_id, )
     if table_colname not in unique_tables:
         print table_colname
         unique_tables.add(table_colname)
@@ -72,12 +69,16 @@ with open('src/pg/test/fixtures/load_fixtures.sql', 'w') as outfile:
         outfile.write('SET client_min_messages TO WARNING;\n\set ECHO none\n')
         dropfiles.write('SET client_min_messages TO WARNING;\n\set ECHO none\n')
         for tablename in metadata:
-            cdb.dump(select_star(tablename), tablename, outfile)
+            cdb.dump(select_star(tablename), tablename, outfile, schema='observatory')
             dropfiles.write('DROP TABLE IF EXISTS observatory.{};\n'.format(tablename))
             print tablename
 
-        for tablename, colname in unique_tables:
-            print ' '.join([select_star(tablename), "WHERE {} LIKE '36047%'".format(colname)])
-            cdb.dump(' '.join([select_star(tablename), "WHERE {} LIKE '36047%'".format(colname)]),
-               tablename, outfile)
+        for tablename, colname, boundary_id in unique_tables:
+            if 'zcta5' in boundary_id:
+                where = '11%'
+            else:
+                where = '36047%'
+            print ' '.join([select_star(tablename), "WHERE {} LIKE '{}'".format(colname, where)])
+            cdb.dump(' '.join([select_star(tablename), "WHERE {} LIKE '{}'".format(colname, where)]),
+                     tablename, outfile, schema='observatory')
             dropfiles.write('DROP TABLE IF EXISTS observatory.{};\n'.format(tablename))

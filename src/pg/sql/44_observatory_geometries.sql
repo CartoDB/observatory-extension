@@ -113,6 +113,7 @@ AS $$
 DECLARE
   output_id text;
   target_table text;
+  geoid_colname text;
 BEGIN
 
   -- If not point, raise error
@@ -139,21 +140,33 @@ BEGIN
     LIMIT 1;
   END IF;
 
-  -- if no tables are found, raise error
+  -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'Error: No boundaries found for ''%''', boundary_id;
+    RAISE NOTICE 'No boundaries found for ''%''', boundary_id;
     RETURN NULL::text;
   END IF;
 
-  RAISE NOTICE 'target_table: %', target_table;
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+   , target_table)
+  INTO geoid_colname;
+
+  RAISE NOTICE 'target_table: %, geoid_colname: %', target_table, geoid_colname;
 
   -- return name of geometry id column
   EXECUTE format(
-    'SELECT t.geoid
-     FROM observatory.%s As t
-     WHERE ST_Intersects($1, t.the_geom)
-     LIMIT 1', target_table)
+    'SELECT %I
+     FROM observatory.%I
+     WHERE ST_Intersects($1, the_geom)
+     LIMIT 1', geoid_colname, target_table)
   INTO output_id
   USING geom;
 

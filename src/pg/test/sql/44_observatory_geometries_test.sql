@@ -171,6 +171,17 @@ FROM (
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
+-- who's on first boundaries
+SELECT
+  array_agg(geom_refs) = Array['85632785','85633051','85633111','85633147','85633253','85633267'] As OBS_GetBoundariesByGeometry_wof
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByGeometry(
+    ST_MakeEnvelope(-4.66, 40.43, 14.48, 51.99, 4326),
+    'whosonfirst.wof_country_geom')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
 -- OBS_GetBoundariesByPointAndRadius
 
 -- check that all census tracts intersecting with the geometry are returned

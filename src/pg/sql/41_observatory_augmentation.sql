@@ -155,19 +155,28 @@ DECLARE
   data_table_info json[];
 BEGIN
 
-  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
-
-  IF geom_table_name IS NULL
-  THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
-     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
-  END IF;
-
   EXECUTE
   'SELECT array_agg(_obs_getcolumndata)
    FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);'
   INTO data_table_info
   USING geometry_level, column_ids, time_span;
+
+  IF geometry_level IS NULL THEN
+    geometry_level = data_table_info[1]->>'boundary_id';
+  END IF;
+
+  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
+
+  IF geom_table_name IS NULL
+  THEN
+     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+      -- TODO this should return JSON
+     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
+  END IF;
+
+  IF data_table_info IS NULL THEN
+    RAISE NOTICE 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
+  END IF;
 
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
@@ -198,7 +207,7 @@ $$ LANGUAGE plpgsql;
 --  otherwise normalize it to the census block area and return that
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
   geom geometry(Geometry, 4326),
-  geom_table_name text,
+  geom_table_name text, -- TODO: change to boundary_id
   data_table_info json[]
 )
 RETURNS json[]
@@ -209,14 +218,42 @@ DECLARE
   query text;
   i int;
   geoid text;
+  data_geoid_colname text;
+  geom_geoid_colname text;
   area NUMERIC;
 BEGIN
 
-  -- TODO: does 'geoid' need to be generalized to geom_ref??
+  -- TODO we're assuming our geom_table has only one geom_ref column
+  --      we *really* should pass in both geom_table_name and boundary_id
+  -- TODO tablename should not be passed here (use boundary_id)
   EXECUTE
-    format('SELECT geoid
-            FROM observatory.%I
-            WHERE ST_Within($1, the_geom)',
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+     , (data_table_info)[1]->>'tablename')
+  INTO data_geoid_colname;
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+   , geom_table_name)
+  INTO geom_geoid_colname;
+
+  EXECUTE
+    format('SELECT %I
+              FROM observatory.%I
+             WHERE ST_Within($1, the_geom)',
+            geom_geoid_colname,
             geom_table_name)
   USING geom
   INTO geoid;
@@ -226,8 +263,9 @@ BEGIN
   EXECUTE
     format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
             FROM observatory.%I
-            WHERE geoid = %L',
+            WHERE %I = %L',
             geom_table_name,
+            geom_geoid_colname,
             geoid)
   INTO area;
 
@@ -262,10 +300,11 @@ BEGIN
 
   query := query || format(' ]::numeric[]
     FROM observatory.%I
-    WHERE %I.geoid  = %L
+    WHERE %I.%I  = %L
   ',
   ((data_table_info)[1])->>'tablename',
   ((data_table_info)[1])->>'tablename',
+  data_geoid_colname,
   geoid
   );
 
@@ -309,16 +348,6 @@ DECLARE
   denominator_id TEXT;
   vals NUMERIC[];
 BEGIN
-
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := 'us.census.tiger.block_group';
-  END IF;
-
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
-  END IF;
 
   IF normalize ILIKE 'area' THEN
     measure_ids := ARRAY[measure_id];

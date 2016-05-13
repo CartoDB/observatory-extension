@@ -281,7 +281,7 @@ BEGIN
   -- return first boundary in intersections
   RETURN QUERY
   EXECUTE format(
-    'SELECT %I, %I
+    'SELECT %I, %I::text
      FROM observatory.%I
      WHERE ST_%s($1, the_geom)
      ', geom_colname, geoid_colname, target_table, overlap_type)
@@ -423,7 +423,7 @@ BEGIN
   -- return first boundary in intersections
   RETURN QUERY
   EXECUTE format(
-    'SELECT ST_PointOnSurface(%I) As %s, %I
+    'SELECT ST_PointOnSurface(%I) As %s, %I::text
      FROM observatory.%I
      WHERE ST_%s($1, the_geom)
      ', geom_colname, geom_colname, geoid_colname, target_table, overlap_type)

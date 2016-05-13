@@ -47,6 +47,7 @@ fixtures = [
     ('us.census.spielman_singleton_segments.X10', 'us.census.tiger.census_tract', '2009 - 2013'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2014-01'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2016-03'),
+    ('whosonfirst.wof_country_geom', 'whosonfirst.wof_country_geom', '2016'),
 ]
 
 unique_tables = set()
@@ -75,10 +76,15 @@ with open('src/pg/test/fixtures/load_fixtures.sql', 'w') as outfile:
 
         for tablename, colname, boundary_id in unique_tables:
             if 'zcta5' in boundary_id:
-                where = '11%'
+                where = '\'11%\''
+                compare = 'LIKE'
+            elif 'whosonfirst' in boundary_id:
+                where = '(\'85632785\',\'85633051\',\'85633111\',\'85633147\',\'85633253\',\'85633267\')'
+                compare = 'IN'
             else:
-                where = '36047%'
-            print ' '.join([select_star(tablename), "WHERE {} LIKE '{}'".format(colname, where)])
-            cdb.dump(' '.join([select_star(tablename), "WHERE {} LIKE '{}'".format(colname, where)]),
+                where = '\'36047%\''
+                compare = 'LIKE'
+            print ' '.join([select_star(tablename), "WHERE {}::text {} {}".format(colname, compare, where)])
+            cdb.dump(' '.join([select_star(tablename), "WHERE {}::text {} {}".format(colname, compare, where)]),
                      tablename, outfile, schema='observatory')
             dropfiles.write('DROP TABLE IF EXISTS observatory.{};\n'.format(tablename))

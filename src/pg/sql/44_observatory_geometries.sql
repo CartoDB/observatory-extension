@@ -161,9 +161,9 @@ BEGIN
 
   RAISE NOTICE 'target_table: %, geoid_colname: %', target_table, geoid_colname;
 
-  -- return name of geometry id column
+  -- return geometry id column value
   EXECUTE format(
-    'SELECT %I
+    'SELECT %I::text
      FROM observatory.%I
      WHERE ST_Intersects($1, the_geom)
      LIMIT 1', geoid_colname, target_table)

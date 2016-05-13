@@ -1,6 +1,6 @@
 # Measures Functions
 
-[Data Observatory Measures](/cartodb-platform/dataobservatory/overview/#measures-methods) are the numerical location data you can access. The Measure Functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (Point or Polygon) and receiving back a Measure (an absolute value) for that location.
+[Data Observatory Measures](/cartodb-platform/dataobservatory/overview/#measures-methods) are the numerical location data you can access. The measure Functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (Point or Polygon) and receiving back a measure (an absolute value) for that location.
 
 There are hundreds of Measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
 
@@ -30,16 +30,12 @@ value | the raw or normalized measure
 
 #### Example
 
-Add a Measure to an empty numeric column based on point locations in your table
+Add a measure to an empty numeric column based on point locations in your table.
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
+UPDATE tablename 
+SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
-
-<!--
-Should add the SQL API call here too
--->
-
 
 ## OBS_GetUSCensusMeasure(polygon geometry, measure_name text);
 
@@ -51,7 +47,7 @@ Name |Description
 --- | ---
 polygon | a WGS84 polygon geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/dataobservatory/glossary/#obsgetuscensusmeasure-names-table).
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
+normalize | for measures that are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -72,13 +68,9 @@ UPDATE tablename
 SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
-<!--
-Should add the SQL API call here too
--->
-
 ## OBS_GetMeasure(point geometry, measure_id text);
 
-The ```OBS_GetMeasure(point, measure_id)``` function returns any Data Observatory Measure at a point location. You can browse all available Measures in the [Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf)).
+The ```OBS_GetMeasure(point, measure_id)``` function returns any Data Observatory measure at a point location. You can browse all available Measures in the [Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf)).
 
 #### Arguments
 
@@ -109,7 +101,7 @@ SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
 
 ## OBS_GetMeasure(polygon geometry, measure_id text);
 
-The ```OBS_GetMeasure(polygon, measure_id)``` function returns any Data Observatory Measure calculated within a polygon.
+The ```OBS_GetMeasure(polygon, measure_id)``` function returns any Data Observatory measure calculated within a polygon.
 
 #### Arguments
 
@@ -131,10 +123,11 @@ value | the raw or normalized measure
 
 #### Example
 
-Add a Measure to an empty column based on polygons in your table
+Add a measure to an empty column based on polygons in your table
 
 ```SQL
-UPDATE tablename SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
+UPDATE tablename 
+SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
 ```
 
 #### Errors
@@ -154,7 +147,7 @@ category_id | a category identifier from the Data Observatory ([see available me
 
 #### Returns
 
-A NUMERIC value
+A TEXT value
 
 Key | Description
 --- | ---
@@ -162,8 +155,9 @@ value | a text based category found at the supplied point
 
 #### Example
 
-Add the Category to an empty column based on point locations in your table
+Add the Category to an empty column text column based on point locations in your table
 
 ```SQL
-UPDATE tablename SET segmentation = OBS_GetCategory(the_geom, 'X55')
+UPDATE tablename 
+SET segmentation = OBS_GetCategory(the_geom, 'us.census.spielman_singleton_segments.X55')
 ```

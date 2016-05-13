@@ -356,11 +356,11 @@ BEGIN
     ' INTO denominator_id
     USING measure_id;
     measure_ids := ARRAY[measure_id, denominator_id];
-  ELSIF normalize IS NULL OR normalize ILIKE 'none' THEN
+  ELSIF normalize ILIKE 'none' THEN
     -- TODO we need a switch on obs_get to disable area normalization
     RAISE EXCEPTION 'No normalization not yet supported.';
   ELSE
-    RAISE EXCEPTION 'Only valid inputs for "normalize" are "area" (default), "denominator", or "none".';
+    RAISE EXCEPTION 'Only valid inputs for "normalize" are "area" (default) and "denominator".';
   END IF;
 
   EXECUTE '

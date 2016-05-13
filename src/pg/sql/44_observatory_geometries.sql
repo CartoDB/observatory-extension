@@ -119,7 +119,7 @@ BEGIN
   -- If not point, raise error
   IF ST_GeometryType(geom) != 'ST_Point'
   THEN
-    RAISE EXCEPTION 'Error: Invalid geometry type (%), expecting ''ST_Point''', ST_GeometryType(geom);
+    RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_Point''', ST_GeometryType(geom);
   END IF;
 
   -- choose appropriate table based on time_span
@@ -143,7 +143,7 @@ BEGIN
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'No boundaries found for ''%''', boundary_id;
+    RAISE NOTICE 'Warning: No boundaries found for ''%''', boundary_id;
     RETURN NULL::text;
   END IF;
 

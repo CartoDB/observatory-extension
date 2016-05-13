@@ -596,7 +596,7 @@ DECLARE
   seg_name     Text;
   geom_id      Text;
   q            Text;
-  segment_name Text;
+  segment_names Text[];
 BEGIN
 IF boundary_id IS NULL THEN
  boundary_id = 'us.census.tiger.census_tract';
@@ -650,14 +650,13 @@ target_cols := Array[
 
     EXECUTE
       $query$
-      SELECT (_OBS_GetCategories)->>'name'
+      SELECT array_agg(_OBS_GetCategories->>'category')
       FROM cdb_observatory._OBS_GetCategories(
          $1,
-         Array['us.census.spielman_singleton_segments.X10'],
+         Array['us.census.spielman_singleton_segments.X10', 'us.census.spielman_singleton_segments.X55'],
          $2)
-      LIMIT 1
       $query$
-    INTO segment_name
+    INTO segment_names
     USING geom, boundary_id;
 
     q :=
@@ -675,7 +674,7 @@ target_cols := Array[
            %s
          FROM  a)
          SELECT row_to_json(r) FROM
-         ( SELECT $4 as segment_name, percentiles.*
+         ( SELECT $4 as x10_segment, $5 as x55_segment, percentiles.*
           FROM percentiles) r
        $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols)) results;
 
@@ -683,7 +682,7 @@ target_cols := Array[
     EXECUTE
       q
     into result
-    USING geom, target_cols, boundary_id, segment_name;
+    USING geom, target_cols, boundary_id, segment_names[1], segment_names[2];
 
     return result;
 

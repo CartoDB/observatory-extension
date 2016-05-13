@@ -39,7 +39,7 @@ AS $$
     boundary_id = 'us.census.tiger.block_group';
   END IF;
 
-  target_cols := Array['us.census.acs.B01001001',
+  target_cols := Array['us.census.acs.B01003001',
                   'us.census.acs.B01001002',
                   'us.census.acs.B01001026',
                   'us.census.acs.B01002001',
@@ -492,7 +492,7 @@ DECLARE
   result NUMERIC;
 BEGIN
   -- TODO use a super-column for global pop
-  population_measure_id := 'us.census.acs.B01001001';
+  population_measure_id := 'us.census.acs.B01003001';
 
   EXECUTE format('SELECT cdb_observatory.OBS_GetMeasure(
       %L, %L, %L, %L, %L
@@ -602,7 +602,7 @@ IF boundary_id IS NULL THEN
  boundary_id = 'us.census.tiger.census_tract';
 END IF;
 target_cols := Array[
-          'us.census.acs.B01001001_quantile',
+          'us.census.acs.B01003001_quantile',
           'us.census.acs.B01001002_quantile',
           'us.census.acs.B01001026_quantile',
           'us.census.acs.B01002001_quantile',

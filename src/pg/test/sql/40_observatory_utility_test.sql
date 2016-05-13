@@ -37,7 +37,7 @@ WITH result as (
 SELECT
   array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
     'us.census.tiger.census_tract',
-    Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01001001'],
+    Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01003001'],
     '2009 - 2013') a
 )
 select (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_d34555209878e8c4b37cf0b2b3d072ff129ec470","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null,"boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_1,
@@ -71,7 +71,7 @@ SELECT
 SELECT cdb_observatory._OBS_GetRelatedColumn(
     Array[
      'es.ine.pop_0_4',
-     'us.census.acs.B01001001',
+     'us.census.acs.B01003001',
      'us.census.acs.B01001002'
     ],
      'denominator'

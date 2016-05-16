@@ -534,10 +534,21 @@ BEGIN
                AND ct.column_id = c2c.source_id
                AND ct.table_id = t.id
                AND t.tablename = %L'
+     , (data_table_info)[1]->>'tablename')
+  INTO data_geoid_colname;
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
    , geom_table_name)
   INTO geom_geoid_colname;
 
-  q_select := format('SELECT %I, ', geom_geoid_colname);
+  q_select := format('SELECT %I, ', data_geoid_colname);
   q_sum    := 'SELECT Array[';
 
   FOR i IN 1..array_upper(data_table_info, 1)
@@ -558,7 +569,7 @@ BEGIN
     END IF;
  END LOOP;
 
-  q = format('
+  q := format('
     WITH _overlaps As (
       SELECT ST_Area(
         ST_Intersection($1, a.the_geom)

@@ -537,7 +537,7 @@ BEGIN
    , geom_table_name)
   INTO geom_geoid_colname;
 
-  q_select := 'SELECT geoid, ';
+  q_select := format('SELECT %I, ', geom_geoid_colname);
   q_sum    := 'SELECT Array[';
 
   FOR i IN 1..array_upper(data_table_info, 1)
@@ -563,12 +563,12 @@ BEGIN
       SELECT ST_Area(
         ST_Intersection($1, a.the_geom)
       ) / ST_Area(a.the_geom) As overlap_fraction,
-      geoid
+      %I
       FROM observatory.%I As a
       WHERE $1 && a.the_geom
     ),
     values As (
-    ', geom_table_name);
+    ', geom_geoid_colname, geom_table_name);
 
   q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1]->>'tablename'));
 

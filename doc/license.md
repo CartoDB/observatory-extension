@@ -13,6 +13,6 @@ GeoPlanet  |  https://developer.yahoo.com/geo/geoplanet/
 Natural Earth  |  http://www.naturalearthdata.com/about/terms-of-use/
 Quattroshapes  |  https://github.com/foursquare/quattroshapes/blob/master/LICENSE.md
 Zetashapes  |  http://zetashapes.com/license
-Spielmana & Singleton  |  http://www.tandfonline.com/doi/full/10.1080/00045608.2015.1052335
+Spielman & Singleton  |  http://www.tandfonline.com/doi/full/10.1080/00045608.2015.1052335
 Instituto Nacional de Estadistica  |  http://www.ine.es/ss/Satellite?L=0&c=Page&cid=1254735849170&p=1254735849170&pagename=Ayuda%2FINELayout
 

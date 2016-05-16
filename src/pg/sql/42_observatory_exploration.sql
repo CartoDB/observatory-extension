@@ -100,10 +100,10 @@ BEGIN
   EXECUTE
   $string$
       SELECT
-        column_id,
-        obs_column.description,
-        timespan,
-        tablename
+        column_id::text As column_id,
+        obs_column.description::text As description,
+        timespan::text As timespan,
+        tablename::text As tablename
       FROM
         observatory.OBS_table,
         observatory.OBS_column_table,

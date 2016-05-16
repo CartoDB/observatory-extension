@@ -537,9 +537,9 @@ BEGIN
   RETURN QUERY
   EXECUTE
   format($string$
-    SELECT geoid_ct.colname As geoid_colname::text,
+    SELECT geoid_ct.colname::text As geoid_colname,
            tablename::text,
-           geom_ct.colname As geom_colname::text
+           geom_ct.colname::text As geom_colname
     FROM observatory.obs_column_table As geoid_ct,
          observatory.obs_table As geom_t,
          observatory.obs_column_table As geom_ct,

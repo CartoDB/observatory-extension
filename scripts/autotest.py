@@ -41,10 +41,17 @@ def default_point(column_id):
     '''
     Returns default test point for the column_id.
     '''
-    if column_id.startswith('es.ine'):
+    if column_id == 'whosonfirst.wof_disputed_geom':
+        return 'CDB_LatLng(33.78, 76.57)'
+    elif column_id == 'whosonfirst.wof_marinearea_geom':
+        return 'CDB_LatLng(43.33, -68.47)'
+    elif column_id in ('us.census.tiger.school_district_elementary',
+                       'us.census.tiger.school_district_secondary'):
+        return 'CDB_LatLng(40.7025, -73.7067)'
+    elif column_id.startswith('es.ine'):
         return 'CDB_LatLng(40.39, -3.7)'
     elif column_id.startswith('us.zillow'):
-        return 'CDB_LatLng(41.76, -73.52)'
+        return 'CDB_LatLng(28.3305906291771, -81.3544048197256)'
     else:
         return 'CDB_LatLng(40.7, -73.9)'
 

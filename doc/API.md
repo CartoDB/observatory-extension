@@ -8,3 +8,4 @@ This file is for reference purposes only. It is intended for tracking the Data O
 * [Boundary Functions](boundary_functions.md)
 * [Discovery Functions](discovery_functions.md)
 * [Glossary](glossary.md)
+* [License](license.md)

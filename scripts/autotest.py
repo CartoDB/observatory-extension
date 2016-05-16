@@ -51,7 +51,9 @@ def default_point(column_id):
     elif column_id == 'whosonfirst.wof_marinearea_geom':
         return 'CDB_LatLng(43.33, -68.47)'
     elif column_id in ('us.census.tiger.school_district_elementary',
-                       'us.census.tiger.school_district_secondary'):
+                       'us.census.tiger.school_district_secondary',
+                       'us.census.tiger.school_district_elementary_clipped',
+                       'us.census.tiger.school_district_secondary_clipped'):
         return 'CDB_LatLng(40.7025, -73.7067)'
     elif column_id.startswith('es.ine'):
         return 'CDB_LatLng(40.39, -3.7)'

@@ -67,7 +67,7 @@ BEGIN
   EXECUTE format($string$
               SELECT id, description,
                 name,
-                  aggregate,
+                  aggregate::text,
                   NULL::TEXT source -- TODO use tags
                   FROM observatory.OBS_column
                   where name ilike     '%%' || %L || '%%'

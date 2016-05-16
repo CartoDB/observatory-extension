@@ -65,8 +65,8 @@ BEGIN
 
   RETURN QUERY
   EXECUTE format($string$
-              SELECT id, description,
-                name,
+              SELECT id::text, description::text,
+                name::text,
                   aggregate::text,
                   NULL::TEXT source -- TODO use tags
                   FROM observatory.OBS_column

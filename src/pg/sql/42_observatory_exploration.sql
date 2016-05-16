@@ -15,7 +15,7 @@ BEGIN
   THEN
     RETURN QUERY
     EXECUTE
-    'SELECT tablename, timespan
+    'SELECT tablename::text, timespan::text
        FROM observatory.obs_table t
        JOIN observatory.obs_column_table ct
          ON ct.table_id = t.id
@@ -24,10 +24,11 @@ BEGIN
        WHERE c.type ILIKE ''geometry''
         AND c.id = $1'
     USING search_term;
+    RETURN;
   ELSE
     RETURN QUERY
     EXECUTE
-    'SELECT tablename, timespan
+    'SELECT tablename::text, timespan::text
        FROM observatory.obs_table t
        JOIN observatory.obs_column_table ct
          ON ct.table_id = t.id
@@ -37,6 +38,7 @@ BEGIN
         AND c.id = $1
         AND t.timespan = $2'
     USING search_term, time_span;
+    RETURN;
   END IF;
 
 END;

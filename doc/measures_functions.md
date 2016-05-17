@@ -1,14 +1,14 @@
 # Measures Functions
 
-[Data Observatory Measures](/cartodb-platform/data/overview/#measures-methods) are the numerical location data you can access. The measure Functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (Point or Polygon) and receiving back a measure (an absolute value) for that location.
+[Data Observatory Measures](/cartodb-platform/data/overview/#measures-methods) are the numerical location data you can access. The measure functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (point or polygon) and receiving back a measure (an absolute value) for that location.
 
-There are hundreds of Measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
+There are hundreds of measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
 
-We show here how you can access Measures through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We encourage you to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+We show here how you can access measures through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We encourage you to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetUSCensusMeasure(point geometry, measure_name text);
 
-The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables at a point location. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all Measures that are available in the Data Observatory, to access the full list, use the ```OBS_GetMeasure``` function below.
+The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables at a point location. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory, to access the full list, use measure IDs with the ```OBS_GetMeasure``` function below.
 
 #### Arguments
 
@@ -33,8 +33,8 @@ value | the raw or normalized measure
 Add a measure to an empty numeric column based on point locations in your table.
 
 ```SQL
-UPDATE tablename 
-SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
+UPDATE tablename
+SET total_population = OBS_GetUSCensusMeasure(the_geom, 'Total Population')
 ```
 
 ## OBS_GetUSCensusMeasure(polygon geometry, measure_name text);
@@ -96,7 +96,7 @@ Add a measure to an empty numeric column based on point locations in your table
 
 ```SQL
 UPDATE tablename
-SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
+SET median_home_value_sqft = OBS_GetMeasure(the_geom, 'us.zillow.AllHomes_MedianValuePerSqft')
 ```
 
 ## OBS_GetMeasure(polygon geometry, measure_id text);
@@ -126,8 +126,8 @@ value | the raw or normalized measure
 Add a measure to an empty column based on polygons in your table
 
 ```SQL
-UPDATE tablename 
-SET local_male_population = OBS_GetMeasure(the_geom, 'us.census.acs.B08134006')
+UPDATE tablename
+SET household_count = OBS_GetMeasure(the_geom, 'us.census.acs.B11001001')
 ```
 
 #### Errors
@@ -158,6 +158,6 @@ value | a text based category found at the supplied point
 Add the Category to an empty column text column based on point locations in your table
 
 ```SQL
-UPDATE tablename 
+UPDATE tablename
 SET segmentation = OBS_GetCategory(the_geom, 'us.census.spielman_singleton_segments.X55')
 ```

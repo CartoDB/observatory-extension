@@ -3,11 +3,11 @@
 \i test/fixtures/load_fixtures.sql
 SET client_min_messages TO WARNING;
 \set ECHO none
-_obs_geomtable
-obs_fc050f0b8673cfe3c6aa1040f749eb40975691b7
+_obs_geomtable_with_returned_table
+t
 (1 row)
-_obs_geomtable
-
+_obs_geomtable_with_null_response
+t
 (1 row)
 test_get_obs_column_with_geoid_and_census_1|test_get_obs_column_with_geoid_and_census_2
 t|t
@@ -15,15 +15,15 @@ t|t
 obs_getcolumndata_missing_measure
 t
 (1 row)
-_obs_buildsnapshotquery
-SELECT  vals[1] As total_pop, vals[2] As male_pop, vals[3] As female_pop, vals[4] As median_age
+_obs_buildsnapshotquery_test_1
+t
 (1 row)
-_obs_buildsnapshotquery
-SELECT  vals[1] As mandarin_orange
+_obs_buildsnapshotquery_test_2
+t
 (1 row)
-_obs_getrelatedcolumn
-{es.ine.total_pop,NULL,us.census.acs.B01003001}
+_obs_getrelatedcolumn_test
+t
 (1 row)
-_obs_standardizemeasurename
-test_343_2_qqq
+_obs_standardizemeasurename_test
+t
 (1 row)

@@ -27,22 +27,16 @@ SELECT
 --     'us.census.tiger.census_tract'
 --   );
 
--- OBS_GetColumnData
--- should give back:
---  colname   | tablename       | aggregate
--- -----------|-----------------|-----------
---  geoid     | obs_{hex table} | null
---  total_pop | obs_{hex table} | sum
 WITH result as (
 SELECT
   array_agg(a) expected from cdb_observatory._OBS_GetColumnData(
     'us.census.tiger.census_tract',
-    Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01003001'],
-    '2010 - 2014') a
+    Array['us.census.spielman_singleton_segments.X55', 'us.census.acs.B01003001'],
+         '2010 - 2014') a
 )
 select
-  (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_1746e37b7cd28cb131971ea4187d42d71f09c5f3","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null,"boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_1,
-  (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_b393b5b88c6adda634b2071a8005b03c551b609a","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null,"boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_2
+(expected)[1]::text  = '{"colname":"x55","tablename":"obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d","aggregate":null,"name":"Spielman-Singleton Segments: 55 Clusters","type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 55 clusters","boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_1,
+(expected)[2]::text  = '{"colname":"total_pop","tablename":"obs_b393b5b88c6adda634b2071a8005b03c551b609a","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.","boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_2
 from result;
 
 -- should be null-valued

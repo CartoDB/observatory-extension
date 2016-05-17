@@ -19,16 +19,16 @@ A TABLE containing the following properties
 
 Key | Description
 --- | ---
-measure_id | the unique id of the measure for use with the ```OBS_GetMeasure``` function
+id | the unique id of the measure for use with the ```OBS_GetMeasure``` function
 name | the human readable name of the measure
 description | a brief description of the measure
-aggregate_type | **sum** are raw count values, **median** are statistical medians, **average** are statistical averages, **undefined** other (e.g. an index value)
-sources | where the data came from (e.g. US Census Bureau)
+aggregate | **sum** are raw count values, **median** are statistical medians, **average** are statistical averages, **undefined** other (e.g. an index value)
+source | where the data came from (e.g. US Census Bureau)
 
 #### Example
 
 ```SQL
-SELECT * FROM OBS_Search('inequality')
+SELECT * FROM OBS_Search('home value')
 ```
 
 ## OBS_GetAvailableBoundaries(point_geometry)

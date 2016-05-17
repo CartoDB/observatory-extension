@@ -119,7 +119,7 @@ BEGIN
   -- If not point, raise error
   IF ST_GeometryType(geom) != 'ST_Point'
   THEN
-    RAISE EXCEPTION 'Error: Invalid geometry type (%), expecting ''ST_Point''', ST_GeometryType(geom);
+    RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_Point''', ST_GeometryType(geom);
   END IF;
 
   -- choose appropriate table based on time_span
@@ -143,7 +143,7 @@ BEGIN
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'No boundaries found for ''%''', boundary_id;
+    RAISE NOTICE 'Warning: No boundaries found for ''%''', boundary_id;
     RETURN NULL::text;
   END IF;
 
@@ -274,6 +274,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
     RETURN QUERY SELECT NULL::geometry, NULL::text;
+    RETURN;
   END IF;
 
   RAISE NOTICE 'target_table: %', target_table;
@@ -286,6 +287,7 @@ BEGIN
      WHERE ST_%s($1, the_geom)
      ', geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -328,6 +330,7 @@ BEGIN
                           time_span,
                           overlap_type
                         );
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -380,6 +383,7 @@ BEGIN
                         circle_boundary,
                         boundary_id,
                         time_span);
+  RETURN;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -416,6 +420,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
     RETURN QUERY SELECT NULL::geometry, NULL::text;
+    RETURN;
   END IF;
 
   RAISE NOTICE 'target_table: %', target_table;
@@ -428,6 +433,7 @@ BEGIN
      WHERE ST_%s($1, the_geom)
      ', geom_colname, geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -469,6 +475,7 @@ BEGIN
                       boundary_id,
                       time_span,
                       overlap_type);
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -522,6 +529,7 @@ BEGIN
                         boundary_id,
                         time_span,
                         overlap_type);
+  RETURN;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -537,9 +545,9 @@ BEGIN
   RETURN QUERY
   EXECUTE
   format($string$
-    SELECT geoid_ct.colname As geoid_colname,
-           tablename,
-           geom_ct.colname As geom_colname
+    SELECT geoid_ct.colname::text As geoid_colname,
+           tablename::text,
+           geom_ct.colname::text As geom_colname
     FROM observatory.obs_column_table As geoid_ct,
          observatory.obs_table As geom_t,
          observatory.obs_column_table As geom_ct,
@@ -560,6 +568,7 @@ BEGIN
     --  AND geom_t.timespan = '%s' <-- put in requested year
     -- TODO: filter by clipped vs. not so appropriate tablename are unique
     --       so the limit 1 can be removed
+    RETURN;
 
 END;
 $$ LANGUAGE plpgsql;

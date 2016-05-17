@@ -8,7 +8,7 @@
 \set cartodb_county_geometry ''
 
 -- _OBS_SearchTables tests
-SELECT 
+SELECT
   t.table_name = 'obs_1babf5a26a1ecda5fb74963e88408f71d0364b81' As _OBS_SearchTables_tables_match,
   t.timespan = '2014' As _OBS_SearchTables_timespan_matches
 FROM cdb_observatory._OBS_SearchTables(
@@ -27,7 +27,7 @@ FROM cdb_observatory._OBS_SearchTables(
 SELECT *
 FROM cdb_observatory.OBS_Search('total_pop');
 
-SELECT * 
+SELECT *
 FROM cdb_observatory.OBS_GetAvailableBoundaries(cdb_observatory._TestPoint());
 
 \i test/fixtures/drop_fixtures.sql

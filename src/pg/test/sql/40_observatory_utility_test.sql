@@ -40,7 +40,7 @@ SELECT
     Array['us.census.tiger.census_tract_geoid', 'us.census.acs.B01003001'],
     '2010 - 2014') a
 )
-select 
+select
   (expected)[1]::text  = '{"colname":"geoid","tablename":"obs_1746e37b7cd28cb131971ea4187d42d71f09c5f3","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null,"boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_1,
   (expected)[2]::text  = '{"colname":"geoid","tablename":"obs_b393b5b88c6adda634b2071a8005b03c551b609a","aggregate":null,"name":"US Census Tracts Geoids","type":"Text","description":null,"boundary_id":"us.census.tiger.census_tract"}' as test_get_obs_column_with_geoid_and_census_2
 from result;

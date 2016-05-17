@@ -49,7 +49,7 @@ Key | Description
 --- | ---
 boundary_id | a boundary identifier from the [boundary ID glossary](/cartodb-platform/data/glossary/#boundary-ids)
 description | a brief description of the boundary dataset
-timespan | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
+time_span | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
 
 #### Example
 

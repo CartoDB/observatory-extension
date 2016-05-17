@@ -1,6 +1,6 @@
 # Boundary Functions
 
-Use the following functions to retrieve [Boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
+Use the following functions to retrieve [Boundary](/cartodb-platform/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
 ## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
 
@@ -28,10 +28,10 @@ If geometries are not found for the requested `polygon`, `geometry_id`, `timespa
 
 #### Example
 
-Insert all Census Tracts from Lower Manhattan and nearby areas within the supplied bounding box to a table named `manhattan_census_tracts` which has columns `the_geom` (geometry) and `geoid` (text).
+Insert all Census Tracts from Lower Manhattan and nearby areas within the supplied bounding box to a table named `manhattan_census_tracts` which has columns `the_geom` (geometry) and `geom_refs` (text).
 
 ```sql
-INSERT INTO manhattan_census_tracts(the_geom, geoid)
+INSERT INTO manhattan_census_tracts(the_geom, geom_refs)
 SELECT *
 FROM OBS_GetBoundariesByGeometry(
        ST_MakeEnvelope(-74.0251922607,40.6945658517,
@@ -67,14 +67,14 @@ Column Name | Description
 the_geom | a point geometry on a boundary (e.g., a point that lies on a US Census tract)
 geom_refs| a string identifier for the geometry (e.g., the geoid of a US Census tract)
 
-If geometries are not found for the requested geometry, `geometry_id`, `timespan`, or `overlap_type`, then null values are returned.
+If geometries are not found for the requested geometry, `geometry_id`, `timespan`, or `overlap_type`, then NULL values are returned.
 
 #### Example
 
-Insert points that lie on Census Tracts from Lower Manhattan and nearby areas within the supplied bounding box to a table named `manhattan_census_tracts` which has columns `the_geom` (geometry) and `geoid` (text).
+Insert points that lie on Census Tracts from Lower Manhattan and nearby areas within the supplied bounding box to a table named `manhattan_tract_points` which has columns `the_geom` (geometry) and `geom_refs` (text).
 
 ```sql
-INSERT INTO manhattan_census_tract_points(the_geom, geoid)
+INSERT INTO manhattan_tract_points (the_geom, geom_refs)
 SELECT *
 FROM OBS_GetPointsByGeometry(
        ST_MakeEnvelope(-74.0251922607,40.6945658517,
@@ -175,9 +175,10 @@ geom | a WGS84 polygon geometry
 
 #### Example
 
-Use a table of `geometry_id`s (e.g., geoid from the U.S. Census) to select the unique boundaries that they correspond to.
+Use a table of `geometry_id`s (e.g., geoid from the U.S. Census) to select the unique boundaries that they correspond to and insert into a table called, `overlapping_polygons`. This is a useful method for creating new choropleths of aggregate data.
 
 ```SQL
+INSERT INTO overlapping_polygons (the_geom, geometry_id, point_count)
 SELECT
   OBS_GetBoundaryById(geometry_id, 'us.census.tiger.county') As the_geom,
   geometry_id,
@@ -213,10 +214,10 @@ If geometries are not found for the requested point and radius, `geometry_id`, `
 
 #### Example
 
-Insert into table `denver_census_tracts` the census tract boundaries and geoids of census tracts which intersect within 10 miles of downtown Denver, Colorado.
+Insert into table `denver_census_tracts` the census tract boundaries and geom_refs of census tracts which intersect within 10 miles of downtown Denver, Colorado.
 
 ```sql
-INSERT INTO denver_census_tracts(the_geom, geoid)
+INSERT INTO denver_census_tracts(the_geom, geom_refs)
 SELECT *
 FROM OBS_GetBoundariesByPointAndRadius(
   CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
@@ -255,10 +256,10 @@ If geometries are not found for the requested point and radius, `geometry_id`, `
 
 #### Example
 
-Insert into table `denver_census_tracts` points on US census tracts and their corresponding geoids for census tracts which intersect within 10 miles of downtown Denver, Colorado, USA.
+Insert into table `denver_tract_points` points on US census tracts and their corresponding geoids for census tracts which intersect within 10 miles of downtown Denver, Colorado, USA.
 
 ```sql
-INSERT INTO denver_census_tracts(the_geom, geoid)
+INSERT INTO denver_tract_points(the_geom, geom_refs)
 SELECT *
 FROM OBS_GetPointsByPointAndRadius(
   CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado

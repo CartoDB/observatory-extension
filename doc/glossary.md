@@ -1,6 +1,6 @@
 # Glossary
 
-A list of boundary ids and measure_names for Data Observatory functions. For US based boundaries, the Shoreline Clipped version provides a high-quality shoreline clipping for mapping uses. 
+A list of boundary ids and measure_names for Data Observatory functions. For US based boundaries, the Shoreline Clipped version provides a high-quality shoreline clipping for mapping uses.
 
 ## Boundary IDs
 
@@ -18,12 +18,12 @@ US Census Blocks  |  us.census.tiger.block  |  us.census.tiger.block_clipped
 US Census Block Groups  |  us.census.tiger.block_group  |  us.census.tiger.block_group_clipped
 US Census PUMAs  |  us.census.tiger.puma  |  us.census.tiger.puma_clipped
 US Incorporated Places  |  us.census.tiger.place  |  us.census.tiger.place_clipped
-ES Sección Censal  |  es.ine.geom  |
-Regions (First-level Administrative)  |  whosonfirst.wof_region_geom  |
-Continents  |  whosonfirst.wof_continent_geom  |
-Countries  |  whosonfirst.wof_country_geom  |
-Marine Areas  |  whosonfirst.wof_marinearea_geom  |
-Disputed Areas  |  whosonfirst.wof_disputed_geom  |
+ES Sección Censal  |  es.ine.geom  |   none
+Regions (First-level Administrative)  |  whosonfirst.wof_region_geom  |   none
+Continents  |  whosonfirst.wof_continent_geom  |   none
+Countries  |  whosonfirst.wof_country_geom  |  none
+Marine Areas  |  whosonfirst.wof_marinearea_geom  |  none
+Disputed Areas  |  whosonfirst.wof_disputed_geom  |  none
 
 
 
@@ -67,7 +67,7 @@ Number of workers with a commute between 25 and 29 minutes   |   The number of w
 Number of workers with a commute between 30 and 34 minutes   |   The number of workers over the age of 16 who do not work from home and commute in between 30 and 34 minutes in a geographic area.
 Number of workers with a commute between 45 and 59 minutes   |   The number of workers over the age of 16 who do not work from home and commute in between 45 and 59 minutes in a geographic area.
 Children under 18 Years of Age   |   The number of people within each geography who are under 18 years of age.
-Households   |   A count of the number of households in each geography. A household consists of one or more people who live in the same dwelling and also share at meals or living accommodation, and may consist of a single family or some other grouping of people. 
+Households   |   A count of the number of households in each geography. A household consists of one or more people who live in the same dwelling and also share at meals or living accommodation, and may consist of a single family or some other grouping of people.
 Population 15 Years and Over   |   The number of people in a geographic area who are over the age of 15.  This is used mostly as a denominator of marital status.
 Never Married   |   The number of people in a geographic area who have never been married.
 Currently married   |   The number of people in a geographic area who are currently married.

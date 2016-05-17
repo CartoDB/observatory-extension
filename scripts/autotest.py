@@ -25,19 +25,19 @@ def query(q, is_meta=False, **options):
     return requests.get(url, params=params)
 
 MEASURE_COLUMNS = [(r['id'], ) for r in query('''
-SELECT id FROM observatory.obs_column
+SELECT id FROM obs_column
 WHERE type ILIKE 'numeric'
 AND weight > 0
 ''', is_meta=True).json()['rows']]
 
 CATEGORY_COLUMNS = [(r['id'], ) for r in query('''
-SELECT id FROM observatory.obs_column
+SELECT id FROM obs_column
 WHERE type ILIKE 'text'
 AND weight > 0
 ''', is_meta=True).json()['rows']]
 
 BOUNDARY_COLUMNS = [(r['id'], ) for r in query('''
-SELECT id FROM observatory.obs_column
+SELECT id FROM obs_column
 WHERE type ILIKE 'geometry'
 AND weight > 0
 ''', is_meta=True).json()['rows']]

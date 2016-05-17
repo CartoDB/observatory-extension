@@ -1,6 +1,6 @@
 # License
 
-The Data Observatory is a collection of various sources of data with varying licenses. We have worked hard to find you data that will work for the broadest set of use-cases. Please **still** review the terms for any dataset you use and respect the rights of the owners for each dataset. The following third-party data sources are used in the Data Observatory, and we have included the links to the terms governing their use.
+The Data Observatory is a collection of various sources of data with varying licenses. We have worked hard to find you data that will work for the broadest set of use-cases. For competency, please still review the terms for any dataset you use and respect the rights of the owners for each dataset. The following third-party data sources are used in the Data Observatory, and we have included the links to the terms governing their use.
 
 Name  | Terms link 
 -------|---------

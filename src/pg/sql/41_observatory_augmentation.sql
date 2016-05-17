@@ -39,7 +39,7 @@ AS $$
     boundary_id = 'us.census.tiger.block_group';
   END IF;
 
-  target_cols := Array['us.census.acs.B01001001',
+  target_cols := Array['us.census.acs.B01003001',
                   'us.census.acs.B01001002',
                   'us.census.acs.B01001026',
                   'us.census.acs.B01002001',
@@ -155,19 +155,29 @@ DECLARE
   data_table_info json[];
 BEGIN
 
-  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
-
-  IF geom_table_name IS NULL
-  THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
-     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
-  END IF;
-
   EXECUTE
   'SELECT array_agg(_obs_getcolumndata)
    FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);'
   INTO data_table_info
   USING geometry_level, column_ids, time_span;
+
+  IF geometry_level IS NULL THEN
+    geometry_level = data_table_info[1]->>'boundary_id';
+  END IF;
+
+  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
+
+  IF geom_table_name IS NULL
+  THEN
+     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+      -- TODO this should return JSON
+     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
+     RETURN;
+  END IF;
+
+  IF data_table_info IS NULL THEN
+    RAISE NOTICE 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
+  END IF;
 
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
@@ -189,6 +199,7 @@ BEGIN
     SELECT unnest($1)
   $query$
   USING results;
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -198,7 +209,7 @@ $$ LANGUAGE plpgsql;
 --  otherwise normalize it to the census block area and return that
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
   geom geometry(Geometry, 4326),
-  geom_table_name text,
+  geom_table_name text, -- TODO: change to boundary_id
   data_table_info json[]
 )
 RETURNS json[]
@@ -209,14 +220,42 @@ DECLARE
   query text;
   i int;
   geoid text;
+  data_geoid_colname text;
+  geom_geoid_colname text;
   area NUMERIC;
 BEGIN
 
-  -- TODO: does 'geoid' need to be generalized to geom_ref??
+  -- TODO we're assuming our geom_table has only one geom_ref column
+  --      we *really* should pass in both geom_table_name and boundary_id
+  -- TODO tablename should not be passed here (use boundary_id)
   EXECUTE
-    format('SELECT geoid
-            FROM observatory.%I
-            WHERE ST_Within($1, the_geom)',
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+     , (data_table_info)[1]->>'tablename')
+  INTO data_geoid_colname;
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+   , geom_table_name)
+  INTO geom_geoid_colname;
+
+  EXECUTE
+    format('SELECT %I
+              FROM observatory.%I
+             WHERE ST_Within($1, the_geom)',
+            geom_geoid_colname,
             geom_table_name)
   USING geom
   INTO geoid;
@@ -226,8 +265,9 @@ BEGIN
   EXECUTE
     format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
             FROM observatory.%I
-            WHERE geoid = %L',
+            WHERE %I = %L',
             geom_table_name,
+            geom_geoid_colname,
             geoid)
   INTO area;
 
@@ -262,10 +302,11 @@ BEGIN
 
   query := query || format(' ]::numeric[]
     FROM observatory.%I
-    WHERE %I.geoid  = %L
+    WHERE %I.%I  = %L
   ',
   ((data_table_info)[1])->>'tablename',
   ((data_table_info)[1])->>'tablename',
+  data_geoid_colname,
   geoid
   );
 
@@ -310,16 +351,6 @@ DECLARE
   vals NUMERIC[];
 BEGIN
 
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := 'us.census.tiger.block_group';
-  END IF;
-
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
-  END IF;
-
   IF normalize ILIKE 'area' THEN
     measure_ids := ARRAY[measure_id];
   ELSIF normalize ILIKE 'denominator' THEN
@@ -327,11 +358,11 @@ BEGIN
     ' INTO denominator_id
     USING measure_id;
     measure_ids := ARRAY[measure_id, denominator_id];
-  ELSIF normalize IS NULL OR normalize ILIKE 'none' THEN
+  ELSIF normalize ILIKE 'none' THEN
     -- TODO we need a switch on obs_get to disable area normalization
     RAISE EXCEPTION 'No normalization not yet supported.';
   ELSE
-    RAISE EXCEPTION 'Only valid inputs for "normalize" are "area" (default), "denominator", or "none".';
+    RAISE EXCEPTION 'Only valid inputs for "normalize" are "area" (default) and "denominator".';
   END IF;
 
   EXECUTE '
@@ -369,7 +400,7 @@ BEGIN
 
   IF time_span IS NULL THEN
     -- TODO we should determine latest timespan for this measure
-    time_span := '2009 - 2013';
+    time_span := '2010 - 2014';
   END IF;
 
   EXECUTE '
@@ -463,7 +494,7 @@ DECLARE
   result NUMERIC;
 BEGIN
   -- TODO use a super-column for global pop
-  population_measure_id := 'us.census.acs.B01001001';
+  population_measure_id := 'us.census.acs.B01003001';
 
   EXECUTE format('SELECT cdb_observatory.OBS_GetMeasure(
       %L, %L, %L, %L, %L
@@ -567,13 +598,13 @@ DECLARE
   seg_name     Text;
   geom_id      Text;
   q            Text;
-  segment_name Text;
+  segment_names Text[];
 BEGIN
 IF boundary_id IS NULL THEN
  boundary_id = 'us.census.tiger.census_tract';
 END IF;
 target_cols := Array[
-          'us.census.acs.B01001001_quantile',
+          'us.census.acs.B01003001_quantile',
           'us.census.acs.B01001002_quantile',
           'us.census.acs.B01001026_quantile',
           'us.census.acs.B01002001_quantile',
@@ -621,14 +652,13 @@ target_cols := Array[
 
     EXECUTE
       $query$
-      SELECT (_OBS_GetCategories)->>'name'
+      SELECT array_agg(_OBS_GetCategories->>'category')
       FROM cdb_observatory._OBS_GetCategories(
          $1,
-         Array['us.census.spielman_singleton_segments.X10'],
+         Array['us.census.spielman_singleton_segments.X10', 'us.census.spielman_singleton_segments.X55'],
          $2)
-      LIMIT 1
       $query$
-    INTO segment_name
+    INTO segment_names
     USING geom, boundary_id;
 
     q :=
@@ -639,14 +669,14 @@ target_cols := Array[
              array_agg(_OBS_GET->>'value') As vals
            FROM cdb_observatory._OBS_Get($1,
                         $2,
-                        '2009 - 2013',
+                        '2010 - 2014',
                         $3)
 
         ), percentiles As (
            %s
          FROM  a)
          SELECT row_to_json(r) FROM
-         ( SELECT $4 as segment_name, percentiles.*
+         ( SELECT $4 as x10_segment, $5 as x55_segment, percentiles.*
           FROM percentiles) r
        $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols)) results;
 
@@ -654,7 +684,7 @@ target_cols := Array[
     EXECUTE
       q
     into result
-    USING geom, target_cols, boundary_id, segment_name;
+    USING geom, target_cols, boundary_id, segment_names[1], segment_names[2];
 
     return result;
 
@@ -680,7 +710,7 @@ DECLARE
 BEGIN
 
   IF time_span IS NULL THEN
-    time_span = '2009 - 2013';
+    time_span = '2010 - 2014';
   END IF;
 
   IF boundary_id IS NULL THEN
@@ -693,6 +723,7 @@ BEGIN
   THEN
      RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
+     RETURN;
   END IF;
 
   EXECUTE '
@@ -706,6 +737,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No data table found for this location';
     RETURN QUERY SELECT NULL::json;
+    RETURN;
   END IF;
 
   EXECUTE
@@ -720,6 +752,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No geometry id for this location';
     RETURN QUERY SELECT NULL::json;
+    RETURN;
   END IF;
 
   query := 'SELECT ARRAY[';

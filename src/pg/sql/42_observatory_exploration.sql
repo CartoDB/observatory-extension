@@ -15,7 +15,7 @@ BEGIN
   THEN
     RETURN QUERY
     EXECUTE
-    'SELECT tablename, timespan
+    'SELECT tablename::text, timespan::text
        FROM observatory.obs_table t
        JOIN observatory.obs_column_table ct
          ON ct.table_id = t.id
@@ -24,10 +24,11 @@ BEGIN
        WHERE c.type ILIKE ''geometry''
         AND c.id = $1'
     USING search_term;
+    RETURN;
   ELSE
     RETURN QUERY
     EXECUTE
-    'SELECT tablename, timespan
+    'SELECT tablename::text, timespan::text
        FROM observatory.obs_table t
        JOIN observatory.obs_column_table ct
          ON ct.table_id = t.id
@@ -37,6 +38,7 @@ BEGIN
         AND c.id = $1
         AND t.timespan = $2'
     USING search_term, time_span;
+    RETURN;
   END IF;
 
 END;
@@ -63,9 +65,9 @@ BEGIN
 
   RETURN QUERY
   EXECUTE format($string$
-              SELECT id, description,
-                name,
-                  aggregate,
+              SELECT id::text, description::text,
+                name::text,
+                  aggregate::text,
                   NULL::TEXT source -- TODO use tags
                   FROM observatory.OBS_column
                   where name ilike     '%%' || %L || '%%'
@@ -89,18 +91,19 @@ DECLARE
   timespan_query TEXT DEFAULT '';
 BEGIN
 
-  IF time_span != null THEN
-    timespan_query = format('AND timespan = %L', time_span);
+  IF timespan != NULL
+  THEN
+    timespan_query = format('AND timespan = %L', timespan);
   END IF;
 
   RETURN QUERY
   EXECUTE
   $string$
-      select
-        column_id,
-        obs_column.description,
-        timespan,
-        tablename
+      SELECT
+        column_id::text As column_id,
+        obs_column.description::text As description,
+        timespan::text As timespan,
+        tablename::text As tablename
       FROM
         observatory.OBS_table,
         observatory.OBS_column_table,
@@ -109,11 +112,11 @@ BEGIN
         observatory.OBS_column_table.column_id = observatory.obs_column.id AND
         observatory.OBS_column_table.table_id = observatory.obs_table.id
       AND
-        observatory.OBS_column.type='Geometry'
+        observatory.OBS_column.type = 'Geometry'
       AND
         $1 && bounds::box2d
   $string$ || timespan_query
-  USING geom
+  USING geom;
   RETURN;
 END
 $$ LANGUAGE plpgsql;

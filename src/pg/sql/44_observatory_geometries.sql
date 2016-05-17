@@ -72,9 +72,9 @@ BEGIN
 
   -- return the first boundary in intersections
   EXECUTE format(
-    'SELECT t.the_geom
-     FROM observatory.%s As t
-     WHERE ST_Intersects($1, t.the_geom)
+    'SELECT the_geom
+     FROM observatory.%I
+     WHERE ST_Intersects($1, the_geom)
      LIMIT 1', target_table)
   INTO boundary
   USING geom;
@@ -113,12 +113,13 @@ AS $$
 DECLARE
   output_id text;
   target_table text;
+  geoid_colname text;
 BEGIN
 
   -- If not point, raise error
   IF ST_GeometryType(geom) != 'ST_Point'
   THEN
-    RAISE EXCEPTION 'Error: Invalid geometry type (%), expecting ''ST_Point''', ST_GeometryType(geom);
+    RAISE EXCEPTION 'Invalid geometry type (%), expecting ''ST_Point''', ST_GeometryType(geom);
   END IF;
 
   -- choose appropriate table based on time_span
@@ -139,21 +140,33 @@ BEGIN
     LIMIT 1;
   END IF;
 
-  -- if no tables are found, raise error
+  -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'Error: No boundaries found for ''%''', boundary_id;
+    RAISE NOTICE 'Warning: No boundaries found for ''%''', boundary_id;
     RETURN NULL::text;
   END IF;
 
-  RAISE NOTICE 'target_table: %', target_table;
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+   , target_table)
+  INTO geoid_colname;
+
+  RAISE NOTICE 'target_table: %, geoid_colname: %', target_table, geoid_colname;
 
   -- return name of geometry id column
   EXECUTE format(
-    'SELECT t.geoid
-     FROM observatory.%s As t
-     WHERE ST_Intersects($1, t.the_geom)
-     LIMIT 1', target_table)
+    'SELECT %I
+     FROM observatory.%I
+     WHERE ST_Intersects($1, the_geom)
+     LIMIT 1', geoid_colname, target_table)
   INTO output_id
   USING geom;
 
@@ -210,9 +223,9 @@ BEGIN
   -- retrieve boundary
   EXECUTE
     format(
-    'SELECT t.%s
-     FROM observatory.%I As t
-     WHERE t.%s = $1
+    'SELECT %I
+     FROM observatory.%I
+     WHERE %I = $1
      LIMIT 1', geom_colname, target_table, geoid_colname)
   INTO boundary
   USING geometry_id;
@@ -261,6 +274,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
     RETURN QUERY SELECT NULL::geometry, NULL::text;
+    RETURN;
   END IF;
 
   RAISE NOTICE 'target_table: %', target_table;
@@ -268,11 +282,12 @@ BEGIN
   -- return first boundary in intersections
   RETURN QUERY
   EXECUTE format(
-    'SELECT t.%s, t.%s
-     FROM observatory.%s As t
-     WHERE ST_%s($1, t.the_geom)
+    'SELECT %I, %I
+     FROM observatory.%I
+     WHERE ST_%s($1, the_geom)
      ', geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -315,6 +330,7 @@ BEGIN
                           time_span,
                           overlap_type
                         );
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -367,6 +383,7 @@ BEGIN
                         circle_boundary,
                         boundary_id,
                         time_span);
+  RETURN;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -403,6 +420,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
     RETURN QUERY SELECT NULL::geometry, NULL::text;
+    RETURN;
   END IF;
 
   RAISE NOTICE 'target_table: %', target_table;
@@ -410,11 +428,12 @@ BEGIN
   -- return first boundary in intersections
   RETURN QUERY
   EXECUTE format(
-    'SELECT ST_PointOnSurface(t.%s) As %s, t.%s
-     FROM observatory.%s As t
-     WHERE ST_%s($1, t.the_geom)
+    'SELECT ST_PointOnSurface(%I) As %s, %I
+     FROM observatory.%I
+     WHERE ST_%s($1, the_geom)
      ', geom_colname, geom_colname, geoid_colname, target_table, overlap_type)
   USING geom;
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -456,6 +475,7 @@ BEGIN
                       boundary_id,
                       time_span,
                       overlap_type);
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -509,6 +529,7 @@ BEGIN
                         boundary_id,
                         time_span,
                         overlap_type);
+  RETURN;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -524,9 +545,9 @@ BEGIN
   RETURN QUERY
   EXECUTE
   format($string$
-    SELECT geoid_ct.colname As geoid_colname,
-           tablename,
-           geom_ct.colname As geom_colname
+    SELECT geoid_ct.colname::text As geoid_colname,
+           tablename::text,
+           geom_ct.colname::text As geom_colname
     FROM observatory.obs_column_table As geoid_ct,
          observatory.obs_table As geom_t,
          observatory.obs_column_table As geom_ct,
@@ -547,6 +568,7 @@ BEGIN
     --  AND geom_t.timespan = '%s' <-- put in requested year
     -- TODO: filter by clipped vs. not so appropriate tablename are unique
     --       so the limit 1 can be removed
+    RETURN;
 
 END;
 $$ LANGUAGE plpgsql;

@@ -48,14 +48,43 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetColumnData(
 RETURNS SETOF JSON
 AS $$
 BEGIN
+
+  -- figure out highest-weight geometry_id/timespan pair for the first data column
+  -- TODO this should be done for each data column separately
+  IF geometry_id IS NULL OR timespan IS NULL THEN
+    EXECUTE '
+      SELECT data_t.timespan timespan, geom_c.id boundary_id
+      FROM observatory.obs_table data_t,
+           observatory.obs_column_table data_ct,
+           observatory.obs_column data_c,
+           observatory.obs_column_table geoid_ct,
+           observatory.obs_column_to_column c2c,
+           observatory.obs_column geom_c
+      WHERE data_c.id = $2
+           AND data_ct.column_id = data_c.id
+           AND data_ct.table_id = data_t.id
+           AND geoid_ct.table_id = data_t.id
+           AND geoid_ct.column_id = c2c.source_id
+           AND c2c.reltype = ''geom_ref''
+           AND geom_c.id = c2c.target_id
+           AND CASE WHEN $3 IS NULL THEN True ELSE $3 = timespan END
+           AND CASE WHEN $1 IS NULL THEN True ELSE $1 = geom_c.id END
+      ORDER BY geom_c.weight DESC,
+               data_t.timespan DESC
+      LIMIT 1
+    ' INTO timespan, geometry_id
+    USING geometry_id, (column_ids)[1], timespan;
+  END IF;
+
   RETURN QUERY
   EXECUTE '
   WITH geomref AS (
-    SELECT t.table_id id
-    FROM observatory.OBS_column_to_column c2c, observatory.OBS_column_table t
+    SELECT ct.table_id id
+    FROM observatory.OBS_column_to_column c2c,
+         observatory.OBS_column_table ct
     WHERE c2c.reltype = ''geom_ref''
       AND c2c.target_id = $1
-      AND c2c.source_id = t.column_id
+      AND c2c.source_id = ct.column_id
     ),
   column_ids as (
     select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a
@@ -66,7 +95,8 @@ BEGIN
             aggregate,
             name,
             type,
-            c.description
+            c.description,
+            $1 AS boundary_id
            FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
            WHERE column_ids.column_id  = c.id
              AND c.id = ct.column_id

@@ -6,7 +6,7 @@ There are hundreds of measures and the list is growing with each release. You ca
 
 We show here how you can access measures through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We encourage you to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
-## OBS_GetUSCensusMeasure(point geometry, measure_name text);
+## OBS_GetUSCensusMeasure(point geometry, measure_name text)
 
 The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables at a point location. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory, to access the full list, use measure IDs with the ```OBS_GetMeasure``` function below.
 
@@ -37,7 +37,7 @@ UPDATE tablename
 SET total_population = OBS_GetUSCensusMeasure(the_geom, 'Total Population')
 ```
 
-## OBS_GetUSCensusMeasure(polygon geometry, measure_name text);
+## OBS_GetUSCensusMeasure(polygon geometry, measure_name text)
 
 The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory, to access the full list, use the ```OBS_GetUSCensusMeasure``` function below.
 
@@ -68,7 +68,7 @@ UPDATE tablename
 SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
-## OBS_GetMeasure(point geometry, measure_id text);
+## OBS_GetMeasure(point geometry, measure_id text)
 
 The ```OBS_GetMeasure(point, measure_id)``` function returns any Data Observatory measure at a point location. You can browse all available Measures in the [Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf)).
 
@@ -99,7 +99,7 @@ UPDATE tablename
 SET median_home_value_sqft = OBS_GetMeasure(the_geom, 'us.zillow.AllHomes_MedianValuePerSqft')
 ```
 
-## OBS_GetMeasure(polygon geometry, measure_id text);
+## OBS_GetMeasure(polygon geometry, measure_id text)
 
 The ```OBS_GetMeasure(polygon, measure_id)``` function returns any Data Observatory measure calculated within a polygon.
 
@@ -134,7 +134,7 @@ SET household_count = OBS_GetMeasure(the_geom, 'us.census.acs.B11001001')
 
 * If an unrecognized normalization type is input, raise an error: `'Only valid inputs for "normalize" are "area" (default) and "denominator".`
 
-## OBS_GetCategory(point geometry, category_id text);
+## OBS_GetCategory(point geometry, category_id text)
 
 The ```OBS_GetCategory(point, category_id)``` function returns any Data Observatory Category value at a point location. The Categories available are currently limited to Segmentation categories. See the Segmentation section of the [Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) for more detail.
 

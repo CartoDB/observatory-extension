@@ -172,6 +172,7 @@ BEGIN
      RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
       -- TODO this should return JSON
      RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
+     RETURN;
   END IF;
 
   IF data_table_info IS NULL THEN
@@ -198,6 +199,7 @@ BEGIN
     SELECT unnest($1)
   $query$
   USING results;
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -722,6 +724,7 @@ BEGIN
   THEN
      RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
+     RETURN;
   END IF;
 
   EXECUTE '
@@ -735,6 +738,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No data table found for this location';
     RETURN QUERY SELECT NULL::json;
+    RETURN;
   END IF;
 
   EXECUTE
@@ -749,6 +753,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No geometry id for this location';
     RETURN QUERY SELECT NULL::json;
+    RETURN;
   END IF;
 
   query := 'SELECT ARRAY[';

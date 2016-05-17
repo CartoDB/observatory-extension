@@ -2,6 +2,8 @@
 
 Use the following functions to retrieve [Boundary](/cartodb-platform/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
+You can [access](/cartodb-platform/data/accessing/#accessing-the-data-observatory) boundaries through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We [encourage you](/cartodb-platform/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+
 ## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
 
 The ```OBS_GetBoundariesByGeometry(geometry, geometry_id)``` method returns a set of boundary geometries that intersect a supplied geometry. This can be used to find all boundaries that are within or overlap a bounding box. You have the ability to choose whether to retrieve all boundaries that intersect your supplied bounding box or only those that fall entirely inside of your bounding box.

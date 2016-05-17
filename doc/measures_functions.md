@@ -4,7 +4,7 @@
 
 There are hundreds of measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
 
-We show here how you can access measures through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We encourage you to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access](/cartodb-platform/data/accessing/#accessing-the-data-observatory) measures through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We [encourage you](/cartodb-platform/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetUSCensusMeasure(point geometry, measure_name text)
 

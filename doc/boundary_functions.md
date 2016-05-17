@@ -1,6 +1,6 @@
 # Boundary Functions
 
-Use the following functions to retrieve [Boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
+Use the following functions to retrieve [Boundary](/cartodb-platform/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
 ## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
 

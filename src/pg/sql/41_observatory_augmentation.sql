@@ -171,7 +171,7 @@ BEGIN
   THEN
      RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
       -- TODO this should return JSON
-     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
+     RETURN QUERY SELECT '{}'::json;
      RETURN;
   END IF;
 

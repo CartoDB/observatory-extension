@@ -1,0 +1,92 @@
+\pset format unaligned
+\set ECHO all
+\i test/fixtures/load_fixtures.sql
+SET client_min_messages TO WARNING;
+\set ECHO none
+obs_getboundary_cartodb_census_tract
+t
+(1 row)
+obs_getboundary_cartodb_county
+t
+(1 row)
+obs_getboundary_non_existent_boundary_id
+t
+(1 row)
+obs_getboundary_null_island_census_tract
+t
+(1 row)
+obs_getboundary_year_census_tract
+t
+(1 row)
+obs_getboundary_unlisted_year
+t
+(1 row)
+obs_getboundaryid_cartodb_census_tract
+t
+(1 row)
+obs_getboundaryid_cartodb_census_tract_with_year
+t
+(1 row)
+obs_getboundaryid_cartodb_county_with_year
+t
+(1 row)
+obs_getboundaryid_null_island
+t
+(1 row)
+obs_getboundarybyid_cartodb_county
+t
+(1 row)
+obs_getboundarybyid_compared_with_obs_getboundary
+t
+(1 row)
+obs_getboundarybyid_boundary_id_mismatch_geom_id
+t
+(1 row)
+obs_getboundarybyid_boundary_id_mismatch_geom_id
+t
+(1 row)
+_obs_getboundariesbygeometry_tracts_around_cartodb
+t
+(1 row)
+_obs_getboundariesbygeometry_tracts_around_null_island
+t
+(1 row)
+obs_getboundariesbygeometry_tracts_around_cartodb
+t
+(1 row)
+obs_getboundariesbygeometry_tracts_around_null_island
+t
+(1 row)
+obs_getboundariesbypointandradius_around_cartodb
+t
+(1 row)
+obs_getboundariesbypointandradius_around_null_island
+t
+(1 row)
+_obs_getpointsbygeometry_around_cartodb
+t
+(1 row)
+_obs_getpointsbygeometry_around_null_island
+t
+(1 row)
+obs_getpointsbygeometry_around_cartodb
+t
+(1 row)
+obs_getpointsbygeometry_around_cartodb_2014
+t
+(1 row)
+obs_getpointsbygeometry_around_null_island
+t
+(1 row)
+obs_getpointsbypointandradius_around_cartodb
+t
+(1 row)
+obs_getpointsbypointandradius_around_cartodb_2014
+t
+(1 row)
+obs_getpointsbypointandradius_around_null_island
+t
+(1 row)
+geoid_name_matches|table_name_matches|geom_name_matches
+t|t|t
+(1 row)

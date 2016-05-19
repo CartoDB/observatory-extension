@@ -1,152 +1,29 @@
-\i test/sql/load_fixtures.sql
+\pset format unaligned
+\set ECHO all
+\i test/fixtures/load_fixtures.sql
 SET client_min_messages TO WARNING;
 \set ECHO none
-Loading obs_table.sql fixture file...
-Done.
-Loading obs_column.sql fixture file...
-Done.
-Loading obs_column_table.sql fixture file...
-Done.
-Loading obs_column_to_column.sql fixture file...
-Done.
-Loading obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1.sql fixture file...
-Done.
-Loading obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb.sql fixture file...
-Done.
-Loading obs_ab038198aaab3f3cb055758638ee4de28ad70146.sql fixture file...
-Done.
-Loading obs_a92e1111ad3177676471d66bb8036e6d057f271b.sql fixture file...
-Done.
-Loading obs_11ee8b82c877c073438bc935a91d3dfccef875d1.sql fixture file...
-Done.
-Loading obs_d34555209878e8c4b37cf0b2b3d072ff129ec470.sql fixture file...
-Done.
--- OBS_GeomTable
--- get table with known geometry_id
--- should give back a table like obs_{hex hash}
-SELECT
-  cdb_observatory._OBS_GeomTable(
-    CDB_LatLng(40.7128,-74.0059),
-    '"us.census.tiger".census_tract'
-  );
-                _obs_geomtable                
-----------------------------------------------
- obs_a92e1111ad3177676471d66bb8036e6d057f271b
+_obs_geomtable_with_returned_table
+t
 (1 row)
-
--- get null for unknown geometry_id
--- should give back null
-SELECT
-  cdb_observatory._OBS_GeomTable(
-    CDB_LatLng(40.7128,-74.0059),
-    '"us.census.tiger".nonexistant_id' -- not in catalog
-  );
- _obs_geomtable 
-----------------
- 
+_obs_geomtable_with_null_response
+t
 (1 row)
-
--- future test: give back nulls when geometry doesn't intersect
--- SELECT
---   cdb_observatory._OBS_GeomTable(
---     CDB_LatLng(0,0), -- should give back null since it's in the ocean?
---     '"us.census.tiger".census_tract'
---   );
--- OBS_GetColumnData
--- should give back:
---  colname   | tablename       | aggregate
--- -----------|-----------------|-----------
---  geoid     | obs_{hex table} | null
---  total_pop | obs_{hex table} | sum
-SELECT
-  (unnest(cdb_observatory._OBS_GetColumnData(
-    '"us.census.tiger".census_tract',
-    Array['"us.census.tiger".census_tract_geoid', '"us.census.acs".B01001001'],
-    '2009 - 2013'
-  ))).*
-ORDER BY colname, tablename ASC;
-  colname  |                  tablename                   | aggregate 
------------+----------------------------------------------+-----------
- geoid     | obs_11ee8b82c877c073438bc935a91d3dfccef875d1 | 
- geoid     | obs_ab038198aaab3f3cb055758638ee4de28ad70146 | 
- geoid     | obs_d34555209878e8c4b37cf0b2b3d072ff129ec470 | 
- total_pop | obs_ab038198aaab3f3cb055758638ee4de28ad70146 | sum
-(4 rows)
-
--- should be null-valued
-SELECT
-  (unnest(cdb_observatory._OBS_GetColumnData(
-    '"us.census.tiger".census_tract',
-    Array['"us.census.tiger".baloney'], -- entry not in catalog
-    '2009 - 2013'
-  ))).*
-ORDER BY 1 ASC;
- colname | tablename | aggregate 
----------+-----------+-----------
-(0 rows)
-
--- OBS_LookupCensusHuman
--- should give back: {"\"us.census.acs\".B19083001"}
-SELECT
-  cdb_observatory._OBS_LookupCensusHuman(
-    Array['gini_index']
-  );
-     _obs_lookupcensushuman      
----------------------------------
- {"\"us.census.acs\".B19083001"}
+test_get_obs_column_with_geoid_and_census_1|test_get_obs_column_with_geoid_and_census_2
+t|t
 (1 row)
-
--- should be empty array
-SELECT
-  cdb_observatory._OBS_LookupCensusHuman(
-    Array['cookies']
-  );
- _obs_lookupcensushuman 
-------------------------
- 
+obs_getcolumndata_missing_measure
+t
 (1 row)
-
--- OBS_BuildSnapshotQuery
--- Should give back: SELECT  vals[1] As total_pop, vals[2] As male_pop, vals[3] As female_pop, vals[4] As median_age
-SELECT
-  cdb_observatory._OBS_BuildSnapshotQuery(
-    Array['total_pop','male_pop','female_pop','median_age']
-  );
-                                     _obs_buildsnapshotquery                                     
--------------------------------------------------------------------------------------------------
- SELECT  vals[1] As total_pop, vals[2] As male_pop, vals[3] As female_pop, vals[4] As median_age
+_obs_buildsnapshotquery_test_1
+t
 (1 row)
-
--- should give back: SELECT  vals[1] As mandarin_orange
-SELECT
-  cdb_observatory._OBS_BuildSnapshotQuery(
-    Array['mandarin_orange']
-  );
-      _obs_buildsnapshotquery       
-------------------------------------
- SELECT  vals[1] As mandarin_orange
+_obs_buildsnapshotquery_test_2
+t
 (1 row)
-
-\i test/sql/drop_fixtures.sql
-SET client_min_messages TO NOTICE;
-\set ECHO none
-Dropping obs_table.sql fixture table...
-Done.
-Dropping obs_column.sql fixture table...
-Done.
-Dropping obs_column_table.sql fixture table...
-Done.
-Dropping obs_column_to_column.sql fixture table...
-Done.
-Dropping obs_85328201013baa14e8e8a4a57a01e6f6fbc5f9b1 fixture table...
-Done.
-Dropping obs_3e7cc9cfd403b912c57b42d5f9195af9ce2f3cdb fixture table...
-Done.
-Dropping obs_ab038198aaab3f3cb055758638ee4de28ad70146 fixture table...
-Done.
-Dropping obs_a92e1111ad3177676471d66bb8036e6d057f271b fixture table...
-Done.
-Dropping obs_11ee8b82c877c073438bc935a91d3dfccef875d1 fixture table...
-Done.
-Dropping obs_d34555209878e8c4b37cf0b2b3d072ff129ec470 fixture table...
-Done.
+_obs_getrelatedcolumn_test
+t
+(1 row)
+_obs_standardizemeasurename_test
+t
+(1 row)

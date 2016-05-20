@@ -40,13 +40,15 @@ fixtures = [
     ('us.census.tiger.block_group', 'us.census.tiger.block_group', '2014'),
     ('us.census.tiger.zcta5', 'us.census.tiger.zcta5', '2014'),
     ('us.census.tiger.county', 'us.census.tiger.county', '2014'),
-    ('us.census.acs.B01001001', 'us.census.tiger.census_tract', '2009 - 2013'),
-    ('us.census.acs.B01001001_quantile', 'us.census.tiger.census_tract', '2009 - 2013'),
-    ('us.census.acs.B01001001', 'us.census.tiger.block_group', '2009 - 2013'),
-    ('us.census.acs.B01001001', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.spielman_singleton_segments.X10', 'us.census.tiger.census_tract', '2009 - 2013'),
+    ('us.census.acs.B01003001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B01003001_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B01003001', 'us.census.tiger.block_group', '2010 - 2014'),
+    ('us.census.spielman_singleton_segments.X10', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2014-01'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2016-03'),
+    ('whosonfirst.wof_country_geom', 'whosonfirst.wof_country_geom', '2016'),
+    ('us.census.tiger.zcta5_clipped', 'us.census.tiger.zcta5_clipped', '2014'),
+    ('us.census.tiger.block_group_clipped', 'us.census.tiger.block_group_clipped', '2014'),
 ]
 
 unique_tables = set()
@@ -75,10 +77,15 @@ with open('src/pg/test/fixtures/load_fixtures.sql', 'w') as outfile:
 
         for tablename, colname, boundary_id in unique_tables:
             if 'zcta5' in boundary_id:
-                where = '11%'
+                where = '\'11%\''
+                compare = 'LIKE'
+            elif 'whosonfirst' in boundary_id:
+                where = '(\'85632785\',\'85633051\',\'85633111\',\'85633147\',\'85633253\',\'85633267\')'
+                compare = 'IN'
             else:
-                where = '36047%'
-            print ' '.join([select_star(tablename), "WHERE {} LIKE '{}'".format(colname, where)])
-            cdb.dump(' '.join([select_star(tablename), "WHERE {} LIKE '{}'".format(colname, where)]),
+                where = '\'36047%\''
+                compare = 'LIKE'
+            print ' '.join([select_star(tablename), "WHERE {}::text {} {}".format(colname, compare, where)])
+            cdb.dump(' '.join([select_star(tablename), "WHERE {}::text {} {}".format(colname, compare, where)]),
                      tablename, outfile, schema='observatory')
             dropfiles.write('DROP TABLE IF EXISTS observatory.{};\n'.format(tablename))

@@ -1,6 +1,6 @@
 # Discovery Functions
 
-If you are using the [discovery methods](/cartodb-platform/dataobservatory/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary](/cartodb-platform/dataobservatory/overview/#boundary-data) and [measures](/cartodb-platform/dataobservatory/overview/#measures-data) data.
+If you are using the [discovery methods](/cartodb-platform/data/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary](/cartodb-platform/data/overview/#boundary-data) and [measures](/cartodb-platform/data/overview/#measures-data) data.
 
 ## OBS_Search(search_term)
 
@@ -19,16 +19,16 @@ A TABLE containing the following properties
 
 Key | Description
 --- | ---
-measure_id | the unique id of the measure for use with the ```OBS_GetMeasure``` function
+id | the unique id of the measure for use with the ```OBS_GetMeasure``` function
 name | the human readable name of the measure
 description | a brief description of the measure
-aggregate_type | **sum** are raw count values, **median** are statistical medians, **average** are statistical averages, **undefined** other (e.g. an index value)
-sources | where the data came from (e.g. US Census Bureau)
+aggregate | **sum** are raw count values, **median** are statistical medians, **average** are statistical averages, **undefined** other (e.g. an index value)
+source | where the data came from (e.g. US Census Bureau)
 
 #### Example
 
 ```SQL
-SELECT * FROM OBS_Search('inequality')
+SELECT * FROM OBS_Search('home value')
 ```
 
 ## OBS_GetAvailableBoundaries(point_geometry)
@@ -47,9 +47,9 @@ A TABLE containing the following properties
 
 Key | Description
 --- | ---
-boundary_id | a boundary identifier from the [boundary ID glossary](/cartodb-platform/dataobservatory/glossary/#boundary-ids)
+boundary_id | a boundary identifier from the [boundary ID glossary](/cartodb-platform/data/glossary/#boundary-ids)
 description | a brief description of the boundary dataset
-timespan | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
+time_span | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
 
 #### Example
 

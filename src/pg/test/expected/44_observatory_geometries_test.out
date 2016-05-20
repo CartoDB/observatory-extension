@@ -57,6 +57,9 @@ t
 obs_getboundariesbygeometry_tracts_around_null_island
 t
 (1 row)
+obs_getboundariesbygeometry_wof
+t
+(1 row)
 obs_getboundariesbypointandradius_around_cartodb
 t
 (1 row)

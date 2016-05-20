@@ -39,7 +39,7 @@ AS $$
     boundary_id = 'us.census.tiger.block_group';
   END IF;
 
-  target_cols := Array['us.census.acs.B01001001',
+  target_cols := Array['us.census.acs.B01003001',
                   'us.census.acs.B01001002',
                   'us.census.acs.B01001026',
                   'us.census.acs.B01002001',
@@ -171,7 +171,8 @@ BEGIN
   THEN
      RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
       -- TODO this should return JSON
-     RETURN QUERY SELECT '{}'::text[], '{}'::NUMERIC[];
+     RETURN QUERY SELECT '{}'::json;
+     RETURN;
   END IF;
 
   IF data_table_info IS NULL THEN
@@ -198,6 +199,7 @@ BEGIN
     SELECT unnest($1)
   $query$
   USING results;
+  RETURN;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -398,7 +400,7 @@ BEGIN
 
   IF time_span IS NULL THEN
     -- TODO we should determine latest timespan for this measure
-    time_span := '2009 - 2013';
+    time_span := '2010 - 2014';
   END IF;
 
   EXECUTE '
@@ -492,7 +494,7 @@ DECLARE
   result NUMERIC;
 BEGIN
   -- TODO use a super-column for global pop
-  population_measure_id := 'us.census.acs.B01001001';
+  population_measure_id := 'us.census.acs.B01003001';
 
   EXECUTE format('SELECT cdb_observatory.OBS_GetMeasure(
       %L, %L, %L, %L, %L
@@ -624,13 +626,13 @@ DECLARE
   seg_name     Text;
   geom_id      Text;
   q            Text;
-  segment_name Text;
+  segment_names Text[];
 BEGIN
 IF boundary_id IS NULL THEN
  boundary_id = 'us.census.tiger.census_tract';
 END IF;
 target_cols := Array[
-          'us.census.acs.B01001001_quantile',
+          'us.census.acs.B01003001_quantile',
           'us.census.acs.B01001002_quantile',
           'us.census.acs.B01001026_quantile',
           'us.census.acs.B01002001_quantile',
@@ -678,14 +680,13 @@ target_cols := Array[
 
     EXECUTE
       $query$
-      SELECT (_OBS_GetCategories)->>'name'
+      SELECT array_agg(_OBS_GetCategories->>'category')
       FROM cdb_observatory._OBS_GetCategories(
          $1,
-         Array['us.census.spielman_singleton_segments.X10'],
+         Array['us.census.spielman_singleton_segments.X10', 'us.census.spielman_singleton_segments.X55'],
          $2)
-      LIMIT 1
       $query$
-    INTO segment_name
+    INTO segment_names
     USING geom, boundary_id;
 
     q :=
@@ -696,14 +697,14 @@ target_cols := Array[
              array_agg(_OBS_GET->>'value') As vals
            FROM cdb_observatory._OBS_Get($1,
                         $2,
-                        '2009 - 2013',
+                        '2010 - 2014',
                         $3)
 
         ), percentiles As (
            %s
          FROM  a)
          SELECT row_to_json(r) FROM
-         ( SELECT $4 as segment_name, percentiles.*
+         ( SELECT $4 as x10_segment, $5 as x55_segment, percentiles.*
           FROM percentiles) r
        $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols)) results;
 
@@ -711,7 +712,7 @@ target_cols := Array[
     EXECUTE
       q
     into result
-    USING geom, target_cols, boundary_id, segment_name;
+    USING geom, target_cols, boundary_id, segment_names[1], segment_names[2];
 
     return result;
 
@@ -737,7 +738,7 @@ DECLARE
 BEGIN
 
   IF time_span IS NULL THEN
-    time_span = '2009 - 2013';
+    time_span = '2010 - 2014';
   END IF;
 
   IF boundary_id IS NULL THEN
@@ -750,6 +751,7 @@ BEGIN
   THEN
      RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
+     RETURN;
   END IF;
 
   EXECUTE '
@@ -763,6 +765,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No data table found for this location';
     RETURN QUERY SELECT NULL::json;
+    RETURN;
   END IF;
 
   EXECUTE
@@ -777,6 +780,7 @@ BEGIN
   THEN
     RAISE NOTICE 'No geometry id for this location';
     RETURN QUERY SELECT NULL::json;
+    RETURN;
   END IF;
 
   query := 'SELECT ARRAY[';

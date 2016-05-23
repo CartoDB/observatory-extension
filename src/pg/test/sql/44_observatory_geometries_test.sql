@@ -331,6 +331,7 @@ FROM (
 ) As m(the_geom, geom_refs);
 
 -- _OBS_GetGeometryMetadata
+-- get metadata for census tracts
 
 SELECT
   geoid_colname = 'geoid' As geoid_name_matches,
@@ -338,5 +339,12 @@ SELECT
   geom_colname = 'the_geom' As geom_name_matches
 FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract')
      As m(geoid_colname, target_table, geom_colname);
+
+-- get metadata for boundaries with clipped geometries
+ SELECT
+   geoid_colname = 'geoid' As geoid_name_matches,
+   target_table = 'obs_fcd4e4f5610f6764973ef8c0c215b2e80bec8963' As table_name_matches,
+   geom_colname = 'the_geom' As geom_name_matches
+ FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract_clipped') As m(geoid_colname, target_table, geom_colname);
 
 \i test/fixtures/drop_fixtures.sql

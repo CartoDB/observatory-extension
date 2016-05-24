@@ -150,7 +150,7 @@ SELECT abs(OBS_GetMeasure_total_pop_point - 10923.093200390833950) / 10923.09320
 
 -- Poly-based OBS_GetMeasure, default normalization (none)
 -- is result within 0.1% of expected
-SELECT abs(OBS_GetMeasure_total_pop_polygon - 9833.47316573952) / 9833.47316573952 < 0.001 As OBS_GetMeasure_total_pop_polygon_test FROM
+SELECT abs(OBS_GetMeasure_total_pop_polygon - 12327.3133495107) / 12327.3133495107 < 0.001 As OBS_GetMeasure_total_pop_polygon_test FROM
   cdb_observatory.OBS_GetMeasure(
     cdb_observatory._TestArea(),
     'us.census.acs.B01003001'
@@ -164,7 +164,7 @@ SELECT (abs(cdb_observatory.OBS_GetMeasure(
 -- Poly-based OBS_GetMeasure with denominator normalization
 SELECT abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestArea(),
-  'us.census.acs.B01001002', 'denominator') - 0.50597531462834994530) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
+  'us.census.acs.B01001002', 'denominator') - 0.49026340444793965457) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
 
 -- Point-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
@@ -181,7 +181,7 @@ SELECT (abs(OBS_GetPopulation - 10923.093200390833950) / 10923.093200390833950) 
   ) As m(OBS_GetPopulation);
 
 -- Poly-based OBS_GetPopulation, default normalization (none)
-SELECT (abs(obs_getpopulation_polygon - 9833.47316573952) / 9833.47316573952) < 0.001 As obs_getpopulation_polygon_test
+SELECT (abs(obs_getpopulation_polygon - 12327.3133495107) / 12327.3133495107) < 0.001 As obs_getpopulation_polygon_test
 FROM
   cdb_observatory.OBS_GetPopulation(
     cdb_observatory._TestArea()
@@ -193,7 +193,7 @@ SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
 
 -- Poly-based OBS_GetUSCensusMeasure, default normalization (none)
 SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
-  cdb_observatory._testarea(), 'male population') - 4975.49467892449) / 4975.49467892449) < 0.001 As obs_getuscensusmeasure;
+  cdb_observatory._testarea(), 'male population') - 6043.63061042765) / 6043.63061042765) < 0.001 As obs_getuscensusmeasure;
 
 -- Point-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(

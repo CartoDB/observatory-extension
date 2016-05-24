@@ -65,12 +65,12 @@ SELECT
 
 SELECT cdb_observatory._OBS_GetRelatedColumn(
     Array[
-     'es.ine.pop_0_4',
+     'es.ine.t3_1',
      'us.census.acs.B01003001',
      'us.census.acs.B01001002'
     ],
      'denominator'
- ) = '{es.ine.total_pop,NULL,us.census.acs.B01003001}' As _OBS_GetRelatedColumn_test;
+ ) = '{es.ine.t1_1,NULL,us.census.acs.B01003001}' As _OBS_GetRelatedColumn_test;
 
 -- should give back a standardized measure name
 SELECT cdb_observatory._OBS_StandardizeMeasureName('test 343 %% 2 qqq }}{{}}') = 'test_343_2_qqq' As _OBS_StandardizeMeasureName_test;

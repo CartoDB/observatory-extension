@@ -413,7 +413,7 @@ BEGIN
   EXECUTE format(
       'SELECT %I
        FROM observatory.%I
-       WHERE %I.%I = %L'
+       WHERE %I.%I = %L',
        colname,
        target_table,
        target_table, data_geoid_colname, measure_id)

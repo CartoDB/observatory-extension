@@ -171,6 +171,17 @@ FROM (
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
+-- who's on first boundaries
+SELECT
+  array_agg(geom_refs) = Array['85632785','85633051','85633111','85633147','85633253','85633267'] As OBS_GetBoundariesByGeometry_wof
+FROM (
+  SELECT *
+  FROM cdb_observatory.OBS_GetBoundariesByGeometry(
+    ST_MakeEnvelope(-4.66, 40.43, 14.48, 51.99, 4326),
+    'whosonfirst.wof_country_geom')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
 -- OBS_GetBoundariesByPointAndRadius
 
 -- check that all census tracts intersecting with the geometry are returned
@@ -320,6 +331,7 @@ FROM (
 ) As m(the_geom, geom_refs);
 
 -- _OBS_GetGeometryMetadata
+-- get metadata for census tracts
 
 SELECT
   geoid_colname = 'geoid' As geoid_name_matches,
@@ -327,5 +339,12 @@ SELECT
   geom_colname = 'the_geom' As geom_name_matches
 FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract')
      As m(geoid_colname, target_table, geom_colname);
+
+-- get metadata for boundaries with clipped geometries
+ SELECT
+   geoid_colname = 'geoid' As geoid_name_matches,
+   target_table = 'obs_fcd4e4f5610f6764973ef8c0c215b2e80bec8963' As table_name_matches,
+   geom_colname = 'the_geom' As geom_name_matches
+ FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract_clipped') As m(geoid_colname, target_table, geom_colname);
 
 \i test/fixtures/drop_fixtures.sql

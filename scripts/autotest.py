@@ -56,7 +56,7 @@ def default_point(column_id):
                        'us.census.tiger.school_district_secondary_clipped'):
         return 'CDB_LatLng(40.7025, -73.7067)'
     elif column_id.startswith('es.ine'):
-        return 'CDB_LatLng(40.39, -3.7)'
+        return 'CDB_LatLng(42.8226119029222, -2.51141249535454)'
     elif column_id.startswith('us.zillow'):
         return 'CDB_LatLng(28.3305906291771, -81.3544048197256)'
     else:

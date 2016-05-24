@@ -520,9 +520,37 @@ DECLARE
   q_sum text;
   q text;
   i NUMERIC;
+  data_geoid_colname text;
+  geom_geoid_colname text;
 BEGIN
 
-  q_select := 'SELECT geoid, ';
+  -- TODO we're assuming our geom_table has only one geom_ref column
+  --      we *really* should pass in both geom_table_name and boundary_id
+  -- TODO tablename should not be passed here (use boundary_id)
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+     , (data_table_info)[1]->>'tablename')
+  INTO data_geoid_colname;
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+   , geom_table_name)
+  INTO geom_geoid_colname;
+
+  q_select := format('SELECT %I, ', data_geoid_colname);
   q_sum    := 'SELECT Array[';
 
   FOR i IN 1..array_upper(data_table_info, 1)
@@ -543,22 +571,22 @@ BEGIN
     END IF;
  END LOOP;
 
-  q = format('
+  q := format('
     WITH _overlaps As (
       SELECT ST_Area(
         ST_Intersection($1, a.the_geom)
       ) / ST_Area(a.the_geom) As overlap_fraction,
-      geoid
+      %I
       FROM observatory.%I As a
       WHERE $1 && a.the_geom
     ),
     values As (
-    ', geom_table_name);
+    ', geom_geoid_colname, geom_table_name);
 
   q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1]->>'tablename'));
 
-  q := q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
-  WHERE values.geoid = _overlaps.geoid';
+  q := format(q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
+  WHERE values.%I = _overlaps.%I', geom_geoid_colname, geom_geoid_colname);
 
   EXECUTE
     q

@@ -145,7 +145,7 @@ Name |Description
 geom_ref | a geometry reference (e.g., a US Census geoid)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf))  
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
-time_span (optional) | time span of interest (e.g., 2010 - 2014)
+time_span (optional) | time span of interest (e.g., 2010 - 2014). If `NULL` is passed, the measure from the most recent data will be used.
 
 #### Returns
 

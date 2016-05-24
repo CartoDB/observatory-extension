@@ -380,6 +380,50 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureById(
+  geom_ref TEXT,
+  measure_id TEXT,
+  boundary_id TEXT,
+  time_span TEXT DEFAULT NULL
+)
+RETURNS NUMERIC
+AS $$
+DECLARE
+  target_table TEXT;
+  colname TEXT;
+  measure_val NUMERIC;
+  data_geoid_colname TEXT;
+BEGIN
+  -- TODO look at how timespans are decided in other functions
+  SELECT x ->> 'colname', x ->> 'tablename' INTO colname, target_table
+  FROM cdb_observatory._OBS_GetColumnData(boundary_id, Array[measure_id], time_span) As x;
+
+  EXECUTE
+    format('SELECT ct.colname
+              FROM observatory.obs_column_to_column c2c,
+                   observatory.obs_column_table ct,
+                   observatory.obs_table t
+             WHERE c2c.reltype = ''geom_ref''
+               AND ct.column_id = c2c.source_id
+               AND ct.table_id = t.id
+               AND t.tablename = %L'
+     , target_table)
+  INTO data_geoid_colname;
+
+  EXECUTE format(
+      'SELECT %I
+       FROM observatory.%I
+       WHERE %I.%I = %L'
+       colname,
+       target_table,
+       target_table, data_geoid_colname, measure_id)
+  INTO measure_val;
+
+  RETURN measure_val;
+
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
   geom geometry(Geometry, 4326),
   category_id TEXT,

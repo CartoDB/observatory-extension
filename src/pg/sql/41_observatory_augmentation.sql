@@ -395,7 +395,7 @@ DECLARE
   data_geoid_colname TEXT;
   test_query TEXT;
 BEGIN
-  -- TODO look at how timespans are decided in other functions
+
   SELECT x ->> 'colname', x ->> 'tablename' INTO colname, target_table
   FROM cdb_observatory._OBS_GetColumnData(boundary_id, Array[measure_id], time_span) As x;
 

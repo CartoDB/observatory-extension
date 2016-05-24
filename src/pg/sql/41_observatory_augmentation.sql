@@ -435,7 +435,7 @@ BEGIN
        JOIN observatory.obs_column_tag ct
          ON c.id = ct.column_id
        WHERE cdb_observatory._OBS_StandardizeMeasureName(c.name) = $1
-         AND ct.tag_id = 'us.census.acs.demographics'
+         AND ct.tag_id ILIKE 'us.census%'
   $string$
   INTO measure_id
   USING standardized_name;

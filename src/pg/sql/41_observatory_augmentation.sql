@@ -393,6 +393,7 @@ DECLARE
   colname TEXT;
   measure_val NUMERIC;
   data_geoid_colname TEXT;
+  test_query TEXT;
 BEGIN
   -- TODO look at how timespans are decided in other functions
   SELECT x ->> 'colname', x ->> 'tablename' INTO colname, target_table
@@ -410,13 +411,18 @@ BEGIN
      , target_table)
   INTO data_geoid_colname;
 
-  EXECUTE format(
+  RAISE NOTICE 'target_table %, colname %', target_table, colname;
+
+  test_query := format(
       'SELECT %I
        FROM observatory.%I
        WHERE %I.%I = %L',
        colname,
        target_table,
-       target_table, data_geoid_colname, measure_id)
+       target_table, data_geoid_colname, geom_ref);
+  RAISE NOTICE 'test_query: %', test_query;
+
+  EXECUTE test_query
   INTO measure_val;
 
   RETURN measure_val;

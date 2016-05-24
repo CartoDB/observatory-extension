@@ -411,18 +411,15 @@ BEGIN
      , target_table)
   INTO data_geoid_colname;
 
-  RAISE NOTICE 'target_table %, colname %', target_table, colname;
+  RAISE DEBUG 'target_table %, colname %', target_table, colname;
 
-  test_query := format(
+  EXECUTE format(
       'SELECT %I
        FROM observatory.%I
        WHERE %I.%I = %L',
        colname,
        target_table,
-       target_table, data_geoid_colname, geom_ref);
-  RAISE NOTICE 'test_query: %', test_query;
-
-  EXECUTE test_query
+       target_table, data_geoid_colname, geom_ref)
   INTO measure_val;
 
   RETURN measure_val;

@@ -204,4 +204,27 @@ SELECT cdb_observatory.OBS_GetUSCensusCategory(
   cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Low income, mix of minorities' As OBS_GetUSCensusCategory_polygon;
 
 
+-- OBS_GetMeasureById tests
+SELECT (cdb_observatory.OBS_GetMeasureById(
+  '36047048500',
+  'us.census.acs.B01003001',
+  'us.census.tiger.census_tract',
+  '2010 - 2014'
+) - 3241) / 3241 < 0.0001 As OBS_GetMeasureById_cartodb_census_tract;
+
+SELECT (cdb_observatory.OBS_GetMeasureById(
+  '360470485002',
+  'us.census.acs.B01003001',
+  'us.census.tiger.block_group',
+  '2010 - 2014'
+) - 1900) / 1900 < 0.0001 As OBS_GetMeasureById_cartodb_block_group;
+
+-- geom ref / boundary mismatch
+SELECT cdb_observatory.OBS_GetMeasureById(
+  '36047048500',
+  'us.census.acs.B01003001',
+  'us.census.tiger.block_group',
+  '2010 - 2014'
+) IS NULL As OBS_GetMeasureById_nulls;
+
 \i test/fixtures/drop_fixtures.sql

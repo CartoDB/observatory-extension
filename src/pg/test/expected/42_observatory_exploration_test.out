@@ -9,7 +9,7 @@ t
 (1 row)
 id|description|name|aggregate|source
 us.census.acs.B01003001_quantile|The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.|Quantile:Total Population|quantile|
-es.ine.total_pop|The total number of all people living in a geographic area.|Total Population|sum|
+es.ine.t1_1||Total population|sum|
 us.census.acs.B01003001|The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.|Total Population|sum|
 us.census.acs.B19301001|Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.|Per Capita Income in the past 12 Months|average|
 us.census.acs.B01001001_quantile|The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.|Quantile:Total Population|quantile|

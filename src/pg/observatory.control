@@ -1,5 +1,5 @@
 comment = 'CartoDB Observatory backend extension'
-default_version = '0.0.2'
+default_version = '0.0.4'
 requires = 'postgis'
 superuser = true
 schema = cdb_observatory

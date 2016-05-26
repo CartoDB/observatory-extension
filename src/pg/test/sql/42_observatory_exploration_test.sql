@@ -24,10 +24,13 @@ FROM cdb_observatory._OBS_SearchTables(
   '1988' -- year before first tiger data was collected
 ) As t(table_name, timespan);
 
-SELECT *
-FROM cdb_observatory.OBS_Search('total_pop');
+SELECT COUNT(*) > 0 AS _OBS_SearchTotalPop
+FROM cdb_observatory.OBS_Search('total_pop')
+AS t(id, description, name, aggregate, source);
 
-SELECT *
-FROM cdb_observatory.OBS_GetAvailableBoundaries(cdb_observatory._TestPoint());
+SELECT COUNT(*) > 0 AS _OBS_GetAvailableBoundariesExist
+FROM cdb_observatory.OBS_GetAvailableBoundaries(
+  cdb_observatory._TestPoint()
+) AS t(boundary_id, description, time_span, tablename);
 
 \i test/fixtures/drop_fixtures.sql

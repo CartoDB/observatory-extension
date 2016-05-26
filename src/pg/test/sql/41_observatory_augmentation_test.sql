@@ -205,6 +205,7 @@ SELECT cdb_observatory.OBS_GetUSCensusCategory(
 
 
 -- OBS_GetMeasureById tests
+-- typical query
 SELECT (cdb_observatory.OBS_GetMeasureById(
   '36047048500',
   'us.census.acs.B01003001',
@@ -212,7 +213,7 @@ SELECT (cdb_observatory.OBS_GetMeasureById(
   '2010 - 2014'
 ) - 3241) / 3241 < 0.0001 As OBS_GetMeasureById_cartodb_census_tract;
 
--- OBS_GetMeasureById tests
+-- no boundary_id should give null
 SELECT cdb_observatory.OBS_GetMeasureById(
   '36047048500',
   'us.census.acs.B01003001',
@@ -220,6 +221,7 @@ SELECT cdb_observatory.OBS_GetMeasureById(
   NULL
 ) IS NULL As OBS_GetMeasureById_null_boundary_null_timespan;
 
+-- query at block_group level
 SELECT (cdb_observatory.OBS_GetMeasureById(
   '360470485002',
   'us.census.acs.B01003001',

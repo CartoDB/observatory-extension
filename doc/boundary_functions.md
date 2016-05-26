@@ -1,8 +1,8 @@
 # Boundary Functions
 
-Use the following functions to retrieve [Boundary](/cartodb-platform/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
+Use the following functions to retrieve [Boundary](/carto-engine/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
-You can [access](/cartodb-platform/data/accessing/#accessing-the-data-observatory) boundaries through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We [encourage you](/cartodb-platform/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access](/carto-engine/data/accessing/#accessing-the-data-observatory) boundaries through the Carto Editor. The same methods will work if you are using the Carto Engine to develop your application. We [encourage you](/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
 
@@ -222,7 +222,7 @@ Insert into table `denver_census_tracts` the census tract boundaries and geom_re
 INSERT INTO denver_census_tracts(the_geom, geom_refs)
 SELECT *
 FROM OBS_GetBoundariesByPointAndRadius(
-  CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
+  carto_LatLng(39.7392, -104.9903), -- Denver, Colorado
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
   'us.census.tiger.census_tract')
 ```
@@ -264,7 +264,7 @@ Insert into table `denver_tract_points` points on US census tracts and their cor
 INSERT INTO denver_tract_points(the_geom, geom_refs)
 SELECT *
 FROM OBS_GetPointsByPointAndRadius(
-  CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
+  carto_LatLng(39.7392, -104.9903), -- Denver, Colorado
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
   'us.census.tiger.census_tract')
 ```

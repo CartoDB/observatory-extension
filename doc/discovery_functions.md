@@ -1,6 +1,6 @@
 # Discovery Functions
 
-If you are using the [discovery methods](/cartodb-platform/data/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary](/cartodb-platform/data/overview/#boundary-data) and [measures](/cartodb-platform/data/overview/#measures-data) data.
+If you are using the [discovery methods](/carto-engine/data/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary](/carto-engine/data/overview/#boundary-data) and [measures](/carto-engine/data/overview/#measures-data) data.
 
 ## OBS_Search(search_term)
 
@@ -47,12 +47,12 @@ A TABLE containing the following properties
 
 Key | Description
 --- | ---
-boundary_id | a boundary identifier from the [boundary ID glossary](/cartodb-platform/data/glossary/#boundary-ids)
+boundary_id | a boundary identifier from the [boundary ID glossary](/carto-engine/data/glossary/#boundary-ids)
 description | a brief description of the boundary dataset
 time_span | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
 
 #### Example
 
 ```SQL
-SELECT * FROM OBS_GetAvailableBoundaries(CDB_LatLng(40.7, -73.9))
+SELECT * FROM OBS_GetAvailableBoundaries(carto_LatLng(40.7, -73.9))
 ```

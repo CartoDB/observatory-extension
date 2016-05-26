@@ -76,3 +76,15 @@ t
 obs_getuscensuscategory_polygon
 t
 (1 row)
+obs_getmeasurebyid_cartodb_census_tract
+t
+(1 row)
+obs_getmeasurebyid_null_boundary_null_timespan
+t
+(1 row)
+obs_getmeasurebyid_cartodb_block_group
+t
+(1 row)
+obs_getmeasurebyid_nulls
+t
+(1 row)

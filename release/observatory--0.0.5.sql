@@ -4,7 +4,7 @@
 -- Version number of the extension release
 CREATE OR REPLACE FUNCTION cdb_observatory_version()
 RETURNS text AS $$
-  SELECT ''::text;
+  SELECT '0.0.5'::text;
 $$ language 'sql' STABLE STRICT;
 
 -- Internal identifier of the installed extension instence

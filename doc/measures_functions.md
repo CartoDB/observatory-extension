@@ -134,6 +134,40 @@ SET household_count = OBS_GetMeasure(the_geom, 'us.census.acs.B11001001')
 
 * If an unrecognized normalization type is input, raise an error: `'Only valid inputs for "normalize" are "area" (default) and "denominator".`
 
+## OBS_GetMeasureById(geom_ref text, measure_id text, boundary_id text)
+
+The ```OBS_GetMeasureById(geom_ref, measure_id, boundary_id)``` function returns any Data Observatory measure that corresponds to the boundary in ```boundary_id``` that has a geometry reference of ```geom_ref```.
+
+#### Arguments
+
+Name |Description
+--- | ---
+geom_ref | a geometry reference (e.g., a US Census geoid)
+measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf))  
+boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
+time_span (optional) | time span of interest (e.g., 2010 - 2014). If `NULL` is passed, the measure from the most recent data will be used.
+
+#### Returns
+
+A NUMERIC value
+
+Key | Description
+--- | ---
+value | the raw measure associated with `geom_ref`
+
+#### Example
+
+Add a measure to an empty column based on county geoids in your table
+
+```SQL
+UPDATE tablename
+SET household_count = OBS_GetMeasureById(geoid_column, 'us.census.acs.B11001001', 'us.census.tiger.county')
+```
+
+#### Errors
+
+* Returns `NULL` if there is a mismatch between the geometry reference and the boundary id such as using the geoid of a county with the boundary of block groups
+
 ## OBS_GetCategory(point geometry, category_id text)
 
 The ```OBS_GetCategory(point, category_id)``` function returns any Data Observatory Category value at a point location. The Categories available are currently limited to Segmentation categories. See the Segmentation section of the [Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) for more detail.

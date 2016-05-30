@@ -14,5 +14,5 @@ Natural Earth  |  [http://www.naturalearthdata.com/about/terms-of-use/](http://w
 Quattroshapes  |  [https://github.com/foursquare/quattroshapes/blob/master/LICENSE.md](https://github.com/foursquare/quattroshapes/blob/master/LICENSE.md)
 Zetashapes  |  [http://zetashapes.com/license](http://zetashapes.com/license)
 Spielman & Singleton  |  [https://www.openicpsr.org/repoEntity/show/41329](https://www.openicpsr.org/repoEntity/show/41329)
-Instituto Nacional de Estadistica  |  [http://www.ine.es/ss/Satellite?L=0&c=Page&cid=1254735849170&p=1254735849170&pagename=Ayuda%2FINELayout](http://www.ine.es/ss/Satellite?L=0&c=Page&cid=1254735849170&p=1254735849170&pagename=Ayuda%2FINELayout)
+El Instituto Nacional de Estadística (INE) | The National Statistics Institute (INE) of Spain includes data from multiple sources. If you are re-using their data, they explicitly require that you reference them accordingly<br /><br />[http://www.ine.es/ss/Satellite?L=0&c=Page&cid=1254735849170&p=1254735849170&pagename=Ayuda%2FINELayout](http://www.ine.es/ss/Satellite?L=0&c=Page&cid=1254735849170&p=1254735849170&pagename=Ayuda%2FINELayout)
 

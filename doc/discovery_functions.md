@@ -54,5 +54,5 @@ time_span | the timespan attached the boundary. this does not mean that the boun
 #### Example
 
 ```SQL
-SELECT * FROM OBS_GetAvailableBoundaries(carto_LatLng(40.7, -73.9))
+SELECT * FROM OBS_GetAvailableBoundaries(CDB_LatLng(40.7, -73.9))
 ```

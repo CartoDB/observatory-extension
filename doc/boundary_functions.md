@@ -222,7 +222,7 @@ Insert into table `denver_census_tracts` the census tract boundaries and geom_re
 INSERT INTO denver_census_tracts(the_geom, geom_refs)
 SELECT *
 FROM OBS_GetBoundariesByPointAndRadius(
-  carto_LatLng(39.7392, -104.9903), -- Denver, Colorado
+  CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
   'us.census.tiger.census_tract')
 ```
@@ -264,7 +264,7 @@ Insert into table `denver_tract_points` points on US census tracts and their cor
 INSERT INTO denver_tract_points(the_geom, geom_refs)
 SELECT *
 FROM OBS_GetPointsByPointAndRadius(
-  carto_LatLng(39.7392, -104.9903), -- Denver, Colorado
+  CDB_LatLng(39.7392, -104.9903), -- Denver, Colorado
   10000 * 1.609, -- 10 miles (10km * conversion to miles)
   'us.census.tiger.census_tract')
 ```

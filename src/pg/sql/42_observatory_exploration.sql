@@ -114,7 +114,7 @@ BEGIN
       AND
         observatory.OBS_column.type = 'Geometry'
       AND
-        $1 && bounds::box2d
+        ST_Intersects($1, the_geom)
   $string$ || timespan_query
   USING geom;
   RETURN;

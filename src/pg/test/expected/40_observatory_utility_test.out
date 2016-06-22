@@ -27,3 +27,6 @@ t
 _obs_standardizemeasurename_test
 t
 (1 row)
+obs_getdumpversion_notnull
+t
+(1 row)

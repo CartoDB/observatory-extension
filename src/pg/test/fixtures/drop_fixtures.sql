@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS observatory.obs_column;
 DROP TABLE IF EXISTS observatory.obs_column_tag;
 DROP TABLE IF EXISTS observatory.obs_tag;
 DROP TABLE IF EXISTS observatory.obs_column_to_column;
+DROP TABLE IF EXISTS observatory.obs_dump_version;
 DROP TABLE IF EXISTS observatory.obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d;
 DROP TABLE IF EXISTS observatory.obs_1746e37b7cd28cb131971ea4187d42d71f09c5f3;
 DROP TABLE IF EXISTS observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd;

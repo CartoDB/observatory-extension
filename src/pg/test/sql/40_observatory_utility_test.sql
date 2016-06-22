@@ -75,4 +75,7 @@ SELECT cdb_observatory._OBS_GetRelatedColumn(
 -- should give back a standardized measure name
 SELECT cdb_observatory._OBS_StandardizeMeasureName('test 343 %% 2 qqq }}{{}}') = 'test_343_2_qqq' As _OBS_StandardizeMeasureName_test;
 
+SELECT cdb_observatory.OBS_GetDumpVersion()
+  IS NOT NULL AS OBS_GetDumpVersion_notnull;
+
 \i test/fixtures/drop_fixtures.sql

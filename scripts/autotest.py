@@ -85,7 +85,12 @@ def default_point(column_id):
                        'us.census.tiger.school_district_elementary_clipped',
                        'us.census.tiger.school_district_secondary_clipped'):
         return 'CDB_LatLng(40.7025, -73.7067)'
-    elif column_id.startswith('es.ine'):
+    elif column_id.startswith('uk'):
+        if 'WA' in column_id:
+            return 'CDB_LatLng(51.46844551219723, -3.184833526611328)'
+        else:
+            return 'CDB_LatLng(51.51461834694225, -0.08883476257324219)'
+    elif column_id.startswith('es'):
         return 'CDB_LatLng(42.8226119029222, -2.51141249535454)'
     elif column_id.startswith('us.zillow'):
         return 'CDB_LatLng(28.3305906291771, -81.3544048197256)'

@@ -114,7 +114,7 @@ BEGIN
       AND
         observatory.OBS_column.type = 'Geometry'
       AND
-        ST_Intersects($1, the_geom)
+        ST_Intersects($1, observatory.obs_table.the_geom)
   $string$ || timespan_query
   USING geom;
   RETURN;

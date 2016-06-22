@@ -213,5 +213,6 @@ BEGIN
   EXECUTE '
     SELECT MAX(dump_id) FROM observatory.obs_dump_version
   ' INTO result;
+  RETURN result;
 END;
 $$ LANGUAGE plpgsql;

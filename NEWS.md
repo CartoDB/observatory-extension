@@ -1,3 +1,29 @@
+1.0.0 (6/27/2016)
+-----
+
+* Incremented to 1.0.0 to be in compliance with [SemVer](http://semver.org/),
+  which disallows use of 0.x.x versions.  This also reflects that we are
+  already in production.
+
+__API Changes__
+
+* Added `OBS_DumpVersion` to look up version data ([#118](https://github.com/CartoDB/observatory-extension/pull/118))
+
+__Improvements__
+
+* Whether data exists for a geom now determined by polygon intersection instead of
+  BBOX overlap ([#119](https://github.com/CartoDB/observatory-extension/pull/119))
+* Automated tests cover Spanish and UK data
+  ([#115](https://github.com/CartoDB/observatory-extension/pull/115))
+* Automated tests cover `OBS_GetUSCensusMeasure`
+  ([#105](https://github.com/CartoDB/observatory-extension/pull/105))
+
+__Bugfixes__
+
+* Geom table can have different `geomref_colname` than the data table
+  ([#123](https://github.com/CartoDB/observatory-extension/pull/123))
+
+
 0.0.5 (5/27/2016)
 -----
 * Adds new function `OBS_GetMeasureById` ([#96](https://github.com/CartoDB/observatory-extension/pull/96))

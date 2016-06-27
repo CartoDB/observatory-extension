@@ -33,7 +33,8 @@ def select_star(tablename):
 
 cdb = Dumpr('observatory.cartodb.com','')
 
-metadata = ['obs_table', 'obs_column_table', 'obs_column', 'obs_column_tag', 'obs_tag', 'obs_column_to_column']
+metadata = ['obs_table', 'obs_column_table', 'obs_column', 'obs_column_tag',
+            'obs_tag', 'obs_column_to_column', 'obs_dump_version']
 
 fixtures = [
     ('us.census.tiger.census_tract', 'us.census.tiger.census_tract', '2014'),

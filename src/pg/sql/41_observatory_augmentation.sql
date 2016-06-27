@@ -633,7 +633,7 @@ BEGIN
   q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1]->>'tablename'));
 
   q := format(q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
-  WHERE values.%I = _overlaps.%I', geom_geoid_colname, geom_geoid_colname);
+  WHERE values.%I = _overlaps.%I', data_geoid_colname, geom_geoid_colname);
 
   EXECUTE
     q

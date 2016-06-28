@@ -1,6 +1,8 @@
 # License
 
-The Data Observatory is a collection of various sources of data with varying licenses. We have worked hard to find you data that will work for the broadest set of use-cases. For competency, please still review the terms for any dataset you use and respect the rights of the owners for each dataset. The following third-party data sources are used in the Data Observatory, and we have included the links to the terms governing their use.
+The Data Observatory is a collection of data sources with varying licenses and terms of use. We have endeavored to find you data that will work for the broadest set of use-cases. The following third-party data sources are used in the Data Observatory, and we have included the links to the terms governing their use.
+
+_**Legal Note**: The Data Observatory makes use of a variety of third party data and databases (collectively, the “Data”). You acknowledge that the included Data, and the licenses and terms of use, may be amended from time to time. Whenever you use the Data, you agree to the current relevant terms or license. Some Data will require that you provide attribution to the data source. Other Data may be protected by US or international copyright laws, treaties, or conventions. The Data and associated metadata are provided 'as-is', without express or implied warranty of any kind, including, but not limited to, infringement, merchantability and fitness for a particular purpose. CartoDB is not responsible for the accuracy, completeness, timeliness or quality of the Data._
 
 Name  | Terms link 
 -------|---------

@@ -2,7 +2,7 @@
 
 [Data Observatory Measures](/cartodb-platform/data/overview/#measures-methods) are the numerical location data you can access. The measure functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (point or polygon) and receiving back a measure (an absolute value) for that location.
 
-There are hundreds of measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
+There are hundreds of measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf).
 
 You can [access](/cartodb-platform/data/accessing/#accessing-the-data-observatory) measures through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We [encourage you](/cartodb-platform/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
@@ -16,7 +16,7 @@ Name |Description
 --- | ---
 point | a WGS84 point geometry (the_geom)
 measure_name | a human readable name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/data/glossary/#obsgetuscensusmeasure-names-table).
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://cartodb.github.io/bigmetadata/index.html) (optional)
+normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -47,7 +47,7 @@ Name |Description
 --- | ---
 polygon | a WGS84 polygon geometry (the_geom)
 measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/data/glossary/#obsgetuscensusmeasure-names-table).
-normalize | for measures that are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
+normalize | for measures that are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -70,7 +70,7 @@ SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 
 ## OBS_GetMeasure(point geometry, measure_id text)
 
-The ```OBS_GetMeasure(point, measure_id)``` function returns any Data Observatory measure at a point location. You can browse all available Measures in the [Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf)).
+The ```OBS_GetMeasure(point, measure_id)``` function returns any Data Observatory measure at a point location. You can browse all available Measures in the [Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf).
 
 #### Arguments
 
@@ -78,7 +78,7 @@ Name |Description
 --- | ---
 point | a WGS84 point geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf)). It is important to note that these are different than 'measure_name' used in the Census based functions above.
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. The other option is 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf). (optional)
+normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. The other option is 'denominator', which will use the denominator specified in the [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf). (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -109,7 +109,7 @@ Name |Description
 --- | ---
 polygon_geometry | a WGS84 polygon geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf))  
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) (optional)
+normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -170,7 +170,7 @@ SET household_count = OBS_GetMeasureById(geoid_column, 'us.census.acs.B11001001'
 
 ## OBS_GetCategory(point geometry, category_id text)
 
-The ```OBS_GetCategory(point, category_id)``` function returns any Data Observatory Category value at a point location. The Categories available are currently limited to Segmentation categories. See the Segmentation section of the [Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf) for more detail.
+The ```OBS_GetCategory(point, category_id)``` function returns any Data Observatory Category value at a point location. The Categories available are currently limited to Segmentation categories. See the Segmentation section of the [Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf) for more detail.
 
 #### Arguments
 

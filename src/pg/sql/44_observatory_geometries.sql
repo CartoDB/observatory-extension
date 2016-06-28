@@ -573,3 +573,28 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+
+-- OBS_GetBoundariesAndMeasure retuns the boundaries and measures requested as
+-- a table
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesAndMeasure(
+  geom geometry(Geometry, 4326),
+  measure_id TEXT,
+  boundary_id TEXT,
+  timespan TEXT DEFAULT NULL,
+  overlap_type TEXT DEFAULT 'intersects'
+) RETURNS TABLE(the_geom geometry(Geometry, 4326), measure_val NUMERIC)
+AS $$
+
+  SELECT
+    the_geom,
+    cdb_observatory.OBS_GetMeasureById(
+      geom_refs, measure_id, boundary_id
+    ) As measure_val
+  FROM
+    cdb_observatory.OBS_GetBoundariesByGeometry(
+      geom, boundary_id,
+      timespan, overlap_type
+    ) As x(the_geom, geom_refs);
+
+$$ LANGUAGE SQL;

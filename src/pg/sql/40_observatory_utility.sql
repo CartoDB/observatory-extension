@@ -199,3 +199,20 @@ BEGIN
   RETURN result;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function that returns the currently deployed obs_dump_version from the
+-- remote table of the same name.
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_DumpVersion(
+)
+  RETURNS TEXT
+AS $$
+DECLARE
+  result text;
+BEGIN
+  EXECUTE '
+    SELECT MAX(dump_id) FROM observatory.obs_dump_version
+  ' INTO result;
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql;

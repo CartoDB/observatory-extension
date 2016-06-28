@@ -24,8 +24,9 @@ def query(q, is_meta=False, **options):
     params['api_key'] = META_API_KEY if is_meta else API_KEY
     return requests.get(url, params=params)
 
-MEASURE_COLUMNS = [(r['id'], ) for r in query('''
-SELECT id FROM obs_column
+MEASURE_COLUMNS = [(r['id'], r['point_only'], ) for r in query('''
+SELECT id, aggregate NOT ILIKE 'sum' as point_only
+FROM obs_column
 WHERE type ILIKE 'numeric'
 AND weight > 0
 ''', is_meta=True).json()['rows']]
@@ -98,14 +99,14 @@ def default_point(column_id):
         return 'CDB_LatLng(40.7, -73.9)'
 
 
-#def default_area(column_id):
-#    '''
-#    Returns default test area for the column_id
-#    '''
-#    point = default_point(column_id)
-#    area = 'ST_Transform(ST_Buffer(ST_Transform({point}, 3857), 1000), 4326)'.format(
-#        point=point)
-#    return area
+def default_area(column_id):
+    '''
+    Returns default test area for the column_id
+    '''
+    point = default_point(column_id)
+    area = 'ST_Transform(ST_Buffer(ST_Transform({point}, 3857), 1000), 4326)'.format(
+        point=point)
+    return area
 
 @parameterized(US_CENSUS_MEASURE_COLUMNS)
 def test_get_us_census_measure_points(name):
@@ -120,21 +121,23 @@ SELECT * FROM {schema}OBS_GetUSCensusMeasure({point}, '{name}')
     assert_is_not_none(rows[0].values()[0])
 
 
-#@parameterized(MEASURE_COLUMNS)
-#def test_get_measure_areas(column_id):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetMeasure({area}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            area=default_area(column_id)))
-#    assert_equal(resp.status_code, 200)
-#    rows = resp.json()['rows']
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0].values()[0])
+@parameterized(MEASURE_COLUMNS)
+def test_get_measure_areas(column_id, point_only):
+    if point_only:
+        return
+    resp = query('''
+SELECT * FROM {schema}OBS_GetMeasure({area}, '{column_id}')
+                 '''.format(column_id=column_id,
+                            schema='cdb_observatory.' if USE_SCHEMA else '',
+                            area=default_area(column_id)))
+    assert_equal(resp.status_code, 200)
+    rows = resp.json()['rows']
+    assert_equal(1, len(rows))
+    assert_is_not_none(rows[0].values()[0])
 
 
 @parameterized(MEASURE_COLUMNS)
-def test_get_measure_points(column_id):
+def test_get_measure_points(column_id, point_only):
     resp = query('''
 SELECT * FROM {schema}OBS_GetMeasure({point}, '{column_id}')
                  '''.format(column_id=column_id,

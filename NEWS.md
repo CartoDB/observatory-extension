@@ -1,3 +1,11 @@
+1.0.1 (2016-07-01)
+---
+
+__Bugfixes__
+
+* Fix for ERROR:  Operation on mixed SRID geometries #130
+
+
 1.0.0 (6/27/2016)
 -----
 

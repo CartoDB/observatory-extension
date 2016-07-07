@@ -1,8 +1,8 @@
 # Boundary Functions
 
-Use the following functions to retrieve [Boundary](/cartodb-platform/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
+Use the following functions to retrieve [Boundary](/carto-engine/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
-You can [access](/cartodb-platform/data/accessing/#accessing-the-data-observatory) boundaries through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We [encourage you](/cartodb-platform/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access](/carto-engine/data/accessing/#accessing-the-data-observatory) boundaries through the CARTO Editor. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
 

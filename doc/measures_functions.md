@@ -1,10 +1,10 @@
 # Measures Functions
 
-[Data Observatory Measures](/cartodb-platform/data/overview/#measures-methods) are the numerical location data you can access. The measure functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (point or polygon) and receiving back a measure (an absolute value) for that location.
+[Data Observatory Measures](/carto-engine/data/overview/#measures-methods) are the numerical location data you can access. The measure functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (point or polygon) and receiving back a measure (an absolute value) for that location.
 
 There are hundreds of measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf).
 
-You can [access](/cartodb-platform/data/accessing/#accessing-the-data-observatory) measures through the CartoDB Editor. The same methods will work if you are using the CartoDB Platform to develop your application. We [encourage you](/cartodb-platform/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access](/carto-engine/data/accessing/#accessing-the-data-observatory) measures through the CARTO Editor. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetUSCensusMeasure(point geometry, measure_name text)
 

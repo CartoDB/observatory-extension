@@ -29,7 +29,7 @@ Disputed Areas  |  whosonfirst.wof_disputed_geom  |  none
 
 ## OBS_GetUSCensusMeasure Names Table
 
-This list contains human readable names accepted in the ```OBS_GetUSCensusMeasure``` function. For the more comprehensive list of columns available to the ```OBS_GetMeasure``` function, see the [Data Observatory Catalog](https://cartodb.github.io/bigmetadata/observatory.pdf).
+This list contains human readable names accepted in the ```OBS_GetUSCensusMeasure``` function. For the more comprehensive list of columns available to the ```OBS_GetMeasure``` function, see the [Data Observatory Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf).
 
 Measure name             |  Measure description
 ------------------------ | --------------------

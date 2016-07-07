@@ -20,12 +20,6 @@ script for the new release, `release/observatory--X.Y.Z.sql`:
 make release
 ```
 
-Then, the release manager shall produce upgrade and downgrade scripts
-to migrate to/from the previous release. In the case of minor/patch
-releases this simply consist in extracting the functions that have changed
-and placing them in the proper `release/observatory--X.Y.Z--A.B.C.sql`
-file.
-
 The new release can be deployed for staging/smoke tests with this command:
 
 ```

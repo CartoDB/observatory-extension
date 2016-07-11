@@ -401,10 +401,11 @@ BEGIN
             FROM observatory.obs_meta
             WHERE geom_id = %L
               AND numer_id = %L
-              AND (numer_timespan = %L OR (%L IS NULL))
+              AND (numer_timespan = %L OR (%L = ''''))
             ORDER BY numer_timespan DESC
             LIMIT 1 ',
-                boundary_id, measure_id, time_span, time_span)
+                boundary_id, measure_id, nullif(time_span, ''), nullif(time_span, ''))
+
     INTO colname, data_geoid_colname, target_table;
 
   RAISE DEBUG 'target_table %, colname %', target_table, colname;

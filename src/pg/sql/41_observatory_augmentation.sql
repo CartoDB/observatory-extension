@@ -396,30 +396,26 @@ DECLARE
   test_query TEXT;
 BEGIN
 
-  SELECT x ->> 'colname', x ->> 'tablename' INTO colname, target_table
-  FROM cdb_observatory._OBS_GetColumnData(boundary_id, Array[measure_id], time_span) As x;
-
   EXECUTE
-    format('SELECT ct.colname
-              FROM observatory.obs_column_to_column c2c,
-                   observatory.obs_column_table ct,
-                   observatory.obs_table t
-             WHERE c2c.reltype = ''geom_ref''
-               AND ct.column_id = c2c.source_id
-               AND ct.table_id = t.id
-               AND t.tablename = %L'
-     , target_table)
-  INTO data_geoid_colname;
+    format('SELECT numer_colname, numer_geomref_colname, numer_tablename
+            FROM observatory.obs_meta
+            WHERE geom_id = %L
+              AND numer_id = %L
+              AND (numer_timespan = %L OR (%L IS NULL))
+            ORDER BY numer_timespan DESC
+            LIMIT 1 ',
+                boundary_id, measure_id)
+    INTO colname, data_geoid_colname, target_table;
 
   RAISE DEBUG 'target_table %, colname %', target_table, colname;
 
   EXECUTE format(
       'SELECT %I
-       FROM observatory.%I
-       WHERE %I.%I = %L',
+       FROM observatory.%I data
+       WHERE data.%I = %L',
        colname,
        target_table,
-       target_table, data_geoid_colname, geom_ref)
+       data_geoid_colname, geom_ref)
   INTO measure_val;
 
   RETURN measure_val;

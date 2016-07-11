@@ -404,7 +404,7 @@ BEGIN
               AND (numer_timespan = %L OR (%L IS NULL))
             ORDER BY numer_timespan DESC
             LIMIT 1 ',
-                boundary_id, measure_id)
+                boundary_id, measure_id, time_span, time_span)
     INTO colname, data_geoid_colname, target_table;
 
   RAISE DEBUG 'target_table %, colname %', target_table, colname;

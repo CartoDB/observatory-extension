@@ -404,7 +404,7 @@ BEGIN
               AND (numer_timespan = %L OR (%L = ''''))
             ORDER BY numer_timespan DESC
             LIMIT 1 ',
-                boundary_id, measure_id, nullif(time_span, ''), nullif(time_span, ''))
+                boundary_id, measure_id, coalesce(time_span, ''), coalesce(time_span, ''))
 
     INTO colname, data_geoid_colname, target_table;
 

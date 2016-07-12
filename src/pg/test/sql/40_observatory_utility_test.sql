@@ -1,6 +1,8 @@
 \pset format unaligned
 \set ECHO all
 \i test/fixtures/load_fixtures.sql
+SET client_min_messages TO WARNING;
+\set ECHO none
 
 -- OBS_GeomTable
 -- get table with known geometry_id
@@ -77,5 +79,3 @@ SELECT cdb_observatory._OBS_StandardizeMeasureName('test 343 %% 2 qqq }}{{}}') =
 
 SELECT cdb_observatory.OBS_DumpVersion()
   IS NOT NULL AS OBS_DumpVersion_notnull;
-
-\i test/fixtures/drop_fixtures.sql

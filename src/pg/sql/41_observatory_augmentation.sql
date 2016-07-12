@@ -440,6 +440,7 @@ DECLARE
   geom_geomref_colname TEXT;
   geom_colname TEXT;
   category_val TEXT;
+  category_share NUMERIC;
 BEGIN
 
   EXECUTE
@@ -469,22 +470,21 @@ BEGIN
   ELSE
     -- favor the category with the most area
     EXECUTE format(
-       'WITH _overlaps AS (
+       'SELECT %I category, SUM(overlap_fraction) category_share
+        FROM observatory.%I data, (
           SELECT ST_Area(
-            ST_Intersection(%L, a.%I)
-          ) / ST_Area(a.%I) AS overlap_fraction, %I geomref
+           ST_Intersection(%L, a.%I)
+          ) / ST_Area(%L) AS overlap_fraction, %I geomref
           FROM observatory.%I as a
-          WHERE %L && a.%I)
-        SELECT %I category
-         FROM observatory.%I data
-         WHERE data.%I = geomref
-         GROUP BY category
-         ORDER BY SUM(overlap_fraction)
+          WHERE %L && a.%I) _overlaps
+        WHERE data.%I = _overlaps.geomref
+        GROUP BY category
+        ORDER BY SUM(overlap_fraction) DESC
         LIMIT 1',
-          geom, geom_colname, geom_colname, geom_geomref_colname,
-          geom_table, geom, geom_colname,
-          colname, data_table, data_geomref_colname)
-    INTO category_val;
+          colname, data_table,
+          geom, geom_colname, geom, geom_geomref_colname,
+          geom_table, geom, geom_colname, data_geomref_colname)
+    INTO category_val, category_share;
   END IF;
 
   RETURN category_val;

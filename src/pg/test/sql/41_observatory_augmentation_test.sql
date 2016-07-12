@@ -172,7 +172,7 @@ SELECT cdb_observatory.OBS_GetCategory(
 
 -- Poly-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
-  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Low income, mix of minorities' As obs_getcategory_polygon;
+  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As obs_getcategory_polygon;
 
 -- Point-based OBS_GetPopulation, default normalization (area)
 SELECT (abs(OBS_GetPopulation - 10923.093200390833950) / 10923.093200390833950) < 0.001 As OBS_GetPopulation FROM
@@ -201,7 +201,7 @@ SELECT cdb_observatory.OBS_GetUSCensusCategory(
 
 -- Area-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
-  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Low income, mix of minorities' As OBS_GetUSCensusCategory_polygon;
+  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Wealthy, urban without Kids' As OBS_GetUSCensusCategory_polygon;
 
 
 -- OBS_GetMeasureById tests

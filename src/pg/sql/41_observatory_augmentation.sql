@@ -393,7 +393,6 @@ DECLARE
   colname TEXT;
   measure_val NUMERIC;
   data_geoid_colname TEXT;
-  test_query TEXT;
 BEGIN
 
   EXECUTE
@@ -434,27 +433,61 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
 RETURNS TEXT
 AS $$
 DECLARE
-  denominator_id TEXT;
-  categories TEXT[];
+  data_table TEXT;
+  geom_table TEXT;
+  colname TEXT;
+  data_geomref_colname TEXT;
+  geom_geomref_colname TEXT;
+  geom_colname TEXT;
+  category_val TEXT;
+  category_share NUMERIC;
 BEGIN
 
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := 'us.census.tiger.census_tract';
+  EXECUTE
+     $query$
+     SELECT numer_colname, numer_geomref_colname, numer_tablename,
+            geom_geomref_colname, geom_colname, geom_tablename
+             FROM observatory.obs_meta
+             WHERE (geom_id = $1 OR ($1 = ''))
+               AND numer_id = $2
+               AND (numer_timespan = $3 OR ($3 = ''))
+             ORDER BY geom_weight DESC, numer_timespan DESC
+             LIMIT 1
+     $query$
+    INTO colname, data_geomref_colname, data_table,
+         geom_geomref_colname, geom_colname, geom_table
+    USING COALESCE(boundary_id, ''), category_id, COALESCE(time_span, '');
+
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    EXECUTE format(
+        'SELECT data.%I
+         FROM observatory.%I data, observatory.%I geom
+         WHERE data.%I = geom.%I
+           AND ST_WITHIN(%L, geom.%I) ',
+         colname, data_table, geom_table, data_geomref_colname,
+         geom_geomref_colname, geom, geom_colname)
+    INTO category_val;
+  ELSE
+    -- favor the category with the most area
+    EXECUTE format(
+       'SELECT data.%I category, SUM(overlap_fraction) category_share
+        FROM observatory.%I data, (
+          SELECT ST_Area(
+           ST_Intersection(%L, a.%I)
+          ) / ST_Area(%L) AS overlap_fraction, a.%I geomref
+          FROM observatory.%I as a
+          WHERE %L && a.%I) _overlaps
+        WHERE data.%I = _overlaps.geomref
+        GROUP BY category
+        ORDER BY SUM(overlap_fraction) DESC
+        LIMIT 1',
+          colname, data_table,
+          geom, geom_colname, geom, geom_geomref_colname,
+          geom_table, geom, geom_colname, data_geomref_colname)
+    INTO category_val, category_share;
   END IF;
 
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
-  END IF;
-
-  EXECUTE '
-    SELECT ARRAY_AGG(val) FROM (SELECT (cdb_observatory._OBS_GetCategories($1, $2, $3, $4))->>''category'' val LIMIT 1) b
-  '
-  INTO categories
-  USING geom, ARRAY[category_id], boundary_id, time_span;
-
-  RETURN (categories)[1];
+  RETURN category_val;
 
 END;
 $$ LANGUAGE plpgsql;

@@ -453,8 +453,8 @@ BEGIN
              ORDER BY geom_weight DESC, numer_timespan DESC
              LIMIT 1
      $query$
-    INTO colname, data_geomref_colname, data_table, geom_geomref_colname,
-         geom_colname, geom_table
+    INTO colname, data_geomref_colname, data_table,
+         geom_geomref_colname, geom_colname, geom_table
     USING COALESCE(boundary_id, ''), category_id, COALESCE(time_span, '');
 
   RAISE DEBUG 'target_table %, colname %', target_table, colname;

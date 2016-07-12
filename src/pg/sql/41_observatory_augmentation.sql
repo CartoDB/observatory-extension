@@ -397,16 +397,17 @@ DECLARE
 BEGIN
 
   EXECUTE
-    format('SELECT numer_colname, numer_geomref_colname, numer_tablename
-            FROM observatory.obs_meta
-            WHERE geom_id = %L
-              AND numer_id = %L
-              AND (numer_timespan = %L OR (%L = ''''))
-            ORDER BY numer_timespan DESC
-            LIMIT 1 ',
-                boundary_id, measure_id, coalesce(time_span, ''), coalesce(time_span, ''))
-
-    INTO colname, data_geoid_colname, target_table;
+     $query$
+     SELECT numer_colname, numer_geomref_colname, numer_tablename
+             FROM observatory.obs_meta
+             WHERE (geom_id = $1 OR ($1 = ''))
+               AND numer_id = $2
+               AND (numer_timespan = $3 OR ($3 = ''))
+             ORDER BY geom_weight DESC, numer_timespan DESC
+             LIMIT 1
+     $query$
+    INTO colname, data_geoid_colname, target_table
+    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
 
   RAISE DEBUG 'target_table %, colname %', target_table, colname;
 

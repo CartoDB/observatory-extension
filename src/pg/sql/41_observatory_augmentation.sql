@@ -466,7 +466,7 @@ BEGIN
          AND ST_WITHIN(%L, geom.%I) ',
        colname,
        data_table,
-       geom_table
+       geom_table,
        data_geomref_colname,
        geom_geomref_colname,
        geom,

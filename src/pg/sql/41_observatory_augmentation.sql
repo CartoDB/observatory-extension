@@ -457,19 +457,35 @@ BEGIN
          geom_geomref_colname, geom_colname, geom_table
     USING COALESCE(boundary_id, ''), category_id, COALESCE(time_span, '');
 
-  EXECUTE format(
-      'SELECT %I
-       FROM observatory.%I data, observatory.%I geom
-       WHERE data.%I = geom.%I
-         AND ST_WITHIN(%L, geom.%I) ',
-       colname,
-       data_table,
-       geom_table,
-       data_geomref_colname,
-       geom_geomref_colname,
-       geom,
-       geom_colname)
-  INTO category_val;
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    EXECUTE format(
+        'SELECT %I
+         FROM observatory.%I data, observatory.%I geom
+         WHERE data.%I = geom.%I
+           AND ST_WITHIN(%L, geom.%I) ',
+         colname, data_table, geom_table, data_geomref_colname,
+         geom_geomref_colname, geom, geom_colname)
+    INTO category_val;
+  ELSE
+    -- favor the category with the most area
+    EXECUTE format(
+       'WITH _overlaps AS (
+          SELECT ST_Area(
+            ST_Intersection(%I, a.%I)
+          ) / ST_Area(a.%I) AS overlap_fraction, %I geomref
+          FROM observatory.%I as a
+          WHERE %I && a.%I,
+        SELECT %I category
+         FROM observatory.%I data
+         WHERE data.%I = geomref
+         GROUP BY category
+         ORDER BY SUM(overlap_fraction)
+        LIMIT 1',
+          geom, geom_colname, geom_colname, geom_geomref_colname,
+          geom_table, geom, geom_colname,
+          colname, data_table, data_geomref_colname)
+    INTO category_val;
+  END IF;
 
   RETURN category_val;
 

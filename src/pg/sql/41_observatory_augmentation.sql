@@ -470,11 +470,11 @@ BEGIN
   ELSE
     -- favor the category with the most area
     EXECUTE format(
-       'SELECT %I category, SUM(overlap_fraction) category_share
+       'SELECT data.%I category, SUM(overlap_fraction) category_share
         FROM observatory.%I data, (
           SELECT ST_Area(
            ST_Intersection(%L, a.%I)
-          ) / ST_Area(%L) AS overlap_fraction, %I geomref
+          ) / ST_Area(%L) AS overlap_fraction, a.%I geomref
           FROM observatory.%I as a
           WHERE %L && a.%I) _overlaps
         WHERE data.%I = _overlaps.geomref

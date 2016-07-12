@@ -21,5 +21,4 @@ DROP TABLE IF EXISTS observatory.obs_d39f7fe5959891c8296490d83c22ded31c54af13;
 DROP TABLE IF EXISTS observatory.obs_144e8b4f906885b2e057ac4842644a553ae49c6e;
 DROP TABLE IF EXISTS observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308;
 
-        DROP TABLE IF EXISTS observatory.obs_meta
-                        
+DROP TABLE IF EXISTS observatory.obs_meta;

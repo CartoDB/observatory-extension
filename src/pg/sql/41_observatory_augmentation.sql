@@ -460,7 +460,7 @@ BEGIN
 
   IF ST_GeometryType(geom) = 'ST_Point' THEN
     EXECUTE format(
-        'SELECT %I
+        'SELECT data.%I
          FROM observatory.%I data, observatory.%I geom
          WHERE data.%I = geom.%I
            AND ST_WITHIN(%L, geom.%I) ',

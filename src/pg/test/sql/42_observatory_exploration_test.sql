@@ -1,4 +1,6 @@
 \pset format unaligned
+\set ECHO none
+SET client_min_messages TO WARNING;
 
 -- set up variables for use in testing
 

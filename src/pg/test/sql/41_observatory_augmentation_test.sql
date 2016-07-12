@@ -1,5 +1,6 @@
 \pset format unaligned
 \set ECHO none
+SET client_min_messages TO WARNING;
 
 --
 WITH result as(

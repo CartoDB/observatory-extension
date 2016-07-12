@@ -1,6 +1,8 @@
 \pset format unaligned
 \set ECHO all
 \i test/fixtures/load_fixtures.sql
+SET client_min_messages TO WARNING;
+\set ECHO none
 
 -- OBS_GeomTable
 -- get table with known geometry_id

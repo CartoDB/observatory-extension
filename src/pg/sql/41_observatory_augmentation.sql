@@ -433,15 +433,19 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
 RETURNS TEXT
 AS $$
 DECLARE
-  target_table TEXT;
+  data_table TEXT;
+  geom_table TEXT;
   colname TEXT;
+  data_geomref_colname TEXT;
+  geom_geomref_colname TEXT;
+  geom_colname TEXT;
   category_val TEXT;
-  data_geoid_colname TEXT;
 BEGIN
 
   EXECUTE
      $query$
-     SELECT numer_colname, numer_geomref_colname, numer_tablename
+     SELECT numer_colname, numer_geomref_colname, numer_tablename,
+            geom_geomref_colname, geom_colname, geom_tablename
              FROM observatory.obs_meta
              WHERE (geom_id = $1 OR ($1 = ''))
                AND numer_id = $2
@@ -449,18 +453,24 @@ BEGIN
              ORDER BY geom_weight DESC, numer_timespan DESC
              LIMIT 1
      $query$
-    INTO colname, data_geoid_colname, target_table
-    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
+    INTO colname, data_geomref_colname, data_table, geom_geomref_colname,
+         geom_colname, geom_table
+    USING COALESCE(boundary_id, ''), category_id, COALESCE(time_span, '');
 
   RAISE DEBUG 'target_table %, colname %', target_table, colname;
 
   EXECUTE format(
       'SELECT %I
-       FROM observatory.%I data
-       WHERE data.%I = %L',
+       FROM observatory.%I data, observatory.%I geom
+       WHERE data.%I = geom.%I
+         AND ST_WITHIN(%L, geom.%I) ',
        colname,
-       target_table,
-       data_geoid_colname, geom_ref)
+       data_table,
+       geom_table
+       data_geomref_colname,
+       geom_geomref_colname,
+       geom,
+       geom_colname)
   INTO category_val;
 
   RETURN category_val;

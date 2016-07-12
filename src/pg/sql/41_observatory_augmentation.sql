@@ -393,7 +393,6 @@ DECLARE
   colname TEXT;
   measure_val NUMERIC;
   data_geoid_colname TEXT;
-  test_query TEXT;
 BEGIN
 
   EXECUTE
@@ -434,27 +433,37 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
 RETURNS TEXT
 AS $$
 DECLARE
-  denominator_id TEXT;
-  categories TEXT[];
+  target_table TEXT;
+  colname TEXT;
+  category_val TEXT;
+  data_geoid_colname TEXT;
 BEGIN
 
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := 'us.census.tiger.census_tract';
-  END IF;
+  EXECUTE
+     $query$
+     SELECT numer_colname, numer_geomref_colname, numer_tablename
+             FROM observatory.obs_meta
+             WHERE (geom_id = $1 OR ($1 = ''))
+               AND numer_id = $2
+               AND (numer_timespan = $3 OR ($3 = ''))
+             ORDER BY geom_weight DESC, numer_timespan DESC
+             LIMIT 1
+     $query$
+    INTO colname, data_geoid_colname, target_table
+    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
 
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
-  END IF;
+  RAISE DEBUG 'target_table %, colname %', target_table, colname;
 
-  EXECUTE '
-    SELECT ARRAY_AGG(val) FROM (SELECT (cdb_observatory._OBS_GetCategories($1, $2, $3, $4))->>''category'' val LIMIT 1) b
-  '
-  INTO categories
-  USING geom, ARRAY[category_id], boundary_id, time_span;
+  EXECUTE format(
+      'SELECT %I
+       FROM observatory.%I data
+       WHERE data.%I = %L',
+       colname,
+       target_table,
+       data_geoid_colname, geom_ref)
+  INTO category_val;
 
-  RETURN (categories)[1];
+  RETURN category_val;
 
 END;
 $$ LANGUAGE plpgsql;

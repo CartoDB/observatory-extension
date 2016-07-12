@@ -96,22 +96,28 @@ with open('src/pg/test/fixtures/load_fixtures.sql', 'w') as outfile:
 ALTER TABLE observatory.obs_table
   ADD PRIMARY KEY (id);
 ALTER TABLE observatory.obs_column_table
-  ADD PRIMARY KEY (column_id, table_id),
-  ADD FOREIGN KEY (column_id) REFERENCES observatory.obs_column(id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (table_id) REFERENCES observatory.obs_table(id) ON DELETE CASCADE;
+  ADD PRIMARY KEY (column_id, table_id);
+CREATE UNIQUE INDEX ON observatory.obs_column_table (table_id, column_id);
 CREATE UNIQUE INDEX ON observatory.obs_column_table (table_id, colname);
 ALTER TABLE observatory.obs_column
   ADD PRIMARY KEY (id);
 ALTER TABLE observatory.obs_column_to_column
-  ADD PRIMARY KEY (source_id, target_id, reltype),
-  ADD FOREIGN KEY (source_id) REFERENCES observatory.obs_column(id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (target_id) REFERENCES observatory.obs_column(id) ON DELETE CASCADE;
+  ADD PRIMARY KEY (source_id, target_id, reltype);
+CREATE UNIQUE INDEX ON observatory.obs_column_to_column (target_id, source_id, reltype);
+CREATE INDEX ON observatory.obs_column_to_column (reltype);
 ALTER TABLE observatory.obs_column_tag
-  ADD PRIMARY KEY (column_id, tag_id),
-  ADD FOREIGN KEY (column_id) REFERENCES observatory.obs_column(id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (tag_id) REFERENCES observatory.obs_tag(id) ON DELETE CASCADE;
+  ADD PRIMARY KEY (column_id, tag_id);
+CREATE UNIQUE INDEX ON observatory.obs_column_tag (tag_id, column_id);
 ALTER TABLE observatory.obs_tag
   ADD PRIMARY KEY (id);
+CREATE INDEX ON observatory.obs_tag (type);
+
+VACUUM ANALYZE observatory.obs_table;
+VACUUM ANALYZE observatory.obs_column_table;
+VACUUM ANALYZE observatory.obs_column;
+VACUUM ANALYZE observatory.obs_column_to_column;
+VACUUM ANALYZE observatory.obs_column_tag;
+VACUUM ANALYZE observatory.obs_tag;
 
 CREATE TABLE observatory.obs_meta AS
 SELECT numer_c.id numer_id,

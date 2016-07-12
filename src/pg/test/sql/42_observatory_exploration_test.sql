@@ -1,4 +1,3 @@
-\i test/fixtures/load_fixtures.sql
 \pset format unaligned
 
 -- set up variables for use in testing
@@ -32,5 +31,3 @@ SELECT COUNT(*) > 0 AS _OBS_GetAvailableBoundariesExist
 FROM cdb_observatory.OBS_GetAvailableBoundaries(
   cdb_observatory._TestPoint()
 ) AS t(boundary_id, description, time_span, tablename);
-
-\i test/fixtures/drop_fixtures.sql

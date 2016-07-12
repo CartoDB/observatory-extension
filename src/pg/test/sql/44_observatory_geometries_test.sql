@@ -1,6 +1,5 @@
 \pset format unaligned
 \set ECHO all
-\i test/fixtures/load_fixtures.sql
 
 -- set up variables for use in testing
 

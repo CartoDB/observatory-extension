@@ -1,4 +1,3 @@
-\i test/fixtures/load_fixtures.sql
 \pset format unaligned
 \set ECHO none
 
@@ -236,5 +235,3 @@ SELECT cdb_observatory.OBS_GetMeasureById(
   'us.census.tiger.block_group',
   '2010 - 2014'
 ) IS NULL As OBS_GetMeasureById_nulls;
-
-\i test/fixtures/drop_fixtures.sql

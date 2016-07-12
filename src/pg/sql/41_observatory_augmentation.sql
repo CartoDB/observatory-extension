@@ -474,7 +474,7 @@ BEGIN
             ST_Intersection(%L, a.%I)
           ) / ST_Area(a.%I) AS overlap_fraction, %I geomref
           FROM observatory.%I as a
-          WHERE %L && a.%I,
+          WHERE %L && a.%I
         SELECT %I category
          FROM observatory.%I data
          WHERE data.%I = geomref

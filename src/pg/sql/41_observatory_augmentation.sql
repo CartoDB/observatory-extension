@@ -457,8 +457,6 @@ BEGIN
          geom_geomref_colname, geom_colname, geom_table
     USING COALESCE(boundary_id, ''), category_id, COALESCE(time_span, '');
 
-  RAISE DEBUG 'target_table %, colname %', target_table, colname;
-
   EXECUTE format(
       'SELECT %I
        FROM observatory.%I data, observatory.%I geom

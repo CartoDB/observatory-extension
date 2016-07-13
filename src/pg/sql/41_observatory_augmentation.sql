@@ -441,7 +441,7 @@ BEGIN
                                      AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0),
                         _denom AS (SELECT denom.%I, denom.%I geom_ref
                                    FROM observatory.%I denom
-                                   WHERE denom.%I IN (SELECT geom_ref FROM _geom))
+                                   WHERE denom.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[]))
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
                            SUM((SELECT _denom.%I * (SELECT _geom.overlap
                                                     FROM _geom

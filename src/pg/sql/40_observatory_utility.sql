@@ -37,6 +37,81 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+
+-- A function that gets the column data for multiple columns
+-- Old: OBS_GetColumnData
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetColumnData(
+  geometry_id text,
+  column_ids text[],
+  timespan text
+)
+RETURNS SETOF JSON
+AS $$
+BEGIN
+
+  -- figure out highest-weight geometry_id/timespan pair for the first data column
+  -- TODO this should be done for each data column separately
+  IF geometry_id IS NULL OR timespan IS NULL THEN
+    EXECUTE '
+      SELECT data_t.timespan timespan, geom_c.id boundary_id
+      FROM observatory.obs_table data_t,
+           observatory.obs_column_table data_ct,
+           observatory.obs_column data_c,
+           observatory.obs_column_table geoid_ct,
+           observatory.obs_column_to_column c2c,
+           observatory.obs_column geom_c
+      WHERE data_c.id = $2
+           AND data_ct.column_id = data_c.id
+           AND data_ct.table_id = data_t.id
+           AND geoid_ct.table_id = data_t.id
+           AND geoid_ct.column_id = c2c.source_id
+           AND c2c.reltype = ''geom_ref''
+           AND geom_c.id = c2c.target_id
+           AND CASE WHEN $3 IS NULL THEN True ELSE $3 = timespan END
+           AND CASE WHEN $1 IS NULL THEN True ELSE $1 = geom_c.id END
+      ORDER BY geom_c.weight DESC,
+               data_t.timespan DESC
+      LIMIT 1
+    ' INTO timespan, geometry_id
+    USING geometry_id, (column_ids)[1], timespan;
+  END IF;
+
+  RETURN QUERY
+  EXECUTE '
+  WITH geomref AS (
+    SELECT ct.table_id id
+    FROM observatory.OBS_column_to_column c2c,
+         observatory.OBS_column_table ct
+    WHERE c2c.reltype = ''geom_ref''
+      AND c2c.target_id = $1
+      AND c2c.source_id = ct.column_id
+    ),
+  column_ids as (
+    select row_number() over () as no, a.column_id as column_id from (select unnest($2) as column_id) a
+  )
+ SELECT row_to_json(a) from (
+   select  colname,
+            tablename,
+            aggregate,
+            name,
+            type,
+            c.description,
+            $1 AS boundary_id
+           FROM column_ids, observatory.OBS_column c, observatory.OBS_column_table ct, observatory.OBS_table t
+           WHERE column_ids.column_id  = c.id
+             AND c.id = ct.column_id
+             AND t.id = ct.table_id
+             AND t.timespan = $3
+             AND t.id in (SELECT id FROM geomref)
+          order by column_ids.no
+    ) a
+ '
+ USING geometry_id, column_ids, timespan
+ RETURN;
+
+END;
+$$ LANGUAGE plpgsql;
+
 --Test point cause Stuart always seems to make random points in the water
 CREATE OR REPLACE FUNCTION cdb_observatory._TestPoint()
   RETURNS geometry(Point, 4326)
@@ -80,6 +155,28 @@ BEGIN
   END LOOP;
   RETURN q;
 
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetRelatedColumn(columns_ids text[], reltype text )
+RETURNS TEXT[]
+AS $$
+DECLARE
+  result TEXT[];
+BEGIN
+  EXECUTE '
+    With ids as (
+      select row_number() over() as no, id from (select unnest($1) as id) t
+    )
+    select array_agg(target_id order by no)
+    FROM  ids
+    LEFT JOIN observatory.obs_column_to_column
+    on  source_id  = id
+    where reltype = $2 or reltype is null
+  '
+  INTO result
+  using columns_ids, reltype;
+  return result;
 END;
 $$ LANGUAGE plpgsql;
 

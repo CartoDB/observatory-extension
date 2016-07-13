@@ -390,38 +390,39 @@ BEGIN
 
   IF ST_GeometryType(geom) = 'ST_Point' THEN
     IF map_type = 'areaNormalized' THEN
-      sql = format('SELECT numer.%I / (ST_Area(geom.%I::Geography) * 1000000)
-                    FROM observatory.%I numer, observatory.%I geom
-                    WHERE numer.%I = geom.%I
-                      AND ST_WITHIN(%L, geom.%I)',
-                        numer_colname, geom_colname, numer_tablename,
-                        geom_tablename, numer_geomref_colname,
-                        geom_geomref_colname, geom, geom_colname);
+      sql = format('WITH _geom AS (SELECT ST_Area(geom.%I::Geography) / 1000000 area, geom.%I geom_ref
+                                   FROM observatory.%I geom
+                                   WHERE ST_Within(%L, geom.%I)
+                                   LIMIT 1)
+                    SELECT numer.%I / (SELECT area FROM _geom)
+                    FROM observatory.%I numer
+                    WHERE numer.%I = (SELECT geom_ref FROM _geom)',
+                geom_colname, geom_geomref_colname, geom_tablename,
+                geom, geom_colname, numer_colname, numer_tablename,
+                numer_geomref_colname);
     ELSIF map_type = 'denominated' THEN
-      sql = format('SELECT numer.%I / denom.%I
-                    FROM observatory.%I numer, observatory.%I geom, observatory.%I denom
-                    WHERE numer.%I = geom.%I
-                      AND geom.%I = denom.%I
-                      AND ST_WITHIN(%L, geom.%I)',
-                        numer_colname, denom_colname, numer_tablename,
-                        geom_tablename, denom_tablename,
+      sql = format('SELECT numer.%I / NULLIF((SELECT denom.%I FROM observatory.%I denom WHERE denom.%I = numer.%I LIMIT 1), 0)
+                    FROM observatory.%I numer
+                    WHERE numer.%I = (SELECT geom.%I FROM observatory.%I geom WHERE ST_Within(%L, geom.%I) LIMIT 1)',
+                        numer_colname, denom_colname, denom_tablename,
+                        denom_geomref_colname, numer_geomref_colname,
+                        numer_tablename,
                         numer_geomref_colname, geom_geomref_colname,
-                        geom_geomref_colname, denom_geomref_colname,
-                        geom, geom_colname);
+                        geom_tablename, geom, geom_colname);
     ELSIF map_type = 'predenominated' THEN
       sql = format('SELECT numer.%I
-                    FROM observatory.%I numer, observatory.%I geom
-                    WHERE numer.%I = geom.%I
-                      AND ST_WITHIN(%L, geom.%I)',
+                    FROM observatory.%I numer
+                    WHERE numer.%I = (SELECT geom.%I FROM observatory.%I geom WHERE ST_Within(%L, geom.%I) LIMIT 1)',
                         numer_colname, numer_tablename,
-                        geom_tablename, numer_geomref_colname,
-                        geom_geomref_colname, geom, geom_colname);
+                        numer_geomref_colname, geom_geomref_colname, geom_tablename,
+                        geom, geom_colname);
     END IF;
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
     IF map_type = 'areaNormalized' THEN
     ELSIF map_type = 'denominated' THEN
     ELSIF map_type = 'predenominated' THEN
     END IF;
+    RAISE EXCEPTION 'Polygon/multipolygon TODO';
   ELSE
     RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
                     ST_GeometryType(geom);

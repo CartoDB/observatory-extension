@@ -169,19 +169,19 @@ BEGIN
 
   IF geom_table_name IS NULL
   THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+     --raise notice 'Point % is outside of the data region', ST_AsText(geom);
       -- TODO this should return JSON
      RETURN QUERY SELECT '{}'::json;
      RETURN;
   END IF;
 
   IF data_table_info IS NULL THEN
-    RAISE NOTICE 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
+    --raise notice 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
   END IF;
 
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
-    RAISE NOTICE 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
+    --raise notice 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
     results := cdb_observatory._OBS_GetPoints(geom,
                                               geom_table_name,
                                               data_table_info);
@@ -260,7 +260,7 @@ BEGIN
   USING geom
   INTO geoid;
 
-  RAISE NOTICE 'geoid is %, geometry table is % ', geoid, geom_table_name;
+  --raise notice 'geoid is %, geometry table is % ', geoid, geom_table_name;
 
   EXECUTE
     format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
@@ -273,7 +273,7 @@ BEGIN
 
   IF area IS NULL
   THEN
-    RAISE NOTICE 'No geometry at %', ST_AsText(geom);
+    --raise notice 'No geometry at %', ST_AsText(geom);
   END IF;
 
   query := 'SELECT Array[';
@@ -408,7 +408,7 @@ BEGIN
     INTO colname, data_geoid_colname, target_table
     USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
 
-  RAISE DEBUG 'target_table %, colname %', target_table, colname;
+  --RAISE DEBUG 'target_table %, colname %', target_table, colname;
 
   EXECUTE format(
       'SELECT %I
@@ -827,7 +827,7 @@ BEGIN
 
   IF geom_table_name IS NULL
   THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+     --raise notice 'Point % is outside of the data region', ST_AsText(geom);
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
      RETURN;
   END IF;
@@ -841,7 +841,7 @@ BEGIN
 
   IF data_table_info IS NULL
   THEN
-    RAISE NOTICE 'No data table found for this location';
+    --raise notice 'No data table found for this location';
     RETURN QUERY SELECT NULL::json;
     RETURN;
   END IF;
@@ -856,7 +856,7 @@ BEGIN
 
   IF geoid IS NULL
   THEN
-    RAISE NOTICE 'No geometry id for this location';
+    --raise notice 'No geometry id for this location';
     RETURN QUERY SELECT NULL::json;
     RETURN;
   END IF;

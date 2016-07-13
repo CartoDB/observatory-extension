@@ -345,37 +345,91 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
 RETURNS NUMERIC
 AS $$
 DECLARE
+  map_type TEXT;
+  numer_aggregate TEXT;
+  numer_colname TEXT;
+  numer_geomref_colname TEXT;
+  numer_tablename TEXT;
+  denom_colname TEXT;
+  denom_geomref_colname TEXT;
+  denom_tablename TEXT;
+  geom_colname TEXT;
+  geom_geomref_colname TEXT;
+  geom_tablename TEXT;
   result NUMERIC;
-  measure_ids TEXT[];
-  denominator_id TEXT;
-  vals NUMERIC[];
+  sql TEXT;
 BEGIN
 
-  IF normalize ILIKE 'area' THEN
-    measure_ids := ARRAY[measure_id];
-  ELSIF normalize ILIKE 'denominator' THEN
-    EXECUTE 'SELECT (cdb_observatory._OBS_GetRelatedColumn(ARRAY[$1], ''denominator''))[1]
-    ' INTO denominator_id
-    USING measure_id;
-    measure_ids := ARRAY[measure_id, denominator_id];
-  ELSIF normalize ILIKE 'none' THEN
-    -- TODO we need a switch on obs_get to disable area normalization
-    RAISE EXCEPTION 'No normalization not yet supported.';
+  EXECUTE
+     $query$
+     SELECT numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
+            denom_colname, denom_geomref_colname, denom_tablename,
+            geom_colname, geom_geomref_colname, geom_tablename
+             FROM observatory.obs_meta
+             WHERE (geom_id = $1 OR ($1 = ''))
+               AND numer_id = $2
+               AND (numer_timespan = $3 OR ($3 = ''))
+             ORDER BY geom_weight DESC, numer_timespan DESC
+             LIMIT 1
+     $query$
+    INTO numer_colname, numer_geomref_colname, numer_table,
+         denom_colname, denom_geomref_colname, denom_table,
+         geom_colname, geom_geomref_colname, geom_table
+    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
+
+  IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
+    -- area normalized
+    map_type := 'areaNormalized';
+  ELSIF normalize ILIKE 'denominator' AND numer_aggregate ILIKE 'sum' THEN
+    -- denominated
+    map_type := 'denominated';
   ELSE
-    RAISE EXCEPTION 'Only valid inputs for "normalize" are "area" (default) and "denominator".';
+    -- predenominated
+    map_type := 'predenominated';
   END IF;
 
-  EXECUTE '
-    SELECT ARRAY_AGG(val) FROM (SELECT (cdb_observatory._OBS_Get($1, $2, $3, $4)->>''value'')::NUMERIC val) b
-  '
-  INTO vals
-  USING geom, measure_ids, time_span, boundary_id;
-
-  IF normalize ILIKE 'denominator' THEN
-    RETURN (vals)[1]/(vals)[2];
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    IF map_type = 'areaNormalied' THEN
+      sql = format('SELECT numer.%I / (ST_Area(geom.%I::Geography) * 1000000)
+                    FROM observatory.%I numer, observatory.%I geom
+                    WHERE numer.%I = geom.%I
+                      AND ST_WITHIN(%L, geom.%I)',
+                        numer_colname, geom_colname, numer_tablename,
+                        geom_tablename, numer_geomref_colname,
+                        geom_geomref_colname, geom, geom_colname);
+    ELSIF map_type = 'denominated' THEN
+      sql = format('SELECT numer.%I / denom.%I
+                    FROM observatory.%I numer, observatory.%I geom, observatory.%I denom
+                    WHERE numer.%I = geom.%I
+                      AND geom.%I = denom.%I
+                      AND ST_WITHIN(%L, geom.%I)',
+                        numer_colname, denom_colname, numer_tablename,
+                        geom_tablename, denom_tablename,
+                        numer_geomref_colname, geom_geomref_colname,
+                        geom_geomref_colname, denom_geomref_colname,
+                        geom, geom_colname);
+    ELSIF map_type = 'predenominated' THEN
+      sql = format('SELECT numer.%I
+                    FROM observatory.%I numer, observatory.%I geom
+                    WHERE numer.%I = geom.%I
+                      AND ST_WITHIN(%L, geom.%I)',
+                        numer_colname, numer_tablename,
+                        geom_tablename, numer_geomref_colname,
+                        geom_geomref_colname, geom, geom_colname);
+    END IF;
+  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
+    IF map_type = 'areaNormalied' THEN
+    ELSIF map_type = 'denominated' THEN
+    ELSIF map_type = 'predenominated' THEN
+    END IF;
   ELSE
-    RETURN (vals)[1];
+    RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
+                    ST_GeometryType(geom);
   END IF;
+
+  EXECUTE sql INTO result;
+  RETURN result;
+
 END;
 $$ LANGUAGE plpgsql;
 

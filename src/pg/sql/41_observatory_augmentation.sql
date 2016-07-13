@@ -448,7 +448,7 @@ BEGIN
                                                     WHERE _geom.geom_ref = _denom.geom_ref)
                                 FROM _denom WHERE _denom.geom_ref = numer.%I))
                     FROM observatory.%I numer
-                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom::TEXT[])',
+                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom, geom_colname,
                 geom_colname, geom_geomref_colname,
                 geom_tablename,

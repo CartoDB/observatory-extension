@@ -420,21 +420,25 @@ BEGIN
       sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                         / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                    FROM observatory.%I geom
-                                   WHERE ST_Intersects(%L, geom.%I))
+                                   WHERE ST_Intersects(%L, geom.%I)
+                                     AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0)
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
                            ST_Area(%L::Geography)
                     FROM observatory.%I numer
-                    WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
+                    WHERE numer.%I = ANY (SELECT ARRAY_AGG(geom_ref) FROM _geom)',
                 geom, geom_colname, geom_colname,
                 geom_geomref_colname, geom_tablename,
-                geom, geom_colname, numer_colname, numer_geomref_colname,
+                geom, geom_colname,
+                geom, geom_colname, geom_colname,
+                numer_colname, numer_geomref_colname,
                 geom, numer_tablename,
                 numer_geomref_colname);
     ELSIF map_type = 'denominated' THEN
       sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                         / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                    FROM observatory.%I geom
-                                   WHERE ST_Intersects(%L, geom.%I)),
+                                   WHERE ST_Intersects(%L, geom.%I)
+                                     AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0),
                         _denom AS (SELECT denom.%I, denom.%I geom_ref
                                    FROM observatory.%I denom
                                    WHERE denom.%I IN (SELECT geom_ref FROM _geom))
@@ -444,11 +448,12 @@ BEGIN
                                                     WHERE _geom.geom_ref = _denom.geom_ref)
                                 FROM _denom WHERE _denom.geom_ref = numer.%I))
                     FROM observatory.%I numer
-                    WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
+                    WHERE numer.%I = ANY (SELECT ARRAY_AGG(geom_ref) FROM _geom)',
                 geom, geom_colname,
                 geom_colname, geom_geomref_colname,
                 geom_tablename,
                 geom, geom_colname,
+                geom, geom_colname, geom_colname,
                 denom_colname, denom_geomref_colname,
                 denom_tablename,
                 denom_geomref_colname,

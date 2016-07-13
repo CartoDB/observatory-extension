@@ -338,13 +338,14 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
   geom geometry(Geometry, 4326),
   measure_id TEXT,
-  normalize TEXT DEFAULT 'area', -- TODO none/null
+  normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
 )
 RETURNS NUMERIC
 AS $$
 DECLARE
+  geom_type TEXT;
   map_type TEXT;
   numer_aggregate TEXT;
   numer_colname TEXT;
@@ -378,15 +379,29 @@ BEGIN
          geom_colname, geom_geomref_colname, geom_tablename, numer_name
     USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
 
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    geom_type := 'point';
+  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
+    geom_type := 'polygon';
+  ELSE
+    RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
+                    ST_GeometryType(geom);
+  END IF;
+
   IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
     map_type := 'areaNormalized';
   ELSIF normalize ILIKE 'denominator' AND numer_aggregate ILIKE 'sum' THEN
     map_type := 'denominated';
   ELSE
-    map_type := 'predenominated';
+    -- defaults: area normalization for point and none for polygon
+    IF geom_type = 'point' THEN
+      map_type := 'areaNormalized';
+    ELSIF geom_type = 'polygon' THEN
+      map_type := 'predenominated';
+    END IF;
   END IF;
 
-  IF ST_GeometryType(geom) = 'ST_Point' THEN
+  IF geom_type = 'point' THEN
     IF map_type = 'areaNormalized' THEN
       sql = format('WITH _geom AS (SELECT ST_Area(geom.%I::Geography) / 1000000 area, geom.%I geom_ref
                                    FROM observatory.%I geom
@@ -415,7 +430,7 @@ BEGIN
                         numer_geomref_colname, geom_geomref_colname, geom_tablename,
                         geom, geom_colname);
     END IF;
-  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
+  ELSIF geom_type = 'polygon' THEN
     IF map_type = 'areaNormalized' THEN
       sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                         / ST_Area(geom.%I) overlap, geom.%I geom_ref
@@ -484,9 +499,6 @@ BEGIN
                   numer_geomref_colname);
       END IF;
     END IF;
-  ELSE
-    RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
-                    ST_GeometryType(geom);
   END IF;
 
   EXECUTE sql INTO result;

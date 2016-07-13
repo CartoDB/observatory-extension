@@ -64,11 +64,11 @@ BEGIN
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'No boundaries found for ''%'' in ''%''', ST_AsText(geom), boundary_id;
+    --RAISE NOTICE 'No boundaries found for ''%'' in ''%''', ST_AsText(geom), boundary_id;
     RETURN NULL::geometry;
   END IF;
 
-  RAISE NOTICE 'target_table: %', target_table;
+  --RAISE NOTICE 'target_table: %', target_table;
 
   -- return the first boundary in intersections
   EXECUTE format(
@@ -143,7 +143,7 @@ BEGIN
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'Warning: No boundaries found for ''%''', boundary_id;
+    --RAISE NOTICE 'Warning: No boundaries found for ''%''', boundary_id;
     RETURN NULL::text;
   END IF;
 
@@ -159,7 +159,7 @@ BEGIN
    , target_table)
   INTO geoid_colname;
 
-  RAISE NOTICE 'target_table: %, geoid_colname: %', target_table, geoid_colname;
+  --RAISE NOTICE 'target_table: %, geoid_colname: %', target_table, geoid_colname;
 
   -- return geometry id column value
   EXECUTE format(
@@ -212,11 +212,11 @@ BEGIN
   SELECT * INTO geoid_colname, target_table, geom_colname
   FROM cdb_observatory._OBS_GetGeometryMetadata(boundary_id);
 
-  RAISE NOTICE '%', target_table;
+  --RAISE NOTICE '%', target_table;
 
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'No geometries found';
+    --RAISE NOTICE 'No geometries found';
     RETURN NULL::geometry;
   END IF;
 
@@ -272,12 +272,12 @@ BEGIN
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
+    --RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
     RETURN QUERY SELECT NULL::geometry, NULL::text;
     RETURN;
   END IF;
 
-  RAISE NOTICE 'target_table: %', target_table;
+  --RAISE NOTICE 'target_table: %', target_table;
 
   -- return first boundary in intersections
   RETURN QUERY
@@ -418,12 +418,12 @@ BEGIN
   -- if no tables are found, raise notice and return null
   IF target_table IS NULL
   THEN
-    RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
+    --RAISE NOTICE 'No boundaries found for bounding box ''%'' in ''%''', ST_AsText(geom), boundary_id;
     RETURN QUERY SELECT NULL::geometry, NULL::text;
     RETURN;
   END IF;
 
-  RAISE NOTICE 'target_table: %', target_table;
+  --RAISE NOTICE 'target_table: %', target_table;
 
   -- return first boundary in intersections
   RETURN QUERY

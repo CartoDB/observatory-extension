@@ -110,6 +110,7 @@ def default_area(column_id):
 
 @parameterized(US_CENSUS_MEASURE_COLUMNS)
 def test_get_us_census_measure_points(name):
+    print 'test_get_us_census_measure_points, ', name
     resp = query('''
 SELECT * FROM {schema}OBS_GetUSCensusMeasure({point}, '{name}')
                  '''.format(name=name.replace("'", "''"),
@@ -123,6 +124,7 @@ SELECT * FROM {schema}OBS_GetUSCensusMeasure({point}, '{name}')
 
 @parameterized(MEASURE_COLUMNS)
 def test_get_measure_areas(column_id, point_only):
+    print 'test_get_measure_areas, ', column_id, point_only
     if point_only:
         return
     resp = query('''
@@ -138,6 +140,7 @@ SELECT * FROM {schema}OBS_GetMeasure({area}, '{column_id}')
 
 @parameterized(MEASURE_COLUMNS)
 def test_get_measure_points(column_id, point_only):
+    print 'test_get_measure_points, ', column_id, point_only
     resp = query('''
 SELECT * FROM {schema}OBS_GetMeasure({point}, '{column_id}')
                  '''.format(column_id=column_id,
@@ -162,6 +165,7 @@ SELECT * FROM {schema}OBS_GetMeasure({point}, '{column_id}')
 
 @parameterized(CATEGORY_COLUMNS)
 def test_get_category_points(column_id):
+    print 'test_get_category_points, ', column_id
     resp = query('''
 SELECT * FROM {schema}OBS_GetCategory({point}, '{column_id}')
                  '''.format(column_id=column_id,

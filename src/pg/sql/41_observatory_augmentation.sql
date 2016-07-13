@@ -439,9 +439,10 @@ BEGIN
                                    FROM observatory.%I denom
                                    WHERE denom.%I IN (SELECT geom_ref FROM _geom))
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
-                           SUM(SELECT _denom.%I * (SELECT _geom.overlap
-                                FROM _geom WHERE _geom.geom_ref = _denom.geom_ref)
-                                WHERE _denom.geom_ref = numer.%I)
+                           SUM((SELECT _denom.%I * (SELECT _geom.overlap
+                                                    FROM _geom
+                                                    WHERE _geom.geom_ref = _denom.geom_ref)
+                                FROM _denom WHERE _denom.geom_ref = numer.%I))
                     FROM observatory.%I numer
                     WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
                 geom, geom_colname,

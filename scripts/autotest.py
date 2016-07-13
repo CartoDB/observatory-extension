@@ -95,6 +95,8 @@ def default_point(column_id):
         return 'CDB_LatLng(42.8226119029222, -2.51141249535454)'
     elif column_id.startswith('us.zillow'):
         return 'CDB_LatLng(28.3305906291771, -81.3544048197256)'
+    elif column_id.startswith('mx.'):
+        return 'CDB_LatLng(19.41347699386547, -99.17019367218018)'
     else:
         return 'CDB_LatLng(40.7, -73.9)'
 

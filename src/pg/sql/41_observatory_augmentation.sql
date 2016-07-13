@@ -465,7 +465,8 @@ BEGIN
         sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                           / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                      FROM observatory.%I geom
-                                     WHERE ST_Intersects(%L, geom.%I))
+                                     WHERE ST_Intersects(%L, geom.%I)
+                                       AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0)
                       SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
                       FROM observatory.%I numer
                       WHERE numer.%I IN (SELECT geom_ref FROM _geom)',

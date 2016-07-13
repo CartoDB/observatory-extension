@@ -420,7 +420,7 @@ BEGIN
       sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                         / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                    FROM observatory.%I geom
-                                   WHERE %L && geom.%I)
+                                   WHERE ST_Overlaps(%L, geom.%I))
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
                            ST_Area(%L::Geography)
                     FROM observatory.%I numer
@@ -434,7 +434,7 @@ BEGIN
       sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                         / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                    FROM observatory.%I geom
-                                   WHERE %L && geom.%I),
+                                   WHERE ST_Overlaps(%L, geom.%I)),
                         _denom AS (SELECT denom.%I, denom.%I geom_ref
                                    FROM observatory.%I denom
                                    WHERE denom.%I IN (SELECT geom_ref FROM _geom))
@@ -465,7 +465,7 @@ BEGIN
         sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                           / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                      FROM observatory.%I geom
-                                     WHERE %L && geom.%I)
+                                     WHERE ST_Overlaps(%L, geom.%I))
                       SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
                       FROM observatory.%I numer
                       WHERE numer.%I IN (SELECT geom_ref FROM _geom)',

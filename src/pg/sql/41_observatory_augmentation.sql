@@ -469,7 +469,7 @@ BEGIN
                                        AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0)
                       SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
                       FROM observatory.%I numer
-                      WHERE numer.%I = ANY ((SELECT geom_ref FROM _geom)::TEXT[])',
+                      WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                   geom, geom_colname, geom_colname,
                   geom_geomref_colname, geom_tablename,
                   geom, geom_colname,

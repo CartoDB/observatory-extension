@@ -472,7 +472,9 @@ BEGIN
                       WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
                   geom, geom_colname, geom_colname,
                   geom_geomref_colname, geom_tablename,
-                  geom, geom_colname, numer_colname, numer_geomref_colname,
+                  geom, geom_colname,
+                  geom, geom_colname, geom_colname,
+                  numer_colname, numer_geomref_colname,
                   numer_tablename,
                   numer_geomref_colname);
       END IF;

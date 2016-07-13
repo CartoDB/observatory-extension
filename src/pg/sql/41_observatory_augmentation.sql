@@ -425,7 +425,7 @@ BEGIN
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
                            ST_Area(%L::Geography)
                     FROM observatory.%I numer
-                    WHERE numer.%I = ANY (SELECT ARRAY_AGG(geom_ref) FROM _geom)',
+                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom, geom_colname, geom_colname,
                 geom_geomref_colname, geom_tablename,
                 geom, geom_colname,
@@ -448,7 +448,7 @@ BEGIN
                                                     WHERE _geom.geom_ref = _denom.geom_ref)
                                 FROM _denom WHERE _denom.geom_ref = numer.%I))
                     FROM observatory.%I numer
-                    WHERE numer.%I = ANY (SELECT ARRAY_AGG(geom_ref) FROM _geom)',
+                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom::TEXT[])',
                 geom, geom_colname,
                 geom_colname, geom_geomref_colname,
                 geom_tablename,

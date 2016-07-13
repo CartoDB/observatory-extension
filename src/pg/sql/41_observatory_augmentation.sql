@@ -358,13 +358,14 @@ DECLARE
   geom_tablename TEXT;
   result NUMERIC;
   sql TEXT;
+  numer_name TEXT;
 BEGIN
 
   EXECUTE
      $query$
      SELECT numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
             denom_colname, denom_geomref_colname, denom_tablename,
-            geom_colname, geom_geomref_colname, geom_tablename
+            geom_colname, geom_geomref_colname, geom_tablename, numer_name
              FROM observatory.obs_meta
              WHERE (geom_id = $1 OR ($1 = ''))
                AND numer_id = $2
@@ -374,17 +375,14 @@ BEGIN
      $query$
     INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
          denom_colname, denom_geomref_colname, denom_tablename,
-         geom_colname, geom_geomref_colname, geom_tablename
+         geom_colname, geom_geomref_colname, geom_tablename, numer_name
     USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
 
   IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
-    -- area normalized
     map_type := 'areaNormalized';
   ELSIF normalize ILIKE 'denominator' AND numer_aggregate ILIKE 'sum' THEN
-    -- denominated
     map_type := 'denominated';
   ELSE
-    -- predenominated
     map_type := 'predenominated';
   END IF;
 
@@ -419,10 +417,54 @@ BEGIN
     END IF;
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
     IF map_type = 'areaNormalized' THEN
+      sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
+                                        / ST_Area(geom.%I) overlap, geom.%I geom_ref
+                                   FROM observatory.%I geom
+                                   WHERE %L && geom.%I)
+                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
+                           ST_Area(%L::Geography)
+                    FROM observatory.%I numer
+                    WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
+                geom, geom_colname, geom_colname,
+                geom_geomref_colname, geom_tablename,
+                geom, geom_colname, numer_colname, numer_geomref_colname,
+                geom, numer_tablename,
+                numer_geomref_colname);
     ELSIF map_type = 'denominated' THEN
+      sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
+                                        / ST_Area(geom.%I) overlap, geom.%I geom_ref
+                                   FROM observatory.%I geom
+                                   WHERE %L && geom.%I),
+                        _denom AS (SELECT denom.%I, denom.%I geom_ref
+                                   FROM observatory.%I denom
+                                   WHERE %L && denom.%I)
+                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
+                           SUM(denom.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = denom%I))
+                    FROM observatory.%I numer
+                    WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
+                geom, geom_colname, geom_colname,
+                geom_geomref_colname, geom_tablename,
+                geom, geom_colname, numer_colname, geom, numer_tablename,
+                numer_geomref_colname);
     ELSIF map_type = 'predenominated' THEN
+      IF numer_aggregate NOT ILIKE 'sum' THEN
+        RAISE EXCEPTION 'Cannot calculate "%" (%) for custom area as it cannot be summed, use ST_PointOnSurface instead',
+                        numer_name, numer_id;
+      ELSE
+        sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
+                                          / ST_Area(geom.%I) overlap, geom.%I geom_ref
+                                     FROM observatory.%I geom
+                                     WHERE %L && geom.%I)
+                      SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
+                      FROM observatory.%I numer
+                      WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
+                  geom, geom_colname, geom_colname,
+                  geom_geomref_colname, geom_tablename,
+                  geom, geom_colname, numer_colname, numer_geomref_colname,
+                  numer_tablename,
+                  numer_geomref_colname);
+      END IF;
     END IF;
-    RAISE EXCEPTION 'Polygon/multipolygon TODO';
   ELSE
     RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
                     ST_GeometryType(geom);

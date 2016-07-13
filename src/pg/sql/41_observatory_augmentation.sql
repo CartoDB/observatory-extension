@@ -623,7 +623,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
    geom geometry(Geometry, 4326),
    name TEXT,
-   normalize TEXT DEFAULT 'area',
+   normalize TEXT DEFAULT NULL,
    boundary_id TEXT DEFAULT NULL,
    time_span TEXT DEFAULT NULL
  )
@@ -689,7 +689,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
   geom geometry(Geometry, 4326),
-  normalize TEXT DEFAULT 'area',
+  normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
 )

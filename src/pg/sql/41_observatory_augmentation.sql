@@ -372,7 +372,7 @@ BEGIN
              ORDER BY geom_weight DESC, numer_timespan DESC
              LIMIT 1
      $query$
-    INTO numer_colname, numer_geomref_colname, numer_tablename,
+    INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
          denom_colname, denom_geomref_colname, denom_tablename,
          geom_colname, geom_geomref_colname, geom_tablename
     USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');

@@ -389,7 +389,7 @@ BEGIN
   END IF;
 
   IF ST_GeometryType(geom) = 'ST_Point' THEN
-    IF map_type = 'areaNormalied' THEN
+    IF map_type = 'areaNormalized' THEN
       sql = format('SELECT numer.%I / (ST_Area(geom.%I::Geography) * 1000000)
                     FROM observatory.%I numer, observatory.%I geom
                     WHERE numer.%I = geom.%I
@@ -418,7 +418,7 @@ BEGIN
                         geom_geomref_colname, geom, geom_colname);
     END IF;
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
-    IF map_type = 'areaNormalied' THEN
+    IF map_type = 'areaNormalized' THEN
     ELSIF map_type = 'denominated' THEN
     ELSIF map_type = 'predenominated' THEN
     END IF;

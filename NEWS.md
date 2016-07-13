@@ -16,6 +16,7 @@ __Improvements__
   (the category covering the highest % of that polygon)
 * Fixtures are only loaded at the start of the unit test suite, and dropped at the end,
   instead of at the start/end of each individual test file
+* Comment noisy NOTICEs ([#73](https://github.com/CartoDB/observatory-extension/issues/73))
 
 1.0.1 (2016-07-01)
 ---

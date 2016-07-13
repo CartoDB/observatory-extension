@@ -1,3 +1,23 @@
+1.0.2 (2016-07-12)
+---
+
+__Bugfixes__
+
+* Fix for `OBS_GetCategory` outside the US ([#135](https://github.com/CartoDB/observatory-extension/pull/137))
+
+__Improvements__
+
+* Automated tests cover Mexico data
+* `obs_meta` is now provisioned during unit tests
+* `OBS_GetMeasureByID` uses `obs_meta` internally, which should help
+  performance
+* `OBS_GetCategory` uses `obs_meta` internally, which should help perfromance
+* `OBS_GetCategory` will pick the correct category for an arbitrary polygon
+  (the category covering the highest % of that polygon)
+* Fixtures are only loaded at the start of the unit test suite, and dropped at the end,
+  instead of at the start/end of each individual test file
+* Comment noisy NOTICEs ([#73](https://github.com/CartoDB/observatory-extension/issues/73))
+
 1.0.1 (2016-07-01)
 ---
 

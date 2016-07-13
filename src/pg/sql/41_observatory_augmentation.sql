@@ -437,14 +437,17 @@ BEGIN
                                    WHERE %L && geom.%I),
                         _denom AS (SELECT denom.%I, denom.%I geom_ref
                                    FROM observatory.%I denom
-                                   WHERE %L && denom.%I)
+                                   WHERE denom.%I IN (SELECT geom_ref FROM _geom))
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
-                           SUM(denom.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = denom%I))
+                           SUM(denom.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = denom.%I))
                     FROM observatory.%I numer
                     WHERE numer.%I IN (SELECT geom_ref FROM _geom)',
                 geom, geom_colname, geom_colname,
                 geom_geomref_colname, geom_tablename,
-                geom, geom_colname, numer_colname, geom, numer_tablename,
+                geom, geom_colname,
+                denom_colname, denom_geomref_colname,
+                denom_tablename, denom_geomref_colname,
+                numer_colname, geom, numer_tablename,
                 numer_geomref_colname);
     ELSIF map_type = 'predenominated' THEN
       IF numer_aggregate NOT ILIKE 'sum' THEN

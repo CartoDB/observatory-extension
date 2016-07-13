@@ -393,10 +393,11 @@ BEGIN
   ELSIF normalize ILIKE 'denominator' THEN
     map_type := 'denominated';
   ELSE
-    -- defaults: area normalization for point and none for polygon
+    -- defaults: area normalization for point if it's possible and none for
+    -- polygon or non-summable point
     IF geom_type = 'point' AND numer_aggregate ILIKE 'sum' THEN
       map_type := 'areaNormalized';
-    ELSIF geom_type = 'polygon' THEN
+    ELSE
       map_type := 'predenominated';
     END IF;
   END IF;

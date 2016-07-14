@@ -9,19 +9,10 @@ t
 _obs_geomtable_with_null_response
 t
 (1 row)
-test_get_obs_column_with_geoid_and_census_1|test_get_obs_column_with_geoid_and_census_2
-t|t
-(1 row)
-obs_getcolumndata_missing_measure
-t
-(1 row)
 _obs_buildsnapshotquery_test_1
 t
 (1 row)
 _obs_buildsnapshotquery_test_2
-t
-(1 row)
-_obs_getrelatedcolumn_test
 t
 (1 row)
 _obs_standardizemeasurename_test

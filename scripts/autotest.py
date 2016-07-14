@@ -24,17 +24,18 @@ def query(q, is_meta=False, **options):
     params['api_key'] = META_API_KEY if is_meta else API_KEY
     return requests.get(url, params=params)
 
-MEASURE_COLUMNS = [(r['id'], r['point_only'], ) for r in query('''
-SELECT id, aggregate NOT ILIKE 'sum' as point_only
-FROM obs_column
-WHERE type ILIKE 'numeric'
-AND weight > 0
+MEASURE_COLUMNS = [(r['numer_id'], r['point_only'], ) for r in query('''
+SELECT distinct numer_id, numer_aggregate NOT ILIKE 'sum' as point_only
+FROM obs_meta
+WHERE numer_type ILIKE 'numeric'
+AND numer_weight > 0
 ''', is_meta=True).json()['rows']]
 
-CATEGORY_COLUMNS = [(r['id'], ) for r in query('''
-SELECT id FROM obs_column
-WHERE type ILIKE 'text'
-AND weight > 0
+CATEGORY_COLUMNS = [(r['numer_id'], ) for r in query('''
+SELECT distinct numer_id
+FROM obs_meta
+WHERE numer_type ILIKE 'text'
+AND numer_weight > 0
 ''', is_meta=True).json()['rows']]
 
 BOUNDARY_COLUMNS = [(r['id'], ) for r in query('''
@@ -43,12 +44,12 @@ WHERE type ILIKE 'geometry'
 AND weight > 0
 ''', is_meta=True).json()['rows']]
 
-US_CENSUS_MEASURE_COLUMNS = [(r['name'], ) for r in query('''
-SELECT c.name FROM obs_column c, obs_column_tag ct
-WHERE type ILIKE 'numeric'
-AND c.id = ct.column_id
-AND ct.tag_id LIKE 'us.census%'
-AND weight > 0
+US_CENSUS_MEASURE_COLUMNS = [(r['numer_name'], ) for r in query('''
+SELECT distinct numer_name
+FROM obs_meta
+WHERE numer_type ILIKE 'numeric'
+AND 'us.census.acs.acs' = ANY (subsection_tags)
+AND numer_weight > 0
 ''', is_meta=True).json()['rows']]
 
 
@@ -95,6 +96,8 @@ def default_point(column_id):
         return 'CDB_LatLng(42.8226119029222, -2.51141249535454)'
     elif column_id.startswith('us.zillow'):
         return 'CDB_LatLng(28.3305906291771, -81.3544048197256)'
+    elif column_id.startswith('mx.'):
+        return 'CDB_LatLng(19.41347699386547, -99.17019367218018)'
     else:
         return 'CDB_LatLng(40.7, -73.9)'
 
@@ -110,6 +113,7 @@ def default_area(column_id):
 
 @parameterized(US_CENSUS_MEASURE_COLUMNS)
 def test_get_us_census_measure_points(name):
+    print 'test_get_us_census_measure_points, ', name
     resp = query('''
 SELECT * FROM {schema}OBS_GetUSCensusMeasure({point}, '{name}')
                  '''.format(name=name.replace("'", "''"),
@@ -123,6 +127,7 @@ SELECT * FROM {schema}OBS_GetUSCensusMeasure({point}, '{name}')
 
 @parameterized(MEASURE_COLUMNS)
 def test_get_measure_areas(column_id, point_only):
+    print 'test_get_measure_areas, ', column_id, point_only
     if point_only:
         return
     resp = query('''
@@ -138,6 +143,7 @@ SELECT * FROM {schema}OBS_GetMeasure({area}, '{column_id}')
 
 @parameterized(MEASURE_COLUMNS)
 def test_get_measure_points(column_id, point_only):
+    print 'test_get_measure_points, ', column_id, point_only
     resp = query('''
 SELECT * FROM {schema}OBS_GetMeasure({point}, '{column_id}')
                  '''.format(column_id=column_id,
@@ -162,6 +168,7 @@ SELECT * FROM {schema}OBS_GetMeasure({point}, '{column_id}')
 
 @parameterized(CATEGORY_COLUMNS)
 def test_get_category_points(column_id):
+    print 'test_get_category_points, ', column_id
     resp = query('''
 SELECT * FROM {schema}OBS_GetCategory({point}, '{column_id}')
                  '''.format(column_id=column_id,

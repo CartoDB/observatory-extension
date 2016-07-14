@@ -169,19 +169,19 @@ BEGIN
 
   IF geom_table_name IS NULL
   THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+     --raise notice 'Point % is outside of the data region', ST_AsText(geom);
       -- TODO this should return JSON
      RETURN QUERY SELECT '{}'::json;
      RETURN;
   END IF;
 
   IF data_table_info IS NULL THEN
-    RAISE NOTICE 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
+    --raise notice 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
   END IF;
 
   IF ST_GeometryType(geom) = 'ST_Point'
   THEN
-    RAISE NOTICE 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
+    --raise notice 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
     results := cdb_observatory._OBS_GetPoints(geom,
                                               geom_table_name,
                                               data_table_info);
@@ -260,7 +260,7 @@ BEGIN
   USING geom
   INTO geoid;
 
-  RAISE NOTICE 'geoid is %, geometry table is % ', geoid, geom_table_name;
+  --raise notice 'geoid is %, geometry table is % ', geoid, geom_table_name;
 
   EXECUTE
     format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
@@ -273,7 +273,7 @@ BEGIN
 
   IF area IS NULL
   THEN
-    RAISE NOTICE 'No geometry at %', ST_AsText(geom);
+    --raise notice 'No geometry at %', ST_AsText(geom);
   END IF;
 
   query := 'SELECT Array[';
@@ -338,44 +338,173 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
   geom geometry(Geometry, 4326),
   measure_id TEXT,
-  normalize TEXT DEFAULT 'area', -- TODO none/null
+  normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
 )
 RETURNS NUMERIC
 AS $$
 DECLARE
+  geom_type TEXT;
+  map_type TEXT;
+  numer_aggregate TEXT;
+  numer_colname TEXT;
+  numer_geomref_colname TEXT;
+  numer_tablename TEXT;
+  denom_colname TEXT;
+  denom_geomref_colname TEXT;
+  denom_tablename TEXT;
+  geom_colname TEXT;
+  geom_geomref_colname TEXT;
+  geom_tablename TEXT;
   result NUMERIC;
-  measure_ids TEXT[];
-  denominator_id TEXT;
-  vals NUMERIC[];
+  sql TEXT;
+  numer_name TEXT;
 BEGIN
 
-  IF normalize ILIKE 'area' THEN
-    measure_ids := ARRAY[measure_id];
+  EXECUTE
+     $query$
+     SELECT numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
+            denom_colname, denom_geomref_colname, denom_tablename,
+            geom_colname, geom_geomref_colname, geom_tablename, numer_name
+             FROM observatory.obs_meta
+             WHERE (geom_id = $1 OR ($1 = ''))
+               AND numer_id = $2
+               AND (numer_timespan = $3 OR ($3 = ''))
+             ORDER BY geom_weight DESC, numer_timespan DESC
+             LIMIT 1
+     $query$
+    INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
+         denom_colname, denom_geomref_colname, denom_tablename,
+         geom_colname, geom_geomref_colname, geom_tablename, numer_name
+    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
+
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    geom_type := 'point';
+  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
+    geom_type := 'polygon';
+  ELSE
+    RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
+                    ST_GeometryType(geom);
+  END IF;
+
+  IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
+    map_type := 'areaNormalized';
   ELSIF normalize ILIKE 'denominator' THEN
-    EXECUTE 'SELECT (cdb_observatory._OBS_GetRelatedColumn(ARRAY[$1], ''denominator''))[1]
-    ' INTO denominator_id
-    USING measure_id;
-    measure_ids := ARRAY[measure_id, denominator_id];
-  ELSIF normalize ILIKE 'none' THEN
-    -- TODO we need a switch on obs_get to disable area normalization
-    RAISE EXCEPTION 'No normalization not yet supported.';
+    map_type := 'denominated';
   ELSE
-    RAISE EXCEPTION 'Only valid inputs for "normalize" are "area" (default) and "denominator".';
+    -- defaults: area normalization for point if it's possible and none for
+    -- polygon or non-summable point
+    IF geom_type = 'point' AND numer_aggregate ILIKE 'sum' THEN
+      map_type := 'areaNormalized';
+    ELSE
+      map_type := 'predenominated';
+    END IF;
   END IF;
 
-  EXECUTE '
-    SELECT ARRAY_AGG(val) FROM (SELECT (cdb_observatory._OBS_Get($1, $2, $3, $4)->>''value'')::NUMERIC val) b
-  '
-  INTO vals
-  USING geom, measure_ids, time_span, boundary_id;
-
-  IF normalize ILIKE 'denominator' THEN
-    RETURN (vals)[1]/(vals)[2];
-  ELSE
-    RETURN (vals)[1];
+  IF geom_type = 'point' THEN
+    IF map_type = 'areaNormalized' THEN
+      sql = format('WITH _geom AS (SELECT ST_Area(geom.%I::Geography) / 1000000 area, geom.%I geom_ref
+                                   FROM observatory.%I geom
+                                   WHERE ST_Within(%L, geom.%I)
+                                   LIMIT 1)
+                    SELECT numer.%I / (SELECT area FROM _geom)
+                    FROM observatory.%I numer
+                    WHERE numer.%I = (SELECT geom_ref FROM _geom)',
+                geom_colname, geom_geomref_colname, geom_tablename,
+                geom, geom_colname, numer_colname, numer_tablename,
+                numer_geomref_colname);
+    ELSIF map_type = 'denominated' THEN
+      sql = format('SELECT numer.%I / NULLIF((SELECT denom.%I FROM observatory.%I denom WHERE denom.%I = numer.%I LIMIT 1), 0)
+                    FROM observatory.%I numer
+                    WHERE numer.%I = (SELECT geom.%I FROM observatory.%I geom WHERE ST_Within(%L, geom.%I) LIMIT 1)',
+                        numer_colname, denom_colname, denom_tablename,
+                        denom_geomref_colname, numer_geomref_colname,
+                        numer_tablename,
+                        numer_geomref_colname, geom_geomref_colname,
+                        geom_tablename, geom, geom_colname);
+    ELSIF map_type = 'predenominated' THEN
+      sql = format('SELECT numer.%I
+                    FROM observatory.%I numer
+                    WHERE numer.%I = (SELECT geom.%I FROM observatory.%I geom WHERE ST_Within(%L, geom.%I) LIMIT 1)',
+                        numer_colname, numer_tablename,
+                        numer_geomref_colname, geom_geomref_colname, geom_tablename,
+                        geom, geom_colname);
+    END IF;
+  ELSIF geom_type = 'polygon' THEN
+    IF map_type = 'areaNormalized' THEN
+      sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
+                                        / ST_Area(geom.%I) overlap, geom.%I geom_ref
+                                   FROM observatory.%I geom
+                                   WHERE ST_Intersects(%L, geom.%I)
+                                     AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0)
+                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
+                           ST_Area(%L::Geography)
+                    FROM observatory.%I numer
+                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
+                geom, geom_colname, geom_colname,
+                geom_geomref_colname, geom_tablename,
+                geom, geom_colname,
+                geom, geom_colname, geom_colname,
+                numer_colname, numer_geomref_colname,
+                geom, numer_tablename,
+                numer_geomref_colname);
+    ELSIF map_type = 'denominated' THEN
+      sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
+                                        / ST_Area(geom.%I) overlap, geom.%I geom_ref
+                                   FROM observatory.%I geom
+                                   WHERE ST_Intersects(%L, geom.%I)
+                                     AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0),
+                        _denom AS (SELECT denom.%I, denom.%I geom_ref
+                                   FROM observatory.%I denom
+                                   WHERE denom.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[]))
+                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
+                           SUM((SELECT _denom.%I * (SELECT _geom.overlap
+                                                    FROM _geom
+                                                    WHERE _geom.geom_ref = _denom.geom_ref)
+                                FROM _denom WHERE _denom.geom_ref = numer.%I))
+                    FROM observatory.%I numer
+                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
+                geom, geom_colname,
+                geom_colname, geom_geomref_colname,
+                geom_tablename,
+                geom, geom_colname,
+                geom, geom_colname, geom_colname,
+                denom_colname, denom_geomref_colname,
+                denom_tablename,
+                denom_geomref_colname,
+                numer_colname, numer_geomref_colname,
+                denom_colname,
+                numer_geomref_colname,
+                numer_tablename,
+                numer_geomref_colname);
+    ELSIF map_type = 'predenominated' THEN
+      IF numer_aggregate NOT ILIKE 'sum' THEN
+        RAISE EXCEPTION 'Cannot calculate "%" (%) for custom area as it cannot be summed, use ST_PointOnSurface instead',
+                        numer_name, numer_id;
+      ELSE
+        sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
+                                          / ST_Area(geom.%I) overlap, geom.%I geom_ref
+                                     FROM observatory.%I geom
+                                     WHERE ST_Intersects(%L, geom.%I)
+                                       AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0)
+                      SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
+                      FROM observatory.%I numer
+                      WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
+                  geom, geom_colname, geom_colname,
+                  geom_geomref_colname, geom_tablename,
+                  geom, geom_colname,
+                  geom, geom_colname, geom_colname,
+                  numer_colname, numer_geomref_colname,
+                  numer_tablename,
+                  numer_geomref_colname);
+      END IF;
+    END IF;
   END IF;
+
+  EXECUTE sql INTO result;
+  RETURN result;
+
 END;
 $$ LANGUAGE plpgsql;
 
@@ -393,33 +522,30 @@ DECLARE
   colname TEXT;
   measure_val NUMERIC;
   data_geoid_colname TEXT;
-  test_query TEXT;
 BEGIN
 
-  SELECT x ->> 'colname', x ->> 'tablename' INTO colname, target_table
-  FROM cdb_observatory._OBS_GetColumnData(boundary_id, Array[measure_id], time_span) As x;
-
   EXECUTE
-    format('SELECT ct.colname
-              FROM observatory.obs_column_to_column c2c,
-                   observatory.obs_column_table ct,
-                   observatory.obs_table t
-             WHERE c2c.reltype = ''geom_ref''
-               AND ct.column_id = c2c.source_id
-               AND ct.table_id = t.id
-               AND t.tablename = %L'
-     , target_table)
-  INTO data_geoid_colname;
+     $query$
+     SELECT numer_colname, numer_geomref_colname, numer_tablename
+             FROM observatory.obs_meta
+             WHERE (geom_id = $1 OR ($1 = ''))
+               AND numer_id = $2
+               AND (numer_timespan = $3 OR ($3 = ''))
+             ORDER BY geom_weight DESC, numer_timespan DESC
+             LIMIT 1
+     $query$
+    INTO colname, data_geoid_colname, target_table
+    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
 
-  RAISE DEBUG 'target_table %, colname %', target_table, colname;
+  --RAISE DEBUG 'target_table %, colname %', target_table, colname;
 
   EXECUTE format(
       'SELECT %I
-       FROM observatory.%I
-       WHERE %I.%I = %L',
+       FROM observatory.%I data
+       WHERE data.%I = %L',
        colname,
        target_table,
-       target_table, data_geoid_colname, geom_ref)
+       data_geoid_colname, geom_ref)
   INTO measure_val;
 
   RETURN measure_val;
@@ -436,27 +562,61 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
 RETURNS TEXT
 AS $$
 DECLARE
-  denominator_id TEXT;
-  categories TEXT[];
+  data_table TEXT;
+  geom_table TEXT;
+  colname TEXT;
+  data_geomref_colname TEXT;
+  geom_geomref_colname TEXT;
+  geom_colname TEXT;
+  category_val TEXT;
+  category_share NUMERIC;
 BEGIN
 
-  IF boundary_id IS NULL THEN
-    -- TODO we should determine best boundary for this geom
-    boundary_id := 'us.census.tiger.census_tract';
+  EXECUTE
+     $query$
+     SELECT numer_colname, numer_geomref_colname, numer_tablename,
+            geom_geomref_colname, geom_colname, geom_tablename
+             FROM observatory.obs_meta
+             WHERE (geom_id = $1 OR ($1 = ''))
+               AND numer_id = $2
+               AND (numer_timespan = $3 OR ($3 = ''))
+             ORDER BY geom_weight DESC, numer_timespan DESC
+             LIMIT 1
+     $query$
+    INTO colname, data_geomref_colname, data_table,
+         geom_geomref_colname, geom_colname, geom_table
+    USING COALESCE(boundary_id, ''), category_id, COALESCE(time_span, '');
+
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    EXECUTE format(
+        'SELECT data.%I
+         FROM observatory.%I data, observatory.%I geom
+         WHERE data.%I = geom.%I
+           AND ST_WITHIN(%L, geom.%I) ',
+         colname, data_table, geom_table, data_geomref_colname,
+         geom_geomref_colname, geom, geom_colname)
+    INTO category_val;
+  ELSE
+    -- favor the category with the most area
+    EXECUTE format(
+       'SELECT data.%I category, SUM(overlap_fraction) category_share
+        FROM observatory.%I data, (
+          SELECT ST_Area(
+           ST_Intersection(%L, a.%I)
+          ) / ST_Area(%L) AS overlap_fraction, a.%I geomref
+          FROM observatory.%I as a
+          WHERE %L && a.%I) _overlaps
+        WHERE data.%I = _overlaps.geomref
+        GROUP BY category
+        ORDER BY SUM(overlap_fraction) DESC
+        LIMIT 1',
+          colname, data_table,
+          geom, geom_colname, geom, geom_geomref_colname,
+          geom_table, geom, geom_colname, data_geomref_colname)
+    INTO category_val, category_share;
   END IF;
 
-  IF time_span IS NULL THEN
-    -- TODO we should determine latest timespan for this measure
-    time_span := '2010 - 2014';
-  END IF;
-
-  EXECUTE '
-    SELECT ARRAY_AGG(val) FROM (SELECT (cdb_observatory._OBS_GetCategories($1, $2, $3, $4))->>''category'' val LIMIT 1) b
-  '
-  INTO categories
-  USING geom, ARRAY[category_id], boundary_id, time_span;
-
-  RETURN (categories)[1];
+  RETURN category_val;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -464,7 +624,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
    geom geometry(Geometry, 4326),
    name TEXT,
-   normalize TEXT DEFAULT 'area',
+   normalize TEXT DEFAULT NULL,
    boundary_id TEXT DEFAULT NULL,
    time_span TEXT DEFAULT NULL
  )
@@ -530,7 +690,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
   geom geometry(Geometry, 4326),
-  normalize TEXT DEFAULT 'area',
+  normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL
 )
@@ -796,7 +956,7 @@ BEGIN
 
   IF geom_table_name IS NULL
   THEN
-     RAISE NOTICE 'Point % is outside of the data region', ST_AsText(geom);
+     --raise notice 'Point % is outside of the data region', ST_AsText(geom);
      RETURN QUERY SELECT '{}'::text[], '{}'::text[];
      RETURN;
   END IF;
@@ -810,7 +970,7 @@ BEGIN
 
   IF data_table_info IS NULL
   THEN
-    RAISE NOTICE 'No data table found for this location';
+    --raise notice 'No data table found for this location';
     RETURN QUERY SELECT NULL::json;
     RETURN;
   END IF;
@@ -825,7 +985,7 @@ BEGIN
 
   IF geoid IS NULL
   THEN
-    RAISE NOTICE 'No geometry id for this location';
+    --raise notice 'No geometry id for this location';
     RETURN QUERY SELECT NULL::json;
     RETURN;
   END IF;

@@ -1,6 +1,6 @@
 \pset format unaligned
-\set ECHO all
-\i test/fixtures/load_fixtures.sql
+\set ECHO none
+SET client_min_messages TO WARNING;
 
 -- set up variables for use in testing
 

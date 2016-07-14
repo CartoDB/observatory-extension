@@ -4,16 +4,23 @@
 __Bugfixes__
 
 * Fix for `OBS_GetCategory` outside the US ([#135](https://github.com/CartoDB/observatory-extension/pull/137))
+* `OBS_GetMeasure` now respects the `normalize` parameter even when passed
+  a multi/polygon. Previously, no normalization was erroneously assumed.
 
 __Improvements__
 
 * Automated tests cover Mexico data
 * `obs_meta` is now provisioned during unit tests
+* `obs_meta` is now used during end-to-end tests
 * `OBS_GetMeasureByID` uses `obs_meta` internally, which should help
   performance
 * `OBS_GetCategory` uses `obs_meta` internally, which should help perfromance
 * `OBS_GetCategory` will pick the correct category for an arbitrary polygon
   (the category covering the highest % of that polygon)
+* `OBS_GetMeasure` has been updated to use `obs_meta` internally, which should
+  help performance
+* `OBS_GetMeasure` now can be passed "none" and skip normalization by area or
+  denominator for points
 * Fixtures are only loaded at the start of the unit test suite, and dropped at the end,
   instead of at the start/end of each individual test file
 * Comment noisy NOTICEs ([#73](https://github.com/CartoDB/observatory-extension/issues/73))

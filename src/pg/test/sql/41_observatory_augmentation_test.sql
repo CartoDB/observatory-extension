@@ -131,7 +131,7 @@ WITH result as (
 -- Point-based OBS_GetMeasure with zillow
 SELECT abs(OBS_GetMeasure_zhvi_point - 583600) / 583600 < 0.001 AS OBS_GetMeasure_zhvi_point_test FROM cdb_observatory.OBS_GetMeasure(
   ST_SetSRID(ST_Point(-73.94602417945862, 40.6768220087458), 4326),
-  'us.zillow.AllHomes_Zhvi', 'area', 'us.census.tiger.zcta5', '2014-01'
+  'us.zillow.AllHomes_Zhvi', null, 'us.census.tiger.zcta5', '2014-01'
 ) As t(OBS_GetMeasure_zhvi_point);
 
 -- Point-based OBS_GetMeasure with zillow default to latest

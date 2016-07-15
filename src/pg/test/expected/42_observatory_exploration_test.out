@@ -1,5 +1,4 @@
-\i test/fixtures/load_fixtures.sql
-SET client_min_messages TO WARNING;
+\pset format unaligned
 \set ECHO none
 _obs_searchtables_tables_match|_obs_searchtables_timespan_matches
 t|t

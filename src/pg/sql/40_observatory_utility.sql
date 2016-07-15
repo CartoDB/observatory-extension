@@ -158,28 +158,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetRelatedColumn(columns_ids text[], reltype text )
-RETURNS TEXT[]
-AS $$
-DECLARE
-  result TEXT[];
-BEGIN
-  EXECUTE '
-    With ids as (
-      select row_number() over() as no, id from (select unnest($1) as id) t
-    )
-    select array_agg(target_id order by no)
-    FROM  ids
-    LEFT JOIN observatory.obs_column_to_column
-    on  source_id  = id
-    where reltype = $2 or reltype is null
-  '
-  INTO result
-  using columns_ids, reltype;
-  return result;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Function that replaces all non digits or letters with _ trims and lowercases the
 -- passed measure name
 

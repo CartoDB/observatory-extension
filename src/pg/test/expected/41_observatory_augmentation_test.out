@@ -1,5 +1,4 @@
-\i test/fixtures/load_fixtures.sql
-SET client_min_messages TO WARNING;
+\pset format unaligned
 \set ECHO none
 obs_getdemographicsnapshot_test_no_returns
 t

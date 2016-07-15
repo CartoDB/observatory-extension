@@ -1,6 +1,6 @@
-\i test/fixtures/load_fixtures.sql
 \pset format unaligned
 \set ECHO none
+SET client_min_messages TO WARNING;
 
 --
 WITH result as(
@@ -131,7 +131,7 @@ WITH result as (
 -- Point-based OBS_GetMeasure with zillow
 SELECT abs(OBS_GetMeasure_zhvi_point - 583600) / 583600 < 0.001 AS OBS_GetMeasure_zhvi_point_test FROM cdb_observatory.OBS_GetMeasure(
   ST_SetSRID(ST_Point(-73.94602417945862, 40.6768220087458), 4326),
-  'us.zillow.AllHomes_Zhvi', 'area', 'us.census.tiger.zcta5', '2014-01'
+  'us.zillow.AllHomes_Zhvi', null, 'us.census.tiger.zcta5', '2014-01'
 ) As t(OBS_GetMeasure_zhvi_point);
 
 -- Point-based OBS_GetMeasure with zillow default to latest
@@ -172,7 +172,7 @@ SELECT cdb_observatory.OBS_GetCategory(
 
 -- Poly-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
-  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Low income, mix of minorities' As obs_getcategory_polygon;
+  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As obs_getcategory_polygon;
 
 -- Point-based OBS_GetPopulation, default normalization (area)
 SELECT (abs(OBS_GetPopulation - 10923.093200390833950) / 10923.093200390833950) < 0.001 As OBS_GetPopulation FROM
@@ -201,7 +201,7 @@ SELECT cdb_observatory.OBS_GetUSCensusCategory(
 
 -- Area-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
-  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Low income, mix of minorities' As OBS_GetUSCensusCategory_polygon;
+  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Wealthy, urban without Kids' As OBS_GetUSCensusCategory_polygon;
 
 
 -- OBS_GetMeasureById tests
@@ -236,5 +236,3 @@ SELECT cdb_observatory.OBS_GetMeasureById(
   'us.census.tiger.block_group',
   '2010 - 2014'
 ) IS NULL As OBS_GetMeasureById_nulls;
-
-\i test/fixtures/drop_fixtures.sql

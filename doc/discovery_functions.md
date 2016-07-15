@@ -47,7 +47,7 @@ A TABLE containing the following properties
 
 Key | Description
 --- | ---
-boundary_id | a boundary identifier from the [boundary ID glossary](/carto-engine/data/glossary/#boundary-ids)
+boundary_id | a boundary identifier from the [Boundary ID Glossary](http:/docs/carto-engine/data/glossary/#boundary-ids)
 description | a brief description of the boundary dataset
 time_span | the timespan attached the boundary. this does not mean that the boundary is invalid outside of the timespan, but is the explicit timespan published with the geometry.
 

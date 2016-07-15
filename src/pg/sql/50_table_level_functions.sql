@@ -1,7 +1,7 @@
 CREATE TYPE cdb_observatory.ds_fdw_metadata as (schemaname text, tabname text, servername text);
 CREATE TYPE cdb_observatory.ds_return_metadata as (colnames text[], coltypes text[]);
 
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_ConnectUserTable(username text, orgname text, user_db_role text, input_schema text, dbname text, table_name text)
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_ConnectUserTable(username text, orgname text, user_db_role text, input_schema text, dbname text, host_addr text, table_name text)
 RETURNS cdb_observatory.ds_fdw_metadata
 AS $$
 DECLARE
@@ -10,16 +10,14 @@ DECLARE
   connection_str json;
   import_foreign_schema_q text;
   epoch_timestamp text;
-  user_host text;
 BEGIN
 
   SELECT extract(epoch from now() at time zone 'utc')::int INTO epoch_timestamp;
   fdw_server := 'fdw_server_' || username || '_' || epoch_timestamp;
   fdw_import_schema:= fdw_server;
-  SELECT split_part(inet_client_addr()::text, '/', 1) INTO user_host;
 
   -- Import foreign table
-  EXECUTE FORMAT ('SELECT cdb_observatory._OBS_ConnectRemoteTable(%L, %L, %L, %L, %L, %L, %L)', fdw_server, fdw_import_schema, dbname, user_host, user_db_role, table_name, input_schema);
+  EXECUTE FORMAT ('SELECT cdb_observatory._OBS_ConnectRemoteTable(%L, %L, %L, %L, %L, %L, %L)', fdw_server, fdw_import_schema, dbname, host_addr, user_db_role, table_name, input_schema);
 
   RETURN (fdw_import_schema::text, table_name::text, fdw_server::text);
 

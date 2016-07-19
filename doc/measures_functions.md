@@ -15,7 +15,7 @@ The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure
 Name |Description
 --- | ---
 point | a WGS84 point geometry (the_geom)
-measure_name | a human readable name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/data/glossary/#obsgetuscensusmeasure-names-table).
+measure_name | a human readable name of a US Census variable. The list of measure_names is [available in the glossary](/docs/carto-engine/data/glossary/).
 normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
@@ -46,7 +46,7 @@ The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure
 Name |Description
 --- | ---
 polygon | a WGS84 polygon geometry (the_geom)
-measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/cartodb-platform/data/glossary/#obsgetuscensusmeasure-names-table).
+measure_name | a human readable string name of a US Census variable. The list of measure_names is [available in the glossary](/docs/carto-engine/data/glossary/).
 normalize | for measures that are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](http://data-observatory.s3.amazonaws.com/observatory.pdf) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)

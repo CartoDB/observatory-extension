@@ -1,8 +1,8 @@
 # Boundary Functions
 
-Use the following functions to retrieve [Boundary](/carto-engine/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
+Use the following functions to retrieve [Boundary](https://carto.com/docs/carto-engine/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
-You can [access](http://docs/carto-engine/data/accessing/#accessing-the-data-observatory) boundaries through the CARTO Editor. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](http://docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access](https://carto.com/docs/carto-engine/data/accessing) boundaries through the CARTO Editor. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](http://docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
 
@@ -91,14 +91,14 @@ FROM OBS_GetPointsByGeometry(
 
 ## OBS_GetBoundary(point_geometry, boundary_id)
 
-The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids). This is a useful method for performing aggregations of points.
+The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID Glossary](https://carto.com/docs/carto-engine/data/glossary/#boundary-ids). This is a useful method for performing aggregations of points.
 
 #### Arguments
 
 Name | Description
 --- | ---
 point_geometry | a WGS84 polygon geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids)
+boundary_id | a boundary identifier from the [Boundary ID Glossary](https://carto.com/docs/carto-engine/data/glossary/#boundary-ids)
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns
@@ -131,7 +131,7 @@ The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geomet
 Name |Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids)
+boundary_id | a boundary identifier from the [Boundary ID Glossary](https://carto.com/docs/carto-engine/data/glossary/#boundary-ids)
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns
@@ -164,7 +164,7 @@ The ```OBS_GetBoundaryById(geometry_id, boundary_id)``` returns the boundary geo
 Name | Description
 --- | ---
 geometry_id | a string identifier for a Boundary geometry
-boundary_id | a boundary identifier from the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids)
+boundary_id | a boundary identifier from the [Boundary ID Glossary](https://carto.com/docs/carto-engine/data/glossary/#boundary-ids)
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns

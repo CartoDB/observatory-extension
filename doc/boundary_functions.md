@@ -91,14 +91,14 @@ FROM OBS_GetPointsByGeometry(
 
 ## OBS_GetBoundary(point_geometry, boundary_id)
 
-The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID glossary table below](below). This is a useful method for performing aggregations of points.
+The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids). This is a useful method for performing aggregations of points.
 
 #### Arguments
 
 Name | Description
 --- | ---
 point_geometry | a WGS84 polygon geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+boundary_id | a boundary identifier from the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids)
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns
@@ -124,14 +124,14 @@ SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
 
 ## OBS_GetBoundaryId(point_geometry, boundary_id)
 
-The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID glossary table below](below). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
+The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
 
 #### Arguments
 
 Name |Description
 --- | ---
 point_geometry | a WGS84 point geometry (the_geom)
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+boundary_id | a boundary identifier from the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids)
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns
@@ -164,7 +164,7 @@ The ```OBS_GetBoundaryById(geometry_id, boundary_id)``` returns the boundary geo
 Name | Description
 --- | ---
 geometry_id | a string identifier for a Boundary geometry
-boundary_id | a boundary identifier from the [Boundary ID glossary table below](below)
+boundary_id | a boundary identifier from the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids)
 timespan (optional) | year(s) to request from (`NULL` (default) gives most recent)
 
 #### Returns

@@ -1,6 +1,6 @@
 # Discovery Functions
 
-If you are using the [discovery methods](/carto-engine/data/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary](/carto-engine/data/overview/#boundary-data) and [measures](/carto-engine/data/overview/#measures-data) data.
+If you are using the [discovery methods](http://docs/carto-engine/data/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary](/carto-engine/data/overview/#boundary-data) and [measures](http://docs/carto-engine/data/overview/#measures-data) data.
 
 ## OBS_Search(search_term)
 

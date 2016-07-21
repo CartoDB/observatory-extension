@@ -481,7 +481,7 @@ BEGIN
     ELSIF map_type = 'predenominated' THEN
       IF numer_aggregate NOT ILIKE 'sum' THEN
         RAISE EXCEPTION 'Cannot calculate "%" (%) for custom area as it cannot be summed, use ST_PointOnSurface instead',
-                        numer_name, numer_id;
+                        numer_name, measure_id;
       ELSE
         sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                           / ST_Area(geom.%I) overlap, geom.%I geom_ref

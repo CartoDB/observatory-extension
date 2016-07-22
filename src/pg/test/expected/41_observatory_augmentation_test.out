@@ -63,10 +63,16 @@ t
 obs_getpopulation_polygon_test
 t
 (1 row)
+obs_getpopulation_polygon_null_test
+t
+(1 row)
 obs_getuscensusmeasure_point_male_pop
 t
 (1 row)
 obs_getuscensusmeasure
+t
+(1 row)
+obs_getuscensusmeasure_null
 t
 (1 row)
 obs_getuscensuscategory_point

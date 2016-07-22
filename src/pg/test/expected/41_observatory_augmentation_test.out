@@ -42,7 +42,19 @@ t
 obs_getmeasure_total_pop_point_test
 t
 (1 row)
+obs_getmeasure_total_pop_point_null_normalization_test
+t
+(1 row)
+obs_getmeasure_total_pop_point_area_test
+t
+(1 row)
 obs_getmeasure_total_pop_polygon_test
+t
+(1 row)
+obs_getmeasure_total_pop_polygon_null_normalization_test
+t
+(1 row)
+obs_getmeasure_total_pop_polygon_area_test
 t
 (1 row)
 obs_getmeasure_total_male_point_denominator

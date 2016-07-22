@@ -166,6 +166,11 @@ SELECT abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestArea(),
   'us.census.acs.B01001002', 'denominator') - 0.49026340444793965457) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
 
+-- Poly-based OBS_GetMeasure with one very bad geom
+SELECT abs(cdb_observatory.OBS_GetMeasure(
+  cdb_observatory._ProblemTestArea(),
+  'us.census.acs.B01003001') - 96230.2929825897) / 96230.2929825897 < 0.001 As OBS_GetMeasure_bad_geometry;
+
 -- Point-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
   cdb_observatory._TestPoint(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As OBS_GetCategory_point;

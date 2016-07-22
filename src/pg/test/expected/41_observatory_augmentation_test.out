@@ -51,6 +51,9 @@ t
 obs_getmeasure_total_male_poly_denominator
 t
 (1 row)
+obs_getmeasure_bad_geometry
+t
+(1 row)
 obs_getcategory_point
 t
 (1 row)

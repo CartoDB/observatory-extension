@@ -361,6 +361,7 @@ DECLARE
   sql TEXT;
   numer_name TEXT;
 BEGIN
+  geom := ST_SnapToGrid(geom, 0.000001);
 
   EXECUTE
      $query$
@@ -383,6 +384,7 @@ BEGIN
     geom_type := 'point';
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
     geom_type := 'polygon';
+    geom := ST_Buffer(geom, 0.000001);
   ELSE
     RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
                     ST_GeometryType(geom);

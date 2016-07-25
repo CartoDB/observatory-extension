@@ -187,6 +187,13 @@ FROM
     cdb_observatory._TestArea()
   ) As m(obs_getpopulation_polygon);
 
+-- Poly-based OBS_GetPopulation, default normalization (none) specified as NULL
+SELECT (abs(obs_getpopulation_polygon_null - 12327.3133495107) / 12327.3133495107) < 0.001 As obs_getpopulation_polygon_null_test
+FROM
+  cdb_observatory.OBS_GetPopulation(
+    cdb_observatory._TestArea(), NULL
+  ) As m(obs_getpopulation_polygon_null);
+
 -- Point-based OBS_GetUSCensusMeasure, default normalization (area)
 SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
   cdb_observatory._testpoint(), 'male population') - 6789.5647735060920500) / 6789.5647735060920500) < 0.001 As obs_getuscensusmeasure_point_male_pop;
@@ -194,6 +201,11 @@ SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
 -- Poly-based OBS_GetUSCensusMeasure, default normalization (none)
 SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
   cdb_observatory._testarea(), 'male population') - 6043.63061042765) / 6043.63061042765) < 0.001 As obs_getuscensusmeasure;
+
+-- Poly-based OBS_GetUSCensusMeasure, default normalization (none) specified
+-- with NULL
+SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
+  cdb_observatory._testarea(), 'male population', NULL) - 6043.63061042765) / 6043.63061042765) < 0.001 As obs_getuscensusmeasure_null;
 
 -- Point-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(

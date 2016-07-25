@@ -42,13 +42,28 @@ t
 obs_getmeasure_total_pop_point_test
 t
 (1 row)
+obs_getmeasure_total_pop_point_null_normalization_test
+t
+(1 row)
+obs_getmeasure_total_pop_point_area_test
+t
+(1 row)
 obs_getmeasure_total_pop_polygon_test
+t
+(1 row)
+obs_getmeasure_total_pop_polygon_null_normalization_test
+t
+(1 row)
+obs_getmeasure_total_pop_polygon_area_test
 t
 (1 row)
 obs_getmeasure_total_male_point_denominator
 t
 (1 row)
 obs_getmeasure_total_male_poly_denominator
+t
+(1 row)
+obs_getmeasure_bad_geometry
 t
 (1 row)
 obs_getcategory_point
@@ -63,10 +78,16 @@ t
 obs_getpopulation_polygon_test
 t
 (1 row)
+obs_getpopulation_polygon_null_test
+t
+(1 row)
 obs_getuscensusmeasure_point_male_pop
 t
 (1 row)
 obs_getuscensusmeasure
+t
+(1 row)
+obs_getuscensusmeasure_null
 t
 (1 row)
 obs_getuscensuscategory_point

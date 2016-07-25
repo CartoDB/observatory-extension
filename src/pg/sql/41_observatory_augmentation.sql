@@ -439,7 +439,7 @@ BEGIN
                                    WHERE ST_Intersects(%L, geom.%I)
                                      AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0)
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
-                           ST_Area(%L::Geography)
+                           (ST_Area(%L::Geography) / 1000000)
                     FROM observatory.%I numer
                     WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom, geom_colname, geom_colname,

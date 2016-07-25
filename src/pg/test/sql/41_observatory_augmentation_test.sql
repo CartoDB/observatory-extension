@@ -148,6 +148,22 @@ SELECT abs(OBS_GetMeasure_total_pop_point - 10923.093200390833950) / 10923.09320
     'us.census.acs.B01003001'
 ) As t(OBS_GetMeasure_total_pop_point);
 
+-- Point-based OBS_GetMeasure, default normalization by NULL (area)
+-- is result within 0.1% of expected
+SELECT abs(OBS_GetMeasure_total_pop_point_null_normalization - 10923.093200390833950) / 10923.093200390833950 < 0.001 As OBS_GetMeasure_total_pop_point_null_normalization_test FROM
+  cdb_observatory.OBS_GetMeasure(
+    cdb_observatory._TestPoint(),
+    'us.census.acs.B01003001', NULL
+) As t(OBS_GetMeasure_total_pop_point_null_normalization);
+
+-- Point-based OBS_GetMeasure, explicit area normalization area
+-- is result within 0.1% of expected
+SELECT abs(OBS_GetMeasure_total_pop_point_area - 10923.093200390833950) / 10923.093200390833950 < 0.001 As OBS_GetMeasure_total_pop_point_area_test FROM
+  cdb_observatory.OBS_GetMeasure(
+    cdb_observatory._TestPoint(),
+    'us.census.acs.B01003001', 'area'
+) As t(OBS_GetMeasure_total_pop_point_area);
+
 -- Poly-based OBS_GetMeasure, default normalization (none)
 -- is result within 0.1% of expected
 SELECT abs(OBS_GetMeasure_total_pop_polygon - 12327.3133495107) / 12327.3133495107 < 0.001 As OBS_GetMeasure_total_pop_polygon_test FROM
@@ -155,6 +171,22 @@ SELECT abs(OBS_GetMeasure_total_pop_polygon - 12327.3133495107) / 12327.31334951
     cdb_observatory._TestArea(),
     'us.census.acs.B01003001'
 ) As t(OBS_GetMeasure_total_pop_polygon);
+
+-- Poly-based OBS_GetMeasure, default normalization by NULL (none)
+-- is result within 0.1% of expected
+SELECT abs(OBS_GetMeasure_total_pop_polygon_null_normalization - 12327.3133495107) / 12327.3133495107 < 0.001 As OBS_GetMeasure_total_pop_polygon_null_normalization_test FROM
+  cdb_observatory.OBS_GetMeasure(
+    cdb_observatory._TestArea(),
+    'us.census.acs.B01003001', NULL
+) As t(OBS_GetMeasure_total_pop_polygon_null_normalization);
+
+-- Poly-based OBS_GetMeasure, explicit area normalization
+-- is result within 0.1% of expected
+SELECT abs(OBS_GetMeasure_total_pop_polygon_area - 15787.4325563538) / 15787.4325563538 < 0.001 As OBS_GetMeasure_total_pop_polygon_area_test FROM
+  cdb_observatory.OBS_GetMeasure(
+    cdb_observatory._TestArea(),
+    'us.census.acs.B01003001', 'area'
+) As t(OBS_GetMeasure_total_pop_polygon_area);
 
 -- Point-based OBS_GetMeasure with denominator normalization
 SELECT (abs(cdb_observatory.OBS_GetMeasure(

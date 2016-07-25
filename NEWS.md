@@ -1,3 +1,27 @@
+1.0.3 (2016-07-25)
+
+__Bugfixes__
+
+* Raise exception instead of crashing when `OBS_GetMeasure` is passed a polygon
+  in combination with a non-summable measure ([cartodb/issues
+  #9063](https://github.com/CartoDB/cartodb/issues/9063))
+* Unnecessary dependencies on cartodb and plpythonu removed
+  ([#161](https://github.com/CartoDB/observatory-extension/issues/161))
+* Tests forced to run in-order on all systems
+  ([#162](https://github.com/CartoDB/observatory-extension/issues/162))
+* Area normalization done by square kilometer instead of square meter for
+  polygons ([#158](https://github.com/CartoDB/observatory-extension/issues/158))
+* `postgres-fdw` installed as required in unit test environment
+  ([#166](https://github.com/CartoDB/observatory-extension/issues/166))
+
+__Improvements__
+
+* Added tests to make sure all functions can handle explicit NULL as default
+  ([#159](https://github.com/CartoDB/observatory-extension/issues/159))
+* Buffer and snaptogrid used to be far more liberal accepting problem geoms
+  ([#170](https://github.com/CartoDB/observatory-extension/issues/160))
+
+
 1.0.2 (2016-07-12)
 ---
 

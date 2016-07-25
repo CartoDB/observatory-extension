@@ -361,6 +361,7 @@ DECLARE
   sql TEXT;
   numer_name TEXT;
 BEGIN
+  geom := ST_SnapToGrid(geom, 0.000001);
 
   EXECUTE
      $query$
@@ -383,6 +384,7 @@ BEGIN
     geom_type := 'point';
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
     geom_type := 'polygon';
+    geom := ST_Buffer(geom, 0.000001);
   ELSE
     RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
                     ST_GeometryType(geom);
@@ -439,7 +441,7 @@ BEGIN
                                    WHERE ST_Intersects(%L, geom.%I)
                                      AND ST_Area(ST_Intersection(%L, geom.%I)) / ST_Area(geom.%I) > 0)
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
-                           ST_Area(%L::Geography)
+                           (ST_Area(%L::Geography) / 1000000)
                     FROM observatory.%I numer
                     WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom, geom_colname, geom_colname,
@@ -481,7 +483,7 @@ BEGIN
     ELSIF map_type = 'predenominated' THEN
       IF numer_aggregate NOT ILIKE 'sum' THEN
         RAISE EXCEPTION 'Cannot calculate "%" (%) for custom area as it cannot be summed, use ST_PointOnSurface instead',
-                        numer_name, numer_id;
+                        numer_name, measure_id;
       ELSE
         sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection(%L, geom.%I))
                                           / ST_Area(geom.%I) overlap, geom.%I geom_ref

@@ -1,6 +1,5 @@
 -- Install dependencies
 CREATE EXTENSION postgis;
-CREATE EXTENSION plpythonu;
-CREATE EXTENSION cartodb;
+CREATE EXTENSION postgres_fdw;
 -- Install the extension
 CREATE EXTENSION observatory VERSION 'dev';

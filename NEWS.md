@@ -1,3 +1,11 @@
+1.0.4 (2016-07-26)
+
+__Bugfixes__
+
+* Always default arguments to `NULL`, which prevents duplication & overwrite by
+  dataservices-api
+  ([#173](https://github.com/CartoDB/observatory-extension/issues/173))
+
 1.0.3 (2016-07-25)
 
 __Bugfixes__

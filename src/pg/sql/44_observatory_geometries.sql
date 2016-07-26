@@ -244,7 +244,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetBoundariesByGeometry(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL,
-  overlap_type text DEFAULT 'intersects')
+  overlap_type text DEFAULT NULL)
 RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 DECLARE
@@ -253,7 +253,7 @@ DECLARE
   geoid_colname text;
   target_table text;
 BEGIN
-
+  overlap_type := COALESCE(overlap_type, 'intersects');
   -- check inputs
   IF lower(overlap_type) NOT IN ('contains', 'intersects', 'within')
   THEN
@@ -318,7 +318,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByGeometry(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL,
-  overlap_type text DEFAULT 'intersects')
+  overlap_type text DEFAULT NULL)
 RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 BEGIN
@@ -364,7 +364,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetBoundariesByPointAndRadius(
   radius numeric, -- radius in meters
   boundary_id text,
   time_span text DEFAULT NULL,
-  overlap_type text DEFAULT 'intersects')
+  overlap_type text DEFAULT NULL)
 RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 DECLARE
@@ -382,7 +382,8 @@ BEGIN
                FROM cdb_observatory._OBS_GetBoundariesByGeometry(
                         circle_boundary,
                         boundary_id,
-                        time_span);
+                        time_span,
+                        overlap_type);
   RETURN;
 END;
 $$ LANGUAGE plpgsql;
@@ -394,7 +395,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPointsByGeometry(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL,
-  overlap_type text DEFAULT 'intersects')
+  overlap_type text DEFAULT NULL)
 RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 DECLARE
@@ -403,6 +404,7 @@ DECLARE
   geoid_colname text;
   target_table text;
 BEGIN
+  overlap_type := COALESCE(overlap_type, 'intersects');
 
   IF lower(overlap_type) NOT IN ('contains', 'within', 'intersects')
   THEN
@@ -464,7 +466,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByGeometry(
   geom geometry(Geometry, 4326),
   boundary_id text,
   time_span text DEFAULT NULL,
-  overlap_type text DEFAULT 'intersects')
+  overlap_type text DEFAULT NULL)
 RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 BEGIN
@@ -509,7 +511,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPointsByPointAndRadius(
   radius numeric, -- radius in meters
   boundary_id text,
   time_span text DEFAULT NULL,
-  overlap_type text DEFAULT 'intersects')
+  overlap_type text DEFAULT NULL)
 RETURNS TABLE(the_geom geometry, geom_refs text)
 AS $$
 DECLARE

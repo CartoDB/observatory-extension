@@ -42,22 +42,26 @@ DECLARE
 BEGIN
 
   -- Simple mock, there should be real logic in here.
+  IF $3 ILIKE 'GetMeasure' THEN
+    SELECT translate($4::json->>'tag_name','[]', '{}')::text[] INTO requested_measures;
 
-  IF $3 NOT ILIKE 'GetMeasure' OR $3 IS NULL THEN
+    FOREACH measure IN ARRAY requested_measures
+    LOOP
+      IF NOT measure ILIKE ANY (Array['total_pop', 'pop_16_over']::text[]) THEN
+        RAISE 'This measure is not supported yet: %', measure;
+      END IF;
+    SELECT array_append(colnames, measure) INTO colnames;
+    SELECT array_append(coltypes, 'double precision'::text) INTO coltypes;
+    END LOOP;
+  ELSIF $3 ILIKE 'Segmentize' THEN
+    SELECT array_append(colnames, 'segments') INTO colnames;
+    SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
+  ELSIF $3 ILIKE 'Voronoi' THEN
+    SELECT array_append(colnames, 'voronoi_cells') INTO colnames;
+    SELECT array_append(coltypes, 'geometry collection'::text) INTO coltypes;
+  ELSE
     RAISE 'This function is not supported yet: %', $3;
   END IF;
-
-  SELECT translate($4::json->>'tag_name','[]', '{}')::text[] INTO requested_measures;
-
-  FOREACH measure IN ARRAY requested_measures
-  LOOP
-    IF NOT measure ILIKE ANY (Array['total_pop', 'pop_16_over']::text[]) THEN
-      RAISE 'This measure is not supported yet: %', measure;
-    END IF;
-  SELECT array_append(colnames, measure) INTO colnames;
-  SELECT array_append(coltypes, 'double precision'::text) INTO coltypes;
-
-  END LOOP;
 
   RETURN (colnames::text[], coltypes::text[]);
 END;
@@ -74,34 +78,45 @@ DECLARE
   tags_query text;
   rec RECORD;
 BEGIN
-    SELECT translate($6::json->>'tag_name','[]', '{}')::text[] INTO tag_name;
-    SELECT array_to_string(tag_name, ',') INTO tags_list;
-    tags_query := '';
+    -- Construct query for GetMeasure
+    IF $3 ILIKE 'GetMeasure' THEN
 
-    FOREACH tag IN ARRAY tag_name
-    LOOP
-      SELECT tags_query || ' sum(' || tag || '/fraction)::double precision as ' || tag || ', ' INTO tags_query;
+        SELECT translate($6::json->>'tag_name','[]', '{}')::text[] INTO tag_name;
+        SELECT array_to_string(tag_name, ',') INTO tags_list;
+        tags_query := '';
 
-    END LOOP;
+        FOREACH tag IN ARRAY tag_name
+        LOOP
+          SELECT tags_query || ' sum(' || tag || '/fraction)::double precision as ' || tag || ', ' INTO tags_query;
 
-    -- Simple mock, there should be real logic in here.
-    data_query := '(WITH _areas AS(SELECT ST_Area(a.the_geom::geography)'
-        || '/ (1000 * 1000) as fraction, a.geoid, b.cartodb_id FROM '
-        || 'observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308 as a, '
-        || table_schema || '.' || table_name || ' AS b '
-        || 'WHERE b.the_geom && a.the_geom ), values AS (SELECT geoid, '
-        || tags_list
-        || ' FROM observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd ) '
-        || 'SELECT '
-        || tags_query
-        || ' cartodb_id::int FROM _areas, values '
-        || 'WHERE values.geoid = _areas.geoid GROUP BY cartodb_id);';
+        END LOOP;
 
+        -- Simple mock, there should be real logic in here.
+        data_query := '(WITH _areas AS(SELECT ST_Area(a.the_geom::geography)'
+            || '/ (1000 * 1000) as fraction, a.geoid, b.cartodb_id FROM '
+            || 'observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308 as a, '
+            || table_schema || '.' || table_name || ' AS b '
+            || 'WHERE b.the_geom && a.the_geom ), values AS (SELECT geoid, '
+            || tags_list
+            || ' FROM observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd ) '
+            || 'SELECT '
+            || tags_query
+            || ' cartodb_id::int FROM _areas, values '
+            || 'WHERE values.geoid = _areas.geoid GROUP BY cartodb_id);';
 
+    -- Construct query for ST_Segmentize
+    ELSIF $3 ILIKE 'Segmentize' THEN
+        SELECT $6::json->>'max_segment_length'::double precision INTO tag_name;
+        data_query := 'SELECT ST_Segmentize(the_geom, ' || tag_name || ') as segments FROM '
+            || table_schema || '.' || table_name || ';';
+
+    END IF;
+
+    -- Execute the query and return results
     FOR rec IN EXECUTE data_query
-    LOOP
-        RETURN NEXT rec;
-    END LOOP;
+        LOOP
+            RETURN NEXT rec;
+        END LOOP;
     RETURN;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -73,14 +73,15 @@ AS $$
 DECLARE
   data_query text;
   tag_name text[];
+  max_segment_length double precision;
   tag text;
   tags_list text;
   tags_query text;
   rec RECORD;
 BEGIN
     -- Construct query for GetMeasure
-    IF $3 ILIKE 'GetMeasure' THEN
-
+    IF $5 ILIKE 'GetMeasure' THEN
+        RAISE NOTICE 'GetMeasure';
         SELECT translate($6::json->>'tag_name','[]', '{}')::text[] INTO tag_name;
         SELECT array_to_string(tag_name, ',') INTO tags_list;
         tags_query := '';
@@ -105,10 +106,20 @@ BEGIN
             || 'WHERE values.geoid = _areas.geoid GROUP BY cartodb_id);';
 
     -- Construct query for ST_Segmentize
-    ELSIF $3 ILIKE 'Segmentize' THEN
-        SELECT $6::json->>'max_segment_length'::double precision INTO tag_name;
-        data_query := 'SELECT ST_Segmentize(the_geom, ' || tag_name || ') as segments FROM '
+    ELSIF $5 ILIKE 'Segmentize' THEN
+        RAISE NOTICE 'Segmentize, args: %', $6::json->>'max_segment_length';
+        SELECT ($6::json->>'max_segment_length')::double precision INTO max_segment_length;
+        data_query := 'SELECT ST_Segmentize(the_geom, ' || max_segment_length || ')::geometry as segments, cartodb_id::int FROM '
             || table_schema || '.' || table_name || ';';
+        RAISE NOTICE 'query: %', data_query;
+
+
+    ELSIF $5 ILIKE 'CentroidSegmentize' THEN
+        RAISE NOTICE 'CentroidSegmentize, args: %', $6::json->>'max_segment_length';
+        SELECT ($6::json->>'max_segment_length')::double precision INTO max_segment_length;
+        data_query := 'SELECT Centroid(ST_Segmentize(the_geom, ' || max_segment_length || '))::geometry as segments, cartodb_id::int FROM '
+            || table_schema || '.' || table_name || ';';
+        RAISE NOTICE 'query: %', data_query;
 
     END IF;
 
@@ -118,6 +129,9 @@ BEGIN
             RETURN NEXT rec;
         END LOOP;
     RETURN;
+EXCEPTION
+  WHEN others then
+    RAISE '----- OOPS: %, errm: %)', SQLSTATE, SQLERRM;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

@@ -56,6 +56,9 @@ BEGIN
   ELSIF $3 ILIKE 'Segmentize' THEN
     SELECT array_append(colnames, 'segments') INTO colnames;
     SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
+  ELSIF $3 ILIKE 'CentroidSegmentize' THEN
+    SELECT array_append(colnames, 'segments') INTO colnames;
+    SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
   ELSIF $3 ILIKE 'Voronoi' THEN
     SELECT array_append(colnames, 'voronoi_cells') INTO colnames;
     SELECT array_append(coltypes, 'geometry collection'::text) INTO coltypes;

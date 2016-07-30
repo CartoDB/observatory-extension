@@ -120,7 +120,7 @@ BEGIN
     ELSIF $5 ILIKE 'CentroidSegmentize' THEN
         RAISE NOTICE 'CentroidSegmentize, args: %', $6::json->>'max_segment_length';
         SELECT ($6::json->>'max_segment_length')::double precision INTO max_segment_length;
-        data_query := 'SELECT Centroid(ST_Segmentize(the_geom, ' || max_segment_length || '))::geometry as segments, cartodb_id::int FROM '
+        data_query := 'SELECT ST_Centroid(ST_Segmentize(the_geom, ' || max_segment_length || '))::geometry as segments, cartodb_id::int FROM '
             || table_schema || '.' || table_name || ';';
         RAISE NOTICE 'query: %', data_query;
 

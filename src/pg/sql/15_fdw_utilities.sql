@@ -8,7 +8,7 @@ DECLARE
 BEGIN
   -- Build connection string
   connection_str := '{"server":{"extensions":"postgis", "dbname":"'
-    || user_dbname ||'", "host":"' || user_hostname ||'", "port":"5432"}, "users":{"public"'
+    || user_dbname ||'", "host":"' || user_hostname ||'", "port":"6432"}, "users":{"public"'
     || ':{"user":"' || username ||'", "password":""} } }';
 
   -- This function tries to be as idempotent as possible, by not creating anything more than once

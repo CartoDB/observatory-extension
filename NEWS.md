@@ -1,3 +1,10 @@
+1.0.5 (2016-08-12)
+
+__Improvements__
+
+* Integration tests moved to `src/python/test/`, and can be run without hitting
+  any HTTP SQL API.
+
 1.0.4 (2016-07-26)
 
 __Bugfixes__

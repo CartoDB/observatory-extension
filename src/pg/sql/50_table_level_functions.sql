@@ -38,12 +38,12 @@ DECLARE
   colnames text[];
   coltypes text[];
 BEGIN
-  IF $3 ILIKE 'OBS_GetMeasure' THEN
+  IF function_name ILIKE 'OBS_GetMeasure' THEN
     SELECT r.colnames::text[], r.coltypes::text[] INTO colnames, coltypes
     FROM cdb_observatory._OBS_GetMeasureResultMetadata(params) r
     LIMIT 1;
   ELSE
-      RAISE 'This function is not supported yet: %', $3;
+      RAISE 'This function is not supported yet: %', function_name;
   END IF;
   RETURN (colnames::text[], coltypes::text[]);
 END;
@@ -78,7 +78,13 @@ DECLARE
   data_query text;
   rec RECORD;
 BEGIN
-    SELECT cdb_observatory._OBS_GetMeasureQuery(table_schema, table_name, params) INTO data_query;
+
+    IF function_name ILIKE 'OBS_GetMeasure' THEN
+        SELECT cdb_observatory._OBS_GetMeasureQuery(table_schema, table_name, params) INTO data_query;
+    ELSE
+        RAISE 'Function not supported';
+    END IF;
+
 
     FOR rec IN EXECUTE data_query
     LOOP
@@ -111,7 +117,7 @@ BEGIN
     data_table_name := 'observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd';
 
     -- Get measure_ids array from JSON
-    SELECT translate($3::json->>'measure_id','[]', '{}')::text[] INTO measure_ids_arr;
+    SELECT translate(params::json->>'measure_id','[]', '{}')::text[] INTO measure_ids_arr;
 
     -- Get a comma-separated list of measures ("total_pop, over_16_pop") to be used in SELECTs
     SELECT array_to_string(measure_ids_arr, ',') INTO measures_list;

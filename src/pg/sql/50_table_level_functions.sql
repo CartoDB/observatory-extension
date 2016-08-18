@@ -37,26 +37,34 @@ AS $$
 DECLARE
   colnames text[];
   coltypes text[];
-  requested_measures text[];
-  measure text;
 BEGIN
-
-  -- Simple mock, there should be real logic in here.
-
-  IF $3 NOT ILIKE 'GetMeasure' OR $3 IS NULL THEN
-    RAISE 'This function is not supported yet: %', $3;
+  IF $3 ILIKE 'OBS_GetMeasure' THEN
+    SELECT r.colnames::text[], r.coltypes::text[] INTO colnames, coltypes
+    FROM cdb_observatory._OBS_GetMeasureResultMetadata(params) r
+    LIMIT 1;
+  ELSE
+      RAISE 'This function is not supported yet: %', $3;
   END IF;
+  RETURN (colnames::text[], coltypes::text[]);
+END;
+$$ LANGUAGE plpgsql;
 
-  SELECT translate($4::json->>'tag_name','[]', '{}')::text[] INTO requested_measures;
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetMeasureResultMetadata(params json)
+RETURNS cdb_observatory.ds_return_metadata
+AS $$
+DECLARE
+  colnames text[]; -- Array to store the name of the measures to be returned
+  coltypes text[]; -- Array to store the type of the measures to be returned
+  requested_measures text[];
+  measure_id text;
+BEGIN
+  -- By definition, all the measure results for the OBS_GetMeasure API are numeric values
+  SELECT translate($1::json->>'measure_id','[]', '{}')::text[] INTO requested_measures;
 
-  FOREACH measure IN ARRAY requested_measures
+  FOREACH measure_id IN ARRAY requested_measures
   LOOP
-    IF NOT measure ILIKE ANY (Array['total_pop', 'pop_16_over']::text[]) THEN
-      RAISE 'This measure is not supported yet: %', measure;
-    END IF;
-  SELECT array_append(colnames, measure) INTO colnames;
-  SELECT array_append(coltypes, 'double precision'::text) INTO coltypes;
-
+    SELECT array_append(colnames, measure_id) INTO colnames;
+    SELECT array_append(coltypes, 'numeric'::text) INTO coltypes;
   END LOOP;
 
   RETURN (colnames::text[], coltypes::text[]);
@@ -68,43 +76,69 @@ RETURNS SETOF record
 AS $$
 DECLARE
   data_query text;
-  tag_name text[];
-  tag text;
-  tags_list text;
-  tags_query text;
   rec RECORD;
 BEGIN
-    SELECT translate($6::json->>'tag_name','[]', '{}')::text[] INTO tag_name;
-    SELECT array_to_string(tag_name, ',') INTO tags_list;
-    tags_query := '';
-
-    FOREACH tag IN ARRAY tag_name
-    LOOP
-      SELECT tags_query || ' sum(' || tag || '/fraction)::double precision as ' || tag || ', ' INTO tags_query;
-
-    END LOOP;
-
-    -- Simple mock, there should be real logic in here.
-    data_query := '(WITH _areas AS(SELECT ST_Area(a.the_geom::geography)'
-        || '/ (1000 * 1000) as fraction, a.geoid, b.cartodb_id FROM '
-        || 'observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308 as a, '
-        || table_schema || '.' || table_name || ' AS b '
-        || 'WHERE b.the_geom && a.the_geom ), values AS (SELECT geoid, '
-        || tags_list
-        || ' FROM observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd ) '
-        || 'SELECT '
-        || tags_query
-        || ' cartodb_id::int FROM _areas, values '
-        || 'WHERE values.geoid = _areas.geoid GROUP BY cartodb_id);';
-
+    SELECT cdb_observatory._OBS_GetMeasureQuery(table_schema, table_name, params) INTO data_query;
 
     FOR rec IN EXECUTE data_query
     LOOP
         RETURN NEXT rec;
     END LOOP;
-    RETURN;
+  RETURN;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetMeasureQuery(table_schema text, table_name text, params json)
+RETURNS text
+AS $$
+DECLARE
+  data_query text;
+  measure_ids_arr text[];
+  measure_id text;
+  measures_list text;
+  measures_query text;
+  normalize text;
+  boundary_id text;
+  time_span text;
+  geom_table_name text;
+  data_table_name text;
+BEGIN
+    measures_query := '';
+    -- SELECT table_name from obs_meta WHERE boundary_id = {bound} AND [...] INTO geom_table_name
+    geom_table_name := 'observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308';
+    -- SELECT table_name from obs_meta WHERE time_span = {time} AND [...] INTO data_table_name
+    data_table_name := 'observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd';
+
+    -- Get measure_ids array from JSON
+    SELECT translate($3::json->>'measure_id','[]', '{}')::text[] INTO measure_ids_arr;
+
+    -- Get a comma-separated list of measures ("total_pop, over_16_pop") to be used in SELECTs
+    SELECT array_to_string(measure_ids_arr, ',') INTO measures_list;
+
+    FOREACH measure_id IN ARRAY measure_ids_arr
+    LOOP
+      -- Build query to compute each value and normalize
+      -- Assumes the default normalization method, the normalize parameter given in the JSON
+      -- should be checked in order to build the final query
+      SELECT measures_query || ' sum(' || measure_id || '/fraction)::numeric as ' || measure_id || ', ' INTO measures_query;
+    END LOOP;
+
+    -- Data query should select the measures and the cartodb_id of the user table, in that order.
+    data_query := '(WITH _areas AS(SELECT ST_Area(a.the_geom::geography)'
+        || '/ (1000 * 1000) as fraction, a.geoid, b.cartodb_id FROM '
+        || geom_table_name || ' as a, '
+        || table_schema || '.' || table_name || ' AS b '
+        || 'WHERE b.the_geom && a.the_geom ), values AS (SELECT geoid, '
+        || measures_list
+        || ' FROM ' || data_table_name || ' ) '
+        || 'SELECT '
+        || measures_query
+        || ' cartodb_id::int FROM _areas, values '
+        || 'WHERE values.geoid = _areas.geoid GROUP BY cartodb_id);';
+    RETURN data_query;
+END;
+$$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_DisconnectUserTable(username text, orgname text, table_schema text, table_name text, servername text)

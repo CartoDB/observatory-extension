@@ -59,7 +59,7 @@ DECLARE
   measure_id text;
 BEGIN
   -- By definition, all the measure results for the OBS_GetMeasure API are numeric values
-  SELECT translate($1::json->>'measure_id','[]', '{}')::text[] INTO requested_measures;
+    SELECT ARRAY(SELECT json_array_elements_text(params->'measure_id'))::text[] INTO requested_measures;
 
   FOREACH measure_id IN ARRAY requested_measures
   LOOP
@@ -94,7 +94,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetMeasureQuery(table_schema text, table_name text, params json)
 RETURNS text
 AS $$
@@ -117,7 +116,7 @@ BEGIN
     data_table_name := 'observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd';
 
     -- Get measure_ids array from JSON
-    SELECT translate(params::json->>'measure_id','[]', '{}')::text[] INTO measure_ids_arr;
+    SELECT ARRAY(SELECT json_array_elements_text(params->'measure_id'))::text[] INTO measure_ids_arr;
 
     -- Get a comma-separated list of measures ("total_pop, over_16_pop") to be used in SELECTs
     SELECT array_to_string(measure_ids_arr, ',') INTO measures_list;

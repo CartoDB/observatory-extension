@@ -38,13 +38,9 @@ DECLARE
   colnames text[];
   coltypes text[];
 BEGIN
-  IF function_name ILIKE 'OBS_GetMeasure' THEN
-    SELECT r.colnames::text[], r.coltypes::text[] INTO colnames, coltypes
-    FROM cdb_observatory._OBS_GetMeasureResultMetadata(params) r
-    LIMIT 1;
-  ELSE
-      RAISE 'This function is not supported yet: %', function_name;
-  END IF;
+  EXECUTE FORMAT('SELECT r.colnames::text[], r.coltypes::text[] FROM cdb_observatory._%sResultMetadata(%L::json) r', function_name, params::text)
+  INTO colnames, coltypes;
+
   RETURN (colnames::text[], coltypes::text[]);
 END;
 $$ LANGUAGE plpgsql;

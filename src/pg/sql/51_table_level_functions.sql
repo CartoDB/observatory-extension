@@ -14,7 +14,7 @@ DECLARE
   measure_id text;
 BEGIN
   -- By definition, all the measure results for the OBS_GetMeasure API are numeric values
-    SELECT ARRAY(SELECT json_array_elements_text(params->'measure_id'))::text[] INTO requested_measures;
+  SELECT ARRAY(SELECT json_array_elements_text(params->'measure_id'))::text[] INTO requested_measures;
 
   FOREACH measure_id IN ARRAY requested_measures
   LOOP

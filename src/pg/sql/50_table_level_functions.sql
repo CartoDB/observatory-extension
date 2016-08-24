@@ -112,8 +112,11 @@ RETURNS boolean
 AS $$
 BEGIN
     EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || table_schema || '".' || table_name;
-    EXECUTE 'DROP SCHEMA IF EXISTS ' || table_schema || ' CASCADE';
-    EXECUTE 'DROP SERVER IF EXISTS ' || servername || ' CASCADE;';
+    EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || table_schema || '".cdb_tablemetadata';
+    EXECUTE 'DROP SCHEMA IF EXISTS ' || table_schema;
+    -- The user mapping is created with the "public" name, see FDW_Utilities
+    EXECUTE 'DROP USER MAPPING IF EXISTS FOR public SERVER ' || servername;
+    EXECUTE 'DROP SERVER IF EXISTS ' || servername;
     RETURN true;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -56,6 +56,9 @@ BEGIN
   ELSIF $3 ILIKE 'Segmentize' THEN
     SELECT array_append(colnames, 'segments') INTO colnames;
     SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
+  ELSIF $3 ILIKE 'ConvexHull' THEN
+    SELECT array_append(colnames, 'convexresult') INTO colnames;
+    SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
   ELSIF $3 ILIKE 'CentroidSegmentize' THEN
     SELECT array_append(colnames, 'segments') INTO colnames;
     SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
@@ -121,6 +124,12 @@ BEGIN
         RAISE NOTICE 'CentroidSegmentize, args: %', $6::json->>'max_segment_length';
         SELECT ($6::json->>'max_segment_length')::double precision INTO max_segment_length;
         data_query := 'SELECT ST_Centroid(ST_Segmentize(the_geom, ' || max_segment_length || '))::geometry as segments, cartodb_id::int FROM '
+            || table_schema || '.' || table_name || ';';
+        RAISE NOTICE 'query: %', data_query;
+
+    ELSIF $5 ILIKE 'ConvexHull' THEN
+        RAISE NOTICE 'ConvexHull';
+        data_query := 'SELECT ST_ConvexHull(ST_Collect(the_geom)) as convexresult, 1::int as cartodb_id FROM '
             || table_schema || '.' || table_name || ';';
         RAISE NOTICE 'query: %', data_query;
 

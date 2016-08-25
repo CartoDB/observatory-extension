@@ -132,7 +132,7 @@ BEGIN
 
     ELSIF $5 ILIKE 'Moran' THEN
         SELECT ($6::json->>'column_name')::text INTO moran_colname;
-        data_query := 'SELECT moran, quads, significance, vals, cartodb_id from cdb_crankshaft._CDB_AreasOfInterestLocalTABLE(''SELECT * FROM ' || table_schema || '.' || table_name || '''::text, ''' || moran_colname ||'''::text, ''knn''::text, 5, 99, ''the_geom''::text, ''cartodb_id''::text) as (moran numeric, quads text, significance numeric, cartodb_id int, vals numeric);';
+        data_query := 'SELECT moran, quads, significance, vals, cartodb_id from observatory._CDB_AreasOfInterestLocalTABLE(''SELECT * FROM ' || table_schema || '.' || table_name || '''::text, ''' || moran_colname ||'''::text, ''knn''::text, 5, 99, ''the_geom''::text, ''cartodb_id''::text) as (moran numeric, quads text, significance numeric, cartodb_id int, vals numeric);';
 
     END IF;
 
@@ -149,7 +149,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION
-  cdb_crankshaft._CDB_AreasOfInterestLocalTABLE(
+  observatory._CDB_AreasOfInterestLocalTABLE(
       subquery TEXT,
       column_name TEXT,
     w_type TEXT DEFAULT 'knn',

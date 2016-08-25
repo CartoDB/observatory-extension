@@ -6,8 +6,10 @@ I'd like to request a new data observatory extension deploy: dump + extension
 
 Please put here the dump id to be deployed: <dump_id>
 
-## New Observatory PRs.
+## Data Observatory extension PRs included.
 
-Add down here the PR links to be added and deployed
+Add down here the PR links to be added and deployed:
+
+  - 
 
 // @CartoDB/dataservices

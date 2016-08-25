@@ -54,17 +54,20 @@ BEGIN
     SELECT array_append(coltypes, 'double precision'::text) INTO coltypes;
     END LOOP;
   ELSIF $3 ILIKE 'Segmentize' THEN
-    SELECT array_append(colnames, 'segments') INTO colnames;
-    SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
+    colnames := Array['segments'];
+    coltypes := Array['geometry'];
   ELSIF $3 ILIKE 'ConvexHull' THEN
-    SELECT array_append(colnames, 'convexresult') INTO colnames;
-    SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
+    colnames := Array['convexresult'];
+    coltypes := Array['geometry'];
   ELSIF $3 ILIKE 'CentroidSegmentize' THEN
-    SELECT array_append(colnames, 'segments') INTO colnames;
-    SELECT array_append(coltypes, 'geometry'::text) INTO coltypes;
+    colnames := Array['segments'];
+    coltypes := Array['geometry'];
   ELSIF $3 ILIKE 'Voronoi' THEN
-    SELECT array_append(colnames, 'voronoi_cells') INTO colnames;
-    SELECT array_append(coltypes, 'geometry collection'::text) INTO coltypes;
+    colnames := Array['voronoi_cells'];
+    coltypes := Array['geometry collection'];
+  ELSIF $3 ILIKE 'Moran' THEN
+    colnames := Array['moran', 'quads', 'significance', 'vals'];
+    coltypes := Array['numeric', 'text', 'numeric' , 'numeric'];
   ELSE
     RAISE 'This function is not supported yet: %', $3;
   END IF;
@@ -80,6 +83,7 @@ DECLARE
   data_query text;
   tag_name text[];
   max_segment_length double precision;
+  moran_colname text;
   tag text;
   tags_list text;
   tags_query text;
@@ -87,7 +91,6 @@ DECLARE
 BEGIN
     -- Construct query for GetMeasure
     IF $5 ILIKE 'GetMeasure' THEN
-        RAISE NOTICE 'GetMeasure';
         SELECT translate($6::json->>'tag_name','[]', '{}')::text[] INTO tag_name;
         SELECT array_to_string(tag_name, ',') INTO tags_list;
         tags_query := '';
@@ -113,25 +116,23 @@ BEGIN
 
     -- Construct query for ST_Segmentize
     ELSIF $5 ILIKE 'Segmentize' THEN
-        RAISE NOTICE 'Segmentize, args: %', $6::json->>'max_segment_length';
         SELECT ($6::json->>'max_segment_length')::double precision INTO max_segment_length;
         data_query := 'SELECT ST_Segmentize(the_geom, ' || max_segment_length || ')::geometry as segments, cartodb_id::int FROM '
             || table_schema || '.' || table_name || ';';
-        RAISE NOTICE 'query: %', data_query;
 
 
     ELSIF $5 ILIKE 'CentroidSegmentize' THEN
-        RAISE NOTICE 'CentroidSegmentize, args: %', $6::json->>'max_segment_length';
         SELECT ($6::json->>'max_segment_length')::double precision INTO max_segment_length;
         data_query := 'SELECT ST_Centroid(ST_Segmentize(the_geom, ' || max_segment_length || '))::geometry as segments, cartodb_id::int FROM '
             || table_schema || '.' || table_name || ';';
-        RAISE NOTICE 'query: %', data_query;
 
     ELSIF $5 ILIKE 'ConvexHull' THEN
-        RAISE NOTICE 'ConvexHull';
         data_query := 'SELECT ST_ConvexHull(ST_Collect(the_geom)) as convexresult, 1::int as cartodb_id FROM '
             || table_schema || '.' || table_name || ';';
-        RAISE NOTICE 'query: %', data_query;
+
+    ELSIF $5 ILIKE 'Moran' THEN
+        SELECT ($6::json->>'column_name')::text INTO moran_colname;
+        data_query := 'SELECT moran, quads, significance, vals, cartodb_id from cdb_crankshaft._CDB_AreasOfInterestLocalTABLE(''SELECT * FROM ' || table_schema || '.' || table_name || '''::text, ''' || moran_colname ||'''::text, ''knn''::text, 5, 99, ''the_geom''::text, ''cartodb_id''::text) as (moran numeric, quads text, significance numeric, cartodb_id int, vals numeric);';
 
     END IF;
 
@@ -146,6 +147,24 @@ EXCEPTION
     RAISE '----- OOPS: %, errm: %)', SQLSTATE, SQLERRM;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION
+  cdb_crankshaft._CDB_AreasOfInterestLocalTABLE(
+      subquery TEXT,
+      column_name TEXT,
+    w_type TEXT DEFAULT 'knn',
+    num_ngbrs INT DEFAULT 5,
+    permutations INT DEFAULT 99,
+    geom_col TEXT DEFAULT 'the_geom',
+    id_col TEXT DEFAULT 'cartodb_id')
+RETURNS SETOF RECORD
+AS $$
+  from crankshaft.clustering import moran_local
+  # TODO: use named parameters or a dictionary
+
+  for row in moran_local(subquery, column_name, w_type, num_ngbrs, permutations, geom_col, id_col):
+    yield (row)
+$$ LANGUAGE plpythonu;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_DisconnectUserTable(username text, orgname text, table_schema text, table_name text, servername text)

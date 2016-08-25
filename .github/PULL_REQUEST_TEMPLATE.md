@@ -8,6 +8,8 @@ Please put here the dump id to be deployed: <dump_id>
 
 ## Data Observatory extension PRs included.
 
+*Please update the NEWS.md*
+
 Add down here the PR links to be added and deployed:
 
   - 

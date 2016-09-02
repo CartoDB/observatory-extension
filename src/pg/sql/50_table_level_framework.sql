@@ -24,9 +24,12 @@ BEGIN
 EXCEPTION
   WHEN others THEN
     -- Disconnect user imported table. Delete schema and FDW server.
-    EXECUTE 'DROP FOREIGN TABLE IF EXISTS ' || fdw_import_schema || '.' || table_name;
-    EXECUTE 'DROP SCHEMA IF EXISTS ' || fdw_import_schema || ' CASCADE';
-    EXECUTE 'DROP SERVER IF EXISTS ' || fdw_server || ' CASCADE;';
+    EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || fdw_import_schema || '".' || table_name;
+    EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || fdw_import_schema || '".cdb_tablemetadata';
+    EXECUTE 'DROP SCHEMA IF EXISTS "' || fdw_import_schema || '"';
+    EXECUTE 'DROP USER MAPPING IF EXISTS FOR public SERVER "' || fdw_server || '"';
+    EXECUTE 'DROP SERVER IF EXISTS "' || fdw_server || '"';
+
     RETURN (null, null, null);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -70,8 +73,10 @@ RETURNS boolean
 AS $$
 BEGIN
     EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || table_schema || '".' || table_name;
-    EXECUTE 'DROP SCHEMA IF EXISTS ' || table_schema || ' CASCADE';
-    EXECUTE 'DROP SERVER IF EXISTS ' || servername || ' CASCADE;';
+    EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || table_schema || '".cdb_tablemetadata';
+    EXECUTE 'DROP SCHEMA IF EXISTS "' || table_schema || '"';
+    EXECUTE 'DROP USER MAPPING IF EXISTS FOR public SERVER "' || servername || '"';
+    EXECUTE 'DROP SERVER IF EXISTS "' || servername || '"';
     RETURN true;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

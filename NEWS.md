@@ -1,3 +1,10 @@
+1.0.6 (2016-09-08)
+
+__Improvements__
+
+* New function structure for Table-level functions which allows to separate the
+  framework logic from the observatory measure functions.
+
 1.0.5 (2016-08-12)
 
 __Improvements__

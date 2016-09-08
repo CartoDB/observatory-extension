@@ -24,9 +24,12 @@ BEGIN
 EXCEPTION
   WHEN others THEN
     -- Disconnect user imported table. Delete schema and FDW server.
-    EXECUTE 'DROP FOREIGN TABLE IF EXISTS ' || fdw_import_schema || '.' || table_name;
-    EXECUTE 'DROP SCHEMA IF EXISTS ' || fdw_import_schema || ' CASCADE';
-    EXECUTE 'DROP SERVER IF EXISTS ' || fdw_server || ' CASCADE;';
+    EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || fdw_import_schema || '".' || table_name;
+    EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || fdw_import_schema || '".cdb_tablemetadata';
+    EXECUTE 'DROP SCHEMA IF EXISTS "' || fdw_import_schema || '"';
+    EXECUTE 'DROP USER MAPPING IF EXISTS FOR public SERVER "' || fdw_server || '"';
+    EXECUTE 'DROP SERVER IF EXISTS "' || fdw_server || '"';
+
     RETURN (null, null, null);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -37,27 +40,9 @@ AS $$
 DECLARE
   colnames text[];
   coltypes text[];
-  requested_measures text[];
-  measure text;
 BEGIN
-
-  -- Simple mock, there should be real logic in here.
-
-  IF $3 NOT ILIKE 'GetMeasure' OR $3 IS NULL THEN
-    RAISE 'This function is not supported yet: %', $3;
-  END IF;
-
-  SELECT translate($4::json->>'tag_name','[]', '{}')::text[] INTO requested_measures;
-
-  FOREACH measure IN ARRAY requested_measures
-  LOOP
-    IF NOT measure ILIKE ANY (Array['total_pop', 'pop_16_over']::text[]) THEN
-      RAISE 'This measure is not supported yet: %', measure;
-    END IF;
-  SELECT array_append(colnames, measure) INTO colnames;
-  SELECT array_append(coltypes, 'double precision'::text) INTO coltypes;
-
-  END LOOP;
+  EXECUTE FORMAT('SELECT r.colnames::text[], r.coltypes::text[] FROM cdb_observatory._%sResultMetadata(%L::json) r', function_name, params::text)
+  INTO colnames, coltypes;
 
   RETURN (colnames::text[], coltypes::text[]);
 END;
@@ -68,41 +53,17 @@ RETURNS SETOF record
 AS $$
 DECLARE
   data_query text;
-  tag_name text[];
-  tag text;
-  tags_list text;
-  tags_query text;
   rec RECORD;
 BEGIN
-    SELECT translate($6::json->>'tag_name','[]', '{}')::text[] INTO tag_name;
-    SELECT array_to_string(tag_name, ',') INTO tags_list;
-    tags_query := '';
 
-    FOREACH tag IN ARRAY tag_name
-    LOOP
-      SELECT tags_query || ' sum(' || tag || '/fraction)::double precision as ' || tag || ', ' INTO tags_query;
-
-    END LOOP;
-
-    -- Simple mock, there should be real logic in here.
-    data_query := '(WITH _areas AS(SELECT ST_Area(a.the_geom::geography)'
-        || '/ (1000 * 1000) as fraction, a.geoid, b.cartodb_id FROM '
-        || 'observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308 as a, '
-        || table_schema || '.' || table_name || ' AS b '
-        || 'WHERE b.the_geom && a.the_geom ), values AS (SELECT geoid, '
-        || tags_list
-        || ' FROM observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd ) '
-        || 'SELECT '
-        || tags_query
-        || ' cartodb_id::int FROM _areas, values '
-        || 'WHERE values.geoid = _areas.geoid GROUP BY cartodb_id);';
-
+    EXECUTE FORMAT('SELECT cdb_observatory._%sQuery(%L, %L, %L::json)', function_name, table_schema, table_name, params::text)
+    INTO data_query;
 
     FOR rec IN EXECUTE data_query
     LOOP
         RETURN NEXT rec;
     END LOOP;
-    RETURN;
+  RETURN;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -112,8 +73,10 @@ RETURNS boolean
 AS $$
 BEGIN
     EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || table_schema || '".' || table_name;
-    EXECUTE 'DROP SCHEMA IF EXISTS ' || table_schema || ' CASCADE';
-    EXECUTE 'DROP SERVER IF EXISTS ' || servername || ' CASCADE;';
+    EXECUTE 'DROP FOREIGN TABLE IF EXISTS "' || table_schema || '".cdb_tablemetadata';
+    EXECUTE 'DROP SCHEMA IF EXISTS "' || table_schema || '"';
+    EXECUTE 'DROP USER MAPPING IF EXISTS FOR public SERVER "' || servername || '"';
+    EXECUTE 'DROP SERVER IF EXISTS "' || servername || '"';
     RETURN true;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

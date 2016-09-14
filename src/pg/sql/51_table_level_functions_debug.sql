@@ -116,3 +116,22 @@ BEGIN
   RETURN data_query;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION
+  cdb_observatory._CDB_AreasOfInterestLocalTABLE(
+      subquery TEXT,
+      column_name TEXT,
+    w_type TEXT DEFAULT 'knn',
+    num_ngbrs INT DEFAULT 5,
+    permutations INT DEFAULT 99,
+    geom_col TEXT DEFAULT 'the_geom',
+    id_col TEXT DEFAULT 'cartodb_id')
+RETURNS SETOF RECORD
+AS $$
+  from crankshaft.clustering import moran_local
+  # TODO: use named parameters or a dictionary
+
+  for row in moran_local(subquery, column_name, w_type, num_ngbrs, permutations, geom_col, id_col):
+    yield (row)
+$$ LANGUAGE plpythonu;

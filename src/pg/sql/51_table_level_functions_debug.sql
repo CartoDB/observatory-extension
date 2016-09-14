@@ -49,6 +49,7 @@ RETURNS text
 AS $$
 DECLARE
   data_query text;
+  tag text;
   measure_ids_arr text[];
   measure_id text;
   measures_list text;
@@ -59,6 +60,7 @@ DECLARE
   geom_table_name text;
   data_table_name text;
   max_segment_length numeric;
+  moran_colname text;
   type_f text;
 BEGIN
   SELECT params->'function' INTO type_f;
@@ -67,14 +69,15 @@ BEGIN
 
    IF type_f ilike '%measure%' THEN
       data_query := 'SELECT total_pop, cartodb_id FROM ' || table_schema || '.' || table_name || ';';
-   IF type_f ILIKE 'GetMeasure' THEN
-        SELECT translate(params::json->>'measure_id','[]', '{}')::text[] INTO tag_name;
-        SELECT array_to_string(tag_name, ',') INTO tags_list;
-        tags_query := '';
 
-        FOREACH tag IN ARRAY tag_name
+   ELSIF type_f ILIKE 'GetMeasure' THEN
+        SELECT translate(params::json->>'measure_id','[]', '{}')::text[] INTO measure_id;
+        SELECT array_to_string(measure_id, ',') INTO measures_list;
+        measures_query := '';
+
+        FOREACH tag IN ARRAY measure_id
         LOOP
-          SELECT tags_query || ' sum(' || tag || '/fraction)::double precision as ' || tag || ', ' INTO tags_query;
+          SELECT measures_query || ' sum(' || tag || '/fraction)::double precision as ' || tag || ', ' INTO measures_query;
 
         END LOOP;
 
@@ -84,14 +87,13 @@ BEGIN
             || 'observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308 as a, '
             || table_schema || '.' || table_name || ' AS b '
             || 'WHERE b.the_geom && a.the_geom ), values AS (SELECT geoid, '
-            || tags_list
+            || measures_list
             || ' FROM observatory.obs_1a098da56badf5f32e336002b0a81708c40d29cd ) '
             || 'SELECT '
-            || tags_query
+            || measures_query
             || ' cartodb_id::int FROM _areas, values '
             || 'WHERE values.geoid = _areas.geoid GROUP BY cartodb_id);';
 
-    -- Construct query for ST_Segmentize
     ELSIF type_f ILIKE 'Segmentize' THEN
         SELECT (params::json->>'max_segment_length')::double precision INTO max_segment_length;
         data_query := 'SELECT ST_Segmentize(the_geom, ' || max_segment_length || ')::geometry as segments, cartodb_id::int FROM '

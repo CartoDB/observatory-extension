@@ -60,6 +60,7 @@ SKIP_COLUMNS = set([
     u'mx.inegi_columns.POB36',
     u'mx.inegi_columns.POB33',
     u'mx.inegi_columns.POB58',
+    u'mx.inegi_columns.DISC4',
 ])
 
 #def default_geometry_id(column_id):
@@ -110,7 +111,10 @@ def default_point(column_id):
     elif column_id.startswith('mx.'):
         return 'ST_SetSRID(ST_MakePoint(-99.17019367218018, 19.41347699386547), 4326)'
     elif column_id.startswith('ca.'):
+        raise SkipTest('Skipping Canada until validation of data complete')
         return 'ST_SetSRID(ST_MakePoint(-79.39716339111328, 43.65694347778308), 4326)'
+    elif column_id.startswith('th.'):
+        return 'ST_SetSRID(ST_MakePoint(100.49263000488281, 13.725377712079784), 4326)'
     else:
         return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
 
@@ -120,7 +124,7 @@ def default_area(column_id):
     Returns default test area for the column_id
     '''
     point = default_point(column_id)
-    area = 'ST_Transform(ST_Buffer(ST_Transform({point}, 3857), 1000), 4326)'.format(
+    area = 'ST_Transform(ST_Buffer(ST_Transform({point}, 3857), 250), 4326)'.format(
         point=point)
     return area
 

@@ -203,6 +203,11 @@ SELECT abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._ProblemTestArea(),
   'us.census.acs.B01003001') - 96230.2929825897) / 96230.2929825897 < 0.001 As OBS_GetMeasure_bad_geometry;
 
+-- OBS_GetMeasure with NULL Input
+SELECT cdb_observatory.OBS_GetMeasure(
+  NULL,
+  'us.census.acs.B01003001') IS NULL As OBS_GetMeasure_null;
+
 -- Point-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
   cdb_observatory._TestPoint(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As OBS_GetCategory_point;
@@ -210,6 +215,10 @@ SELECT cdb_observatory.OBS_GetCategory(
 -- Poly-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
   cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As obs_getcategory_polygon;
+
+-- NULL Input OBS_GetCategory
+SELECT cdb_observatory.OBS_GetCategory(
+  NULL, 'us.census.spielman_singleton_segments.X10') IS NULL As obs_getcategory_null;
 
 -- Point-based OBS_GetPopulation, default normalization (area)
 SELECT (abs(OBS_GetPopulation - 10923.093200390833950) / 10923.093200390833950) < 0.001 As OBS_GetPopulation FROM
@@ -231,6 +240,13 @@ FROM
     cdb_observatory._TestArea(), NULL
   ) As m(obs_getpopulation_polygon_null);
 
+-- Null input OBS_GetPopulation
+SELECT obs_getpopulation_polygon_null_geom IS NULL As obs_getpopulation_polygon_null_geom_test
+FROM
+  cdb_observatory.OBS_GetPopulation(
+    NULL, NULL
+  ) As m(obs_getpopulation_polygon_null_geom);
+
 -- Point-based OBS_GetUSCensusMeasure, default normalization (area)
 SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
   cdb_observatory._testpoint(), 'male population') - 6789.5647735060920500) / 6789.5647735060920500) < 0.001 As obs_getuscensusmeasure_point_male_pop;
@@ -244,6 +260,11 @@ SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
 SELECT (abs(cdb_observatory.obs_getuscensusmeasure(
   cdb_observatory._testarea(), 'male population', NULL) - 6043.63061042765) / 6043.63061042765) < 0.001 As obs_getuscensusmeasure_null;
 
+-- Poly-based OBS_GetUSCensusMeasure, Null input geom
+SELECT cdb_observatory.obs_getuscensusmeasure(
+  NULL, 'male population', NULL) IS NULL As obs_getuscensusmeasure_null_geom;
+
+
 -- Point-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
   cdb_observatory._testpoint(), 'Spielman-Singleton Segments: 10 Clusters') = 'Wealthy, urban without Kids' As OBS_GetUSCensusCategory_point;
@@ -251,6 +272,10 @@ SELECT cdb_observatory.OBS_GetUSCensusCategory(
 -- Area-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
   cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Wealthy, urban without Kids' As OBS_GetUSCensusCategory_polygon;
+
+-- Null-input OBS_GetUSCensusCategory
+SELECT cdb_observatory.OBS_GetUSCensusCategory(
+  NULL, 'Spielman-Singleton Segments: 10 Clusters') IS NULL As OBS_GetUSCensusCategory_null;
 
 
 -- OBS_GetMeasureById tests
@@ -285,3 +310,11 @@ SELECT cdb_observatory.OBS_GetMeasureById(
   'us.census.tiger.block_group',
   '2010 - 2014'
 ) IS NULL As OBS_GetMeasureById_nulls;
+
+-- NULL input id
+SELECT cdb_observatory.OBS_GetMeasureById(
+  NULL,
+  'us.census.acs.B01003001',
+  'us.census.tiger.block_group',
+  '2010 - 2014'
+) IS NULL As OBS_GetMeasureById_null_id;

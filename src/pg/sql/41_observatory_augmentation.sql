@@ -179,7 +179,10 @@ BEGIN
     --raise notice 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
   END IF;
 
-  IF ST_GeometryType(geom) = 'ST_Point'
+  IF geom IS NULL
+  THEN
+    results := NULL;
+  ELSIF ST_GeometryType(geom) = 'ST_Point'
   THEN
     --raise notice 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
     results := cdb_observatory._OBS_GetPoints(geom,
@@ -361,6 +364,10 @@ DECLARE
   sql TEXT;
   numer_name TEXT;
 BEGIN
+  IF geom IS NULL THEN
+    RETURN NULL;
+  END IF;
+
   geom := ST_SnapToGrid(geom, 0.000001);
 
   EXECUTE
@@ -525,6 +532,9 @@ DECLARE
   measure_val NUMERIC;
   data_geoid_colname TEXT;
 BEGIN
+  IF geom_ref IS NULL THEN
+    RETURN NULL;
+  END IF;
 
   EXECUTE
      $query$
@@ -573,6 +583,9 @@ DECLARE
   category_val TEXT;
   category_share NUMERIC;
 BEGIN
+  IF geom IS NULL THEN
+    RETURN NULL;
+  END IF;
 
   EXECUTE
      $query$

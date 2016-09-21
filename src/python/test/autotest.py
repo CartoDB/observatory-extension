@@ -60,27 +60,30 @@ SKIP_COLUMNS = set([
     u'mx.inegi_columns.POB36',
     u'mx.inegi_columns.POB33',
     u'mx.inegi_columns.POB58',
+    u'mx.inegi_columns.DISC4',
 ])
 
-def default_geometry_id(column_id):
-    '''
-    Returns default test point for the column_id.
-    '''
-    if column_id == 'whosonfirst.wof_disputed_geom':
-        return 'ST_SetSRID(ST_MakePoint(76.57, 33.78), 4326)'
-    elif column_id == 'whosonfirst.wof_marinearea_geom':
-        return 'ST_SetSRID(ST_MakePoint(-68.47, 43.33), 4326)'
-    elif column_id in ('us.census.tiger.school_district_elementary',
-                       'us.census.tiger.school_district_secondary',
-                       'us.census.tiger.school_district_elementary_clipped',
-                       'us.census.tiger.school_district_secondary_clipped'):
-        return 'ST_SetSRID(ST_MakePoint(-73.7067, 40.7025), 4326)'
-    elif column_id.startswith('es.ine'):
-        return 'ST_SetSRID(ST_MakePoint(-2.51141249535454, 42.8226119029222), 4326)'
-    elif column_id.startswith('us.zillow'):
-        return 'ST_SetSRID(ST_MakePoint(-81.3544048197256, 28.3305906291771), 4326)'
-    else:
-        return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
+#def default_geometry_id(column_id):
+#    '''
+#    Returns default test point for the column_id.
+#    '''
+#    if column_id == 'whosonfirst.wof_disputed_geom':
+#        return 'ST_SetSRID(ST_MakePoint(76.57, 33.78), 4326)'
+#    elif column_id == 'whosonfirst.wof_marinearea_geom':
+#        return 'ST_SetSRID(ST_MakePoint(-68.47, 43.33), 4326)'
+#    elif column_id in ('us.census.tiger.school_district_elementary',
+#                       'us.census.tiger.school_district_secondary',
+#                       'us.census.tiger.school_district_elementary_clipped',
+#                       'us.census.tiger.school_district_secondary_clipped'):
+#        return 'ST_SetSRID(ST_MakePoint(-73.7067, 40.7025), 4326)'
+#    elif column_id.startswith('es.ine'):
+#        return 'ST_SetSRID(ST_MakePoint(-2.51141249535454, 42.8226119029222), 4326)'
+#    elif column_id.startswith('us.zillow'):
+#        return 'ST_SetSRID(ST_MakePoint(-81.3544048197256, 28.3305906291771), 4326)'
+#    elif column_id.startswith('ca.'):
+#        return ''
+#    else:
+#        return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
 
 
 def default_point(column_id):
@@ -107,6 +110,11 @@ def default_point(column_id):
         return 'ST_SetSRID(ST_MakePoint(-81.3544048197256, 28.3305906291771), 4326)'
     elif column_id.startswith('mx.'):
         return 'ST_SetSRID(ST_MakePoint(-99.17019367218018, 19.41347699386547), 4326)'
+    elif column_id.startswith('ca.'):
+        raise SkipTest('Skipping Canada until validation of data complete')
+        return 'ST_SetSRID(ST_MakePoint(-79.39716339111328, 43.65694347778308), 4326)'
+    elif column_id.startswith('th.'):
+        return 'ST_SetSRID(ST_MakePoint(100.49263000488281, 13.725377712079784), 4326)'
     else:
         return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
 
@@ -116,7 +124,7 @@ def default_area(column_id):
     Returns default test area for the column_id
     '''
     point = default_point(column_id)
-    area = 'ST_Transform(ST_Buffer(ST_Transform({point}, 3857), 1000), 4326)'.format(
+    area = 'ST_Transform(ST_Buffer(ST_Transform({point}, 3857), 250), 4326)'.format(
         point=point)
     return area
 

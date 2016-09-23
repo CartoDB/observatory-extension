@@ -26,7 +26,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-select cdb_observatory._obs_getmeasurequery('public', 'testinput', '{"numer_ids":["us.census.acs.B03002006", "us.census.acs.B03002012"], "denom_ids":["us.census.acs.B01003001", "us.census.acs.B01003001"], "geom_ids": ["us.census.tiger.census_tract", "us.census.tiger.state"], "timespans": ["2006 - 2010", "2010 - 2014"], "geom": "0101000020E610000000000000807A54C0C3CF8DC4FADB4240" }'::json);
+--select cdb_observatory._obs_getmeasurequery('public', 'testinput', '{"numer_ids":["us.census.acs.B03002006", "us.census.acs.B03002012"], "denom_ids":["us.census.acs.B01003001", "us.census.acs.B01003001"], "geom_ids": ["us.census.tiger.census_tract", "us.census.tiger.state"], "timespans": ["2006 - 2010", "2010 - 2014"], "geom": "0101000020E610000000000000807A54C0C3CF8DC4FADB4240" }'::json);
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetMeasureQuery(

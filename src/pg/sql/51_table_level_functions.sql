@@ -4,6 +4,8 @@
 --
 --
 
+--select cdb_observatory._obs_getmeasureresultmetadata('{"numer_ids":["us.census.acs.B03002006", "us.census.acs.B03002012"], "denom_ids":["us.census.acs.B01003001", "us.census.acs.B01003001"], "geom_ids": ["us.census.tiger.census_tract", "us.census.tiger.state"], "timespans": ["2006 - 2010", "2010 - 2014"], "geom": "0101000020E610000000000000807A54C0C3CF8DC4FADB4240" }'::json);
+
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetMeasureResultMetadata(params json)
 RETURNS cdb_observatory.ds_return_metadata
 AS $$
@@ -13,16 +15,28 @@ DECLARE
   requested_measures text[];
   measure_id text;
 BEGIN
-  -- By definition, all the measure results for the OBS_GetMeasure API are numeric values
-  SELECT ARRAY(SELECT json_array_elements_text(params->'measure_id'))::text[] INTO requested_measures;
+  EXECUTE
+    $query$
+      WITH _filters AS (SELECT
+        row_number() over () as filter_id,
+        unnest($1) filter_numer_id,
+        unnest($2) filter_denom_id,
+        unnest($3) filter_geom_id,
+        unnest($4) filter_timespan
+      )
+      SELECT ARRAY_AGG(numer_colname ORDER BY filter_id), ARRAY_AGG(numer_type ORDER BY filter_id)
+      FROM observatory.obs_meta, _filters
+      WHERE (numer_id, coalesce(denom_id, ''), geom_id, numer_timespan)
+         = (filter_numer_id, filter_denom_id, filter_geom_id, filter_timespan);
+      ;
+    $query$
+  INTO colnames, coltypes
+  USING (SELECT ARRAY(SELECT json_array_elements_text(params->'numer_ids'))::text[]),
+        (SELECT ARRAY(SELECT json_array_elements_text(params->'denom_ids'))::text[]),
+        (SELECT ARRAY(SELECT json_array_elements_text(params->'geom_ids'))::text[]),
+        (SELECT ARRAY(SELECT json_array_elements_text(params->'timespans'))::text[]);
 
-  FOREACH measure_id IN ARRAY requested_measures
-  LOOP
-    SELECT array_append(colnames, measure_id) INTO colnames;
-    SELECT array_append(coltypes, 'numeric'::text) INTO coltypes;
-  END LOOP;
-
-  RETURN (colnames::text[], coltypes::text[]);
+  RETURN (colnames, coltypes);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -36,11 +50,6 @@ AS $$
 DECLARE
   data_query text;
 
-  numer_ids_arr text[];
-  denom_ids_arr text[];
-  geom_ids_arr text[];
-  timespans_arr text[];
-
   geom Geometry(Geometry, 4326);
   colspecs TEXT;
   tables TEXT;
@@ -53,22 +62,8 @@ DECLARE
   geom_table_name text;
   data_table_name text;
 BEGIN
-  /*
-params: {
-  geom: geometry(Geometry, 4326),
-  numer_ids: TEXT[],
-  denom_ids: TEXT[],
-  geom_ids: TEXT[],
-  timespans: TEXT[]
-}
-   */
 
     -- Deconstruct JSON args
-    SELECT params->>'geom' INTO geom;
-    SELECT ARRAY(SELECT json_array_elements_text(params->'numer_ids'))::text[] INTO numer_ids_arr;
-    SELECT ARRAY(SELECT json_array_elements_text(params->'denom_ids'))::text[] INTO denom_ids_arr;
-    SELECT ARRAY(SELECT json_array_elements_text(params->'geom_ids'))::text[] INTO geom_ids_arr;
-    SELECT ARRAY(SELECT json_array_elements_text(params->'timespans'))::text[] INTO timespans_arr;
 
     EXECUTE
       $query$
@@ -98,11 +93,14 @@ params: {
         FROM observatory.obs_meta
         WHERE (numer_id, coalesce(denom_id, ''), geom_id, numer_timespan)
            IN (SELECT numer_id, denom_id, geom_id, timespan FROM _filters)
-          --AND ST_Overlaps($7, the_geom)
         ;
       $query$
     INTO colspecs, tables, obs_wheres, user_wheres
-    USING numer_ids_arr, denom_ids_arr, geom_ids_arr, timespans_arr, table_schema, table_name, geom;
+    USING (SELECT ARRAY(SELECT json_array_elements_text(params->'numer_ids'))::text[]),
+          (SELECT ARRAY(SELECT json_array_elements_text(params->'denom_ids'))::text[]),
+          (SELECT ARRAY(SELECT json_array_elements_text(params->'geom_ids'))::text[]),
+          (SELECT ARRAY(SELECT json_array_elements_text(params->'timespans'))::text[]),
+          table_schema, table_name;
 
     data_query := format($query$
       SELECT cartodb_id, %s FROM %s, %s.%s WHERE %s AND %s

@@ -2,11 +2,63 @@
 \set ECHO none
 SET client_min_messages TO WARNING;
 
--- Point table augmentation with one measure
+-- Point table augmentation with one measure, areanormalized (total_pop)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testpoints',
+  '{"numer_ids":["us.census.acs.B01003001"], "denom_ids":[], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
 
--- Buffer table augmentation with one measure
+-- Buffer table augmentation with one measure, areanormalized (total_pop)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testbuffers',
+  '{"numer_ids":["us.census.acs.B01003001"], "denom_ids":[], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
 
--- Rich geometry table augmentation with one measure
+-- Rich geometry table augmentation with one measure, areanormalized
+-- (total_pop)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testgeoms',
+  '{"numer_ids":["us.census.acs.B01003001"], "denom_ids":[], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
+
+-- Point table augmentation with one measure, predenominated
+-- (median_income)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testpoints',
+  '{"numer_ids":["us.census.acs.B19013001"], "denom_ids":[], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
+
+-- Buffer table augmentation with one measure, predenominated
+-- (median_income)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testbuffers',
+  '{"numer_ids":["us.census.acs.B19013001"], "denom_ids":[], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
+
+-- Rich geometry table augmentation with one measure, predenominated
+-- (median_income)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testgeoms',
+  '{"numer_ids":["us.census.acs.B19013001"], "denom_ids":[], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
+
+-- Point table augmentation with one measure, denominated (hispanic_pop)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testpoints',
+  '{"numer_ids":["us.census.acs.B03002012"], "denom_ids":["us.census.acs.B01003001"], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
+
+-- Buffer table augmentation with one measure, denominated (hispanic_pop)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testbuffers',
+  '{"numer_ids":["us.census.acs.B03002012"], "denom_ids":["us.census.acs.B01003001"], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
+
+-- Rich geometry table augmentation with one measure, denominated (hispanic_pop)
+SELECT cdb_observatory._OBS_GetMeasureQuery(
+  'public', 'testgeoms',
+  '{"numer_ids":["us.census.acs.B03002012"], "denom_ids":["us.census.acs.B01003001"], "geom_ids": ["us.census.tiger.census_tract"], "timespans": ["2010 - 2014"]}'::json
+);
 
 -- Point table augmentation with three measures from one source
 

@@ -103,8 +103,8 @@ BEGIN
           table_schema, table_name;
 
     data_query := format($query$
-      SELECT %s.%s.cartodb_id, %s FROM %s, %s.%s WHERE %s AND %s
-    $query$, table_schema, table_name, colspecs, tables, table_schema, table_name, obs_wheres, user_wheres);
+      SELECT %s, %s.%s.cartodb_id::int FROM %s, %s.%s WHERE %s AND %s
+    $query$, colspecs, table_schema, table_name, tables, table_schema, table_name, obs_wheres, user_wheres);
     RETURN data_query;
 
     --FOREACH measure_id IN ARRAY measure_ids_arr

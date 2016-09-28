@@ -206,15 +206,15 @@ $$ LANGUAGE plpgsql;
 
 -- Functions that return the first row in an aggregate.
 
-CREATE OR REPLACE FUNCTION public.first_agg ( anyelement, anyelement )
+CREATE OR REPLACE FUNCTION cdb_observatory.first_agg ( anyelement, anyelement )
 RETURNS anyelement LANGUAGE SQL IMMUTABLE STRICT AS $$
         SELECT $1;
 $$;
 
 -- And then wrap an aggregate around it
-DROP AGGREGATE IF EXISTS public.FIRST (anyelement);
-CREATE AGGREGATE public.FIRST (
-        sfunc    = public.first_agg,
+DROP AGGREGATE IF EXISTS cdb_observatory.FIRST (anyelement);
+CREATE AGGREGATE cdb_observatory.FIRST (
+        sfunc    = cdb_observatory.first_agg,
         basetype = anyelement,
         stype    = anyelement
 );

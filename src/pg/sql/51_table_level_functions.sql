@@ -70,9 +70,9 @@ BEGIN
           -- denominated
           WHEN denom_id IS NOT NULL THEN ' CASE ' ||
             -- denominated point-in-poly or user polygon is same as OBS polygon
-            ' WHEN ST_GeometryType(FIRST(_user_table.the_geom)) = ''ST_Point'' ' ||
-            '      OR FIRST(_user_table.the_geom = ' || geom_tablename || '.' || geom_colname || ')' ||
-            ' THEN FIRST(' || numer_tablename || '.' || numer_colname ||
+            ' WHEN ST_GeometryType(cdb_observatory.FIRST(_user_table.the_geom)) = ''ST_Point'' ' ||
+            '      OR cdb_observatory.FIRST(_user_table.the_geom = ' || geom_tablename || '.' || geom_colname || ')' ||
+            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
             '      / NullIf(' || denom_tablename || '.' || denom_colname || ', 0))' ||
             -- denominated polygon interpolation
             -- SUM ((numer / denom) * (% user geom in OBS geom))
@@ -89,9 +89,9 @@ BEGIN
           -- areaNormalized
           WHEN numer_aggregate ILIKE 'sum' THEN ' CASE ' ||
             -- areaNormalized point-in-poly or user polygon is the same as OBS polygon
-            ' WHEN ST_GeometryType(FIRST(_user_table.the_geom)) = ''ST_Point'' ' ||
-            '      OR FIRST(_user_table.the_geom = ' || geom_tablename || '.' || geom_colname || ')' ||
-            ' THEN FIRST(' || numer_tablename || '.' || numer_colname ||
+            ' WHEN ST_GeometryType(cdb_observatory.FIRST(_user_table.the_geom)) = ''ST_Point'' ' ||
+            '      OR cdb_observatory.FIRST(_user_table.the_geom = ' || geom_tablename || '.' || geom_colname || ')' ||
+            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
             '      / (ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography)/1000000)) ' ||
             -- areaNormalized polygon interpolation
             -- SUM (numer * (% OBS geom in user geom)) / area of big geom
@@ -108,9 +108,9 @@ BEGIN
           -- prenormalized
           ELSE ' CASE ' ||
             -- predenominated point-in-poly or user polygon is the same as OBS- polygon
-            ' WHEN ST_GeometryType(FIRST(_user_table.the_geom)) = ''ST_Point'' ' ||
-            '      OR FIRST(_user_table.the_geom = ' || geom_tablename || '.' || geom_colname || ')' ||
-            ' THEN FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
+            ' WHEN ST_GeometryType(cdb_observatory.FIRST(_user_table.the_geom)) = ''ST_Point'' ' ||
+            '      OR cdb_observatory.FIRST(_user_table.the_geom = ' || geom_tablename || '.' || geom_colname || ')' ||
+            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
             ' ELSE ' ||
             -- predenominated polygon interpolation
             -- TODO should weight by universe instead of area

@@ -33,3 +33,52 @@ SELECT COUNT(*) > 0 AS _OBS_GetAvailableBoundariesExist
 FROM cdb_observatory.OBS_GetAvailableBoundaries(
   cdb_observatory._TestPoint()
 ) AS t(boundary_id, description, time_span, tablename);
+
+--
+-- OBS_GetAvailableNumerators tests
+--
+
+/*
+SELECT * FROM  cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, 'us.census.acs.B01003001', 'us.census.tiger.census_tract', ''
+) where valid_denom IS true and valid_geom IS true;
+
+SELECT * FROM  cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  ARRAY['unit/tags.money'], '', '', ''
+);
+*/
+
+--
+-- OBS_GetAvailableDenominators tests
+--
+
+/*
+SELECT * FROM cdb_observatory.OBS_GetAvailableDenominators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, 'us.census.acs.B03002006', 'us.census.tiger.census_tract', ''
+) where valid_numer IS true and valid_geom IS true;
+*/
+
+--
+-- OBS_GetAvailableGeometries tests
+--
+
+/*
+SELECT * FROM cdb_observatory.OBS_GetAvailableGeometries(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, 'us.census.acs.B03002006', 'us.census.acs.B01003001', ''
+) where valid_numer IS true and valid_denom IS true;
+*/
+
+--
+-- OBS_GetAvailableTimespans tests
+--
+
+/*
+SELECT * FROM cdb_observatory.OBS_GetAvailableTimespans(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, 'us.census.acs.B03002006', 'us.census.acs.B01003001', 'us.census.tiger.census_tract'
+) where valid_numer IS true and valid_denom IS true AND valid_geom IS true;
+*/

@@ -18,7 +18,7 @@ test:   ## Run the tests for the development version of the extension
 	$(MAKE) -C $(EXT_DIR) test
 
 # Generate a new release into release
-release: ## Generate a new release of the extension. Only for telease manager
+release: ## Generate a new release of the extension. Only for release manager
 	$(MAKE) -C $(EXT_DIR) release
 
 # Install the current release.

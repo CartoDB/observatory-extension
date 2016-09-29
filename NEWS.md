@@ -1,3 +1,21 @@
+1.0.7 (2016-09-20)
+
+__Bugfixes__
+
+* `NULL` geometries or geometry IDs no longer result in an exception from any
+  augmentation functions ([#178](https://github.com/CartoDB/observatory-extension/issues/178))
+
+__Improvements__
+
+* Automatic tests work for Canada and Thailand
+
+1.0.6 (2016-09-08)
+
+__Improvements__
+
+* New function structure for Table-level functions which allows to separate the
+  framework logic from the observatory measure functions.
+
 1.0.5 (2016-08-12)
 
 __Improvements__

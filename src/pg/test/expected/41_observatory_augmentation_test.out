@@ -66,10 +66,16 @@ t
 obs_getmeasure_bad_geometry
 t
 (1 row)
+obs_getmeasure_null
+t
+(1 row)
 obs_getcategory_point
 t
 (1 row)
 obs_getcategory_polygon
+t
+(1 row)
+obs_getcategory_null
 t
 (1 row)
 obs_getpopulation
@@ -81,6 +87,9 @@ t
 obs_getpopulation_polygon_null_test
 t
 (1 row)
+obs_getpopulation_polygon_null_geom_test
+t
+(1 row)
 obs_getuscensusmeasure_point_male_pop
 t
 (1 row)
@@ -90,10 +99,16 @@ t
 obs_getuscensusmeasure_null
 t
 (1 row)
+obs_getuscensusmeasure_null_geom
+t
+(1 row)
 obs_getuscensuscategory_point
 t
 (1 row)
 obs_getuscensuscategory_polygon
+t
+(1 row)
+obs_getuscensuscategory_null
 t
 (1 row)
 obs_getmeasurebyid_cartodb_census_tract
@@ -106,5 +121,8 @@ obs_getmeasurebyid_cartodb_block_group
 t
 (1 row)
 obs_getmeasurebyid_nulls
+t
+(1 row)
+obs_getmeasurebyid_null_id
 t
 (1 row)

@@ -48,6 +48,11 @@ SELECT * FROM  cdb_observatory.OBS_GetAvailableNumerators(
   ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
   ARRAY['unit/tags.money'], '', '', ''
 );
+
+SELECT * FROM  cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  ARRAY['unit/tags.money', 'subsection/tags.housing'], '', '', ''
+);
 */
 
 --

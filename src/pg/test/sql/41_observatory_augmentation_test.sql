@@ -67,7 +67,7 @@ FROM cte;
 SELECT
   (cdb_observatory._OBS_GetPoints(
     ST_SetSRID(ST_Point(0, 0), 4326),
-    'obs_1a098da56badf5f32e336002b0a81708c40d29cd'::text, -- see example in obs_geomtable
+    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
     (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
   ))[1]::text  is null
   as OBS_GetPoints_for_null_island;
@@ -89,7 +89,7 @@ SELECT
 SELECT
   ((cdb_observatory._OBS_GetPolygons(
     ST_Buffer(ST_SetSRID(ST_Point(0, 0), 4326)::geography, 500)::geometry,
-    'obs_1a098da56badf5f32e336002b0a81708c40d29cd'::text, -- see example in obs_geomtable
+    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
     Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
   )[1]->>'value') is null
   as OBS_GetPolygons_for_null_island;
@@ -129,15 +129,15 @@ WITH result as (
   from result;
 
 -- Point-based OBS_GetMeasure with zillow
-SELECT abs(OBS_GetMeasure_zhvi_point - 583600) / 583600 < 0.001 AS OBS_GetMeasure_zhvi_point_test FROM cdb_observatory.OBS_GetMeasure(
+SELECT abs(OBS_GetMeasure_zhvi_point - 597900) / 597900 < 5.0 AS OBS_GetMeasure_zhvi_point_test FROM cdb_observatory.OBS_GetMeasure(
   ST_SetSRID(ST_Point(-73.94602417945862, 40.6768220087458), 4326),
   'us.zillow.AllHomes_Zhvi', null, 'us.census.tiger.zcta5', '2014-01'
 ) As t(OBS_GetMeasure_zhvi_point);
 
--- Point-based OBS_GetMeasure with zillow default to latest
-SELECT abs(OBS_GetMeasure_zhvi_point_default_latest - 972900) / 972900 < 0.001 AS OBS_GetMeasure_zhvi_point_default_latest_test FROM cdb_observatory.OBS_GetMeasure(
+-- Point-based OBS_GetMeasure with later measure
+SELECT abs(OBS_GetMeasure_zhvi_point_default_latest - 995400) / 995400 < 5.0 AS OBS_GetMeasure_zhvi_point_default_latest_test FROM cdb_observatory.OBS_GetMeasure(
   ST_SetSRID(ST_Point(-73.94602417945862, 40.6768220087458), 4326),
-  'us.zillow.AllHomes_Zhvi'
+  'us.zillow.AllHomes_Zhvi', null, 'us.census.tiger.zcta5', '2016-06'
 ) As t(OBS_GetMeasure_zhvi_point_default_latest);
 
 -- Point-based OBS_GetMeasure, default normalization (area)

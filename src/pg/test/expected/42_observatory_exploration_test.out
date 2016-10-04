@@ -12,3 +12,147 @@ t
 _obs_getavailableboundariesexist
 t
 (1 row)
+_obs_getavailablenumerators_usa_pop_in_all
+t
+(1 row)
+_obs_getavailablenumerators_usa_pop_in_nyc_point
+t
+(1 row)
+_obs_getavailablenumerators_usa_pop_in_usa_extents
+t
+(1 row)
+_obs_getavailablenumerators_no_usa_pop_not_in_zero_point
+t
+(1 row)
+_obs_getavailablenumerators_usa_pop_in_age_gender_subsection
+t
+(1 row)
+_obs_getavailablenumerators_no_pop_in_income_subsection
+t
+(1 row)
+_obs_getavailablenumerators_male_pop_denom_by_total_pop
+t
+(1 row)
+_obs_getavailablenumerators_no_income_denom_by_total_pop
+t
+(1 row)
+_obs_getavailablenumerators_zillow_at_zcta5
+t
+(1 row)
+_obs_getavailablenumerators_no_zillow_at_block_group
+t
+(1 row)
+_obs_getavailablenumerators_total_pop_2010_2014
+t
+(1 row)
+_obs_getavailablenumerators_no_total_pop_1996
+t
+(1 row)
+_obs_getavailabledenominators_usa_pop_in_all
+t
+(1 row)
+_obs_getavailabledenominators_usa_pop_in_nyc_point
+t
+(1 row)
+_obs_getavailabledenominators_usa_pop_in_usa_extents
+t
+(1 row)
+_obs_getavailabledenominators_no_usa_pop_not_in_zero_point
+t
+(1 row)
+_obs_getavailabledenominators_usa_pop_in_age_gender_subsection
+t
+(1 row)
+_obs_getavailabledenominators_no_pop_in_income_subsection
+t
+(1 row)
+_obs_getavailabledenominators_male_pop_denom_by_total_pop
+t
+(1 row)
+_obs_getavailabledenominators_no_income_denom_by_total_pop
+t
+(1 row)
+_obs_getavailabledenominators_at_zcta5
+t
+(1 row)
+_obs_getavailabledenominators_none_spanish_geom
+t
+(1 row)
+_obs_getavailabledenominators_total_pop_2010_2014
+t
+(1 row)
+_obs_getavailabledenominators_no_total_pop_1996
+t
+(1 row)
+_obs_getavailablegeometries_usa_bg_in_all
+t
+(1 row)
+_obs_getavailablegeometries_usa_bg_in_nyc_point
+t
+(1 row)
+_obs_getavailablegeometries_usa_bg_in_usa_extents
+t
+(1 row)
+_obs_getavailablegeometries_no_usa_bg_not_in_zero_point
+t
+(1 row)
+_obs_getavailablegeometries_usa_bg_in_boundary_subsection
+t
+(1 row)
+_obs_getavailablegeometries_no_bg_in_uk_section
+t
+(1 row)
+_obs_getavailablegeometries_total_pop_in_usa_bg
+t
+(1 row)
+_obs_getavailablegeometries_foobarbaz_not_in_usa_bg
+t
+(1 row)
+_obs_getavailablegeometries_total_pop_denom_in_usa_bg
+t
+(1 row)
+_obs_getavailablegeometries_foobarbaz_denom_not_in_usa_bg
+t
+(1 row)
+_obs_getavailablegeometries_bg_2014
+t
+(1 row)
+_obs_getavailablegeometries_bg_not_1996
+t
+(1 row)
+_obs_getavailabletimespans_2010_2014_in_all
+t
+(1 row)
+_obs_getavailabletimespans_2010_2014_in_nyc_point
+t
+(1 row)
+_obs_getavailabletimespans_2010_2014_in_usa_extents
+t
+(1 row)
+_obs_getavailabletimespans_no_usa_bg_not_in_zero_point
+t
+(1 row)
+_obs_getavailabletimespans_total_pop_in_2010_2014
+t
+(1 row)
+_obs_getavailabletimespans_foobarbaz_not_in_2010_2014
+t
+(1 row)
+_obs_getavailablegeometries_total_pop_denom_in_2010_2014
+t
+(1 row)
+_obs_getavailablegeometries_foobarbaz_denom_not_in_2010_2014
+t
+(1 row)
+_total_pop_in_legacy_builder_metadata
+t
+(1 row)
+_median_income_in_legacy_builder_metadata
+t
+(1 row)
+_total_pop_in_legacy_builder_metadata_sums
+t
+(1 row)
+_median_income_not_in_legacy_builder_metadata_sums
+t
+(1 row)

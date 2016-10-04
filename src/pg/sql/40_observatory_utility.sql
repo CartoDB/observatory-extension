@@ -203,3 +203,20 @@ BEGIN
   RETURN result;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Create a function that always returns the first non-NULL item
+CREATE OR REPLACE FUNCTION cdb_observatory.first_agg ( anyelement, anyelement )
+RETURNS anyelement LANGUAGE SQL IMMUTABLE STRICT AS $$
+        SELECT $1;
+$$;
+
+DROP AGGREGATE IF EXISTS cdb_observatory.FIRST (anyelement);
+
+-- And then wrap an aggregate around it
+CREATE AGGREGATE cdb_observatory.FIRST (
+        sfunc    = cdb_observatory.first_agg,
+        basetype = anyelement,
+        stype    = anyelement
+);
+

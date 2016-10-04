@@ -125,7 +125,7 @@ $$ LANGUAGE plpgsql;
 -- denominators, geometries, and timespans
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableNumerators(
-  bounds GEOMETRY,
+  bounds GEOMETRY DEFAULT NULL,
   filter_tags TEXT[] DEFAULT NULL,
   denom_id TEXT DEFAULT NULL,
   geom_id TEXT DEFAULT NULL,
@@ -138,20 +138,28 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableNumerators(
   numer_license TEXT,
   numer_source TEXT,
   numer_type TEXT,
+  numer_aggregate TEXT,
   numer_extra JSONB,
   numer_tags JSONB,
   valid_denom BOOLEAN,
   valid_geom BOOLEAN,
   valid_timespan BOOLEAN
 ) AS $$
+DECLARE
+  geom_clause TEXT;
 BEGIN
   filter_tags := COALESCE(filter_tags, (ARRAY[])::TEXT[]);
   denom_id := COALESCE(denom_id, '');
   geom_id := COALESCE(geom_id, '');
   timespan := COALESCE(timespan, '');
+  IF bounds IS NULL THEN
+    geom_clause := '';
+  ELSE
+    geom_clause := 'ST_Intersects(the_geom, $5) AND';
+  END IF;
   RETURN QUERY
   EXECUTE
-  $string$
+  format($string$
     SELECT numer_id::TEXT,
            numer_name::TEXT,
            numer_description::TEXT,
@@ -159,22 +167,22 @@ BEGIN
            NULL::TEXT license,
            NULL::TEXT source,
            numer_type numer_type,
+           numer_aggregate numer_aggregate,
            numer_extra::JSONB numer_extra,
            numer_tags numer_tags,
     $1 = ANY(denoms) valid_denom,
     $2 = ANY(geoms) valid_geom,
     $3 = ANY(timespans) valid_timespan
     FROM observatory.obs_meta_numer
-    WHERE st_intersects(the_geom, $5)
-      AND (numer_tags ?& $4 OR CARDINALITY($4) = 0)
-  $string$
+    WHERE %s (numer_tags ?& $4 OR CARDINALITY($4) = 0)
+  $string$, geom_clause)
   USING denom_id, geom_id, timespan, filter_tags, bounds;
   RETURN;
 END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableDenominators(
-  bounds GEOMETRY,
+  bounds GEOMETRY DEFAULT NULL,
   filter_tags TEXT[] DEFAULT NULL,
   numer_id TEXT DEFAULT NULL,
   geom_id TEXT DEFAULT NULL,
@@ -187,20 +195,28 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableDenominators(
   denom_license TEXT,
   denom_source TEXT,
   denom_type TEXT,
+  denom_aggregate TEXT,
   denom_extra JSONB,
   denom_tags JSONB,
   valid_numer BOOLEAN,
   valid_geom BOOLEAN,
   valid_timespan BOOLEAN
 ) AS $$
+DECLARE
+  geom_clause TEXT;
 BEGIN
   filter_tags := COALESCE(filter_tags, (ARRAY[])::TEXT[]);
   numer_id := COALESCE(numer_id, '');
   geom_id := COALESCE(geom_id, '');
   timespan := COALESCE(timespan, '');
+  IF bounds IS NULL THEN
+    geom_clause := '';
+  ELSE
+    geom_clause := 'ST_Intersects(the_geom, $5) AND';
+  END IF;
   RETURN QUERY
   EXECUTE
-  $string$
+  format($string$
     SELECT denom_id::TEXT,
            denom_name::TEXT,
            denom_description::TEXT,
@@ -208,15 +224,15 @@ BEGIN
            NULL::TEXT license,
            NULL::TEXT source,
            denom_type::TEXT,
+           denom_aggregate::TEXT,
            denom_extra::JSONB,
            denom_tags::JSONB,
     $1 = ANY(numers) valid_numer,
     $2 = ANY(geoms) valid_geom,
     $3 = ANY(timespans) valid_timespan
     FROM observatory.obs_meta_denom
-    WHERE st_intersects(the_geom, $5)
-      AND (denom_tags ?& $4 OR CARDINALITY($4) = 0)
-  $string$
+    WHERE %s (denom_tags ?& $4 OR CARDINALITY($4) = 0)
+  $string$, geom_clause)
   USING numer_id, geom_id, timespan, filter_tags, bounds;
   RETURN;
 END
@@ -233,33 +249,41 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableGeometries(
   geom_name TEXT,
   geom_description TEXT,
   geom_weight NUMERIC,
+  geom_aggregate TEXT,
   geom_license TEXT,
   geom_source TEXT,
   valid_numer BOOLEAN,
   valid_denom BOOLEAN,
   valid_timespan BOOLEAN
 ) AS $$
+DECLARE
+  geom_clause TEXT;
 BEGIN
   filter_tags := COALESCE(filter_tags, (ARRAY[])::TEXT[]);
   numer_id := COALESCE(numer_id, '');
   denom_id := COALESCE(denom_id, '');
   timespan := COALESCE(timespan, '');
+  IF bounds IS NULL THEN
+    geom_clause := '';
+  ELSE
+    geom_clause := 'ST_Intersects(the_geom, $5) AND';
+  END IF;
   RETURN QUERY
   EXECUTE
-  $string$
+  format($string$
     SELECT geom_id::TEXT,
            geom_name::TEXT,
            geom_description::TEXT,
            geom_weight::NUMERIC,
+           NULL::TEXT geom_aggregate,
            NULL::TEXT license,
            NULL::TEXT source,
     $1 = ANY(numers) valid_numer,
     $2 = ANY(denoms) valid_denom,
     $3 = ANY(timespans) valid_timespan
     FROM observatory.obs_meta_geom
-    WHERE st_intersects(the_geom, $5)
-      AND (geom_tags ?& $4 OR CARDINALITY($4) = 0)
-  $string$
+    WHERE %s (geom_tags ?& $4 OR CARDINALITY($4) = 0)
+  $string$, geom_clause)
   USING numer_id, denom_id, timespan, filter_tags, bounds;
   RETURN;
 END
@@ -283,18 +307,26 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableTimespans(
   valid_geom BOOLEAN,
   stats JSONB -- information about # of geoms, avg geom size, etc.
 ) AS $$
+DECLARE
+  geom_clause TEXT;
 BEGIN
   filter_tags := COALESCE(filter_tags, (ARRAY[])::TEXT[]);
   numer_id := COALESCE(numer_id, '');
   denom_id := COALESCE(denom_id, '');
   geom_id := COALESCE(geom_id, '');
+  IF bounds IS NULL THEN
+    geom_clause := '';
+  ELSE
+    geom_clause := 'ST_Intersects(the_geom, $5) AND';
+  END IF;
   RETURN QUERY
   EXECUTE
-  $string$
+  format($string$
     SELECT timespan_id::TEXT,
            timespan_name::TEXT,
            timespan_description::TEXT,
            timespan_weight::NUMERIC,
+           NULL::TEXT timespan_aggregate,
            NULL::TEXT license,
            NULL::TEXT source,
     $1 = ANY(numers) valid_numer,
@@ -302,10 +334,67 @@ BEGIN
     $3 = ANY(geoms) valid_geom_id,
     NULL::JSONB stats
     FROM observatory.obs_meta_timespan
-    WHERE st_intersects(the_geom, $5)
-      AND (timespan_tags ?& $4 OR CARDINALITY($4) = 0)
-  $string$
+    WHERE %s (timespan_tags ?& $4 OR CARDINALITY($4) = 0)
+  $string$, geom_clause)
   USING numer_id, denom_id, geom_id, filter_tags, bounds;
+  RETURN;
+END
+$$ LANGUAGE plpgsql;
+
+
+-- Function below should replace SQL in
+-- https://github.com/CartoDB/cartodb/blob/ab465cb2918c917940e955963b0cd8a050c06600/lib/assets/javascripts/cartodb3/editor/layers/layer-content-views/analyses/data-observatory-metadata.js
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_LegacyBuilderMetadata(
+  aggregate_type TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+  name TEXT,
+  subsection JSONB
+) AS $$
+DECLARE
+  aggregate_condition TEXT DEFAULT '';
+BEGIN
+  IF aggregate_type IS NOT NULL THEN
+    aggregate_condition := format(' AND numer_aggregate = %L ', aggregate_type);
+  END IF;
+  RETURN QUERY
+  EXECUTE format($string$
+  WITH expanded_subsections AS (
+    SELECT numer_id,
+           numer_name,
+           numer_tags,
+           jsonb_each_text(numer_tags) as subsection_tag_id_name
+      FROM cdb_observatory.OBS_GetAvailableNumerators()
+      WHERE numer_weight > 0 %s
+  ), expanded_sections AS (
+    SELECT JSONB_Agg(JSONB_Build_Object(
+           'f1', JSONB_Build_Object('id', numer_id, 'name', numer_name))) columns,
+         SUBSTR((subsection_tag_id_name).key, 12) subsection_id,
+         (subsection_tag_id_name).value subsection_name,
+         jsonb_each_text(numer_tags) as section_tag_id_name
+    FROM expanded_subsections
+    WHERE (subsection_tag_id_name).key LIKE 'subsection/%%'
+    GROUP BY (subsection_tag_id_name).key, (subsection_tag_id_name).value,
+             numer_tags
+  ), full_expansion AS (
+    SELECT columns, subsection_id, subsection_name,
+           SUBSTR((section_tag_id_name).key, 9) section_id,
+           (section_tag_id_name).value section_name
+    FROM expanded_sections
+    WHERE (section_tag_id_name).key LIKE 'section/%%'
+  )
+  SELECT section_name AS name, JSONB_Agg(
+    JSONB_Build_Object(
+      'f1', JSONB_Build_Object(
+        'name', subsection_name,
+        'id', subsection_id,
+        'columns', columns
+      )
+    )
+  ) as subsection
+  FROM full_expansion
+  GROUP BY section_name
+  $string$, aggregate_condition);
   RETURN;
 END
 $$ LANGUAGE plpgsql;

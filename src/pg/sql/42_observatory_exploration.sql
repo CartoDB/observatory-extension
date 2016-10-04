@@ -239,7 +239,7 @@ END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableGeometries(
-  bounds GEOMETRY,
+  bounds GEOMETRY DEFAULT NULL,
   filter_tags TEXT[] DEFAULT NULL,
   numer_id TEXT DEFAULT NULL,
   denom_id TEXT DEFAULT NULL,
@@ -290,7 +290,7 @@ END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableTimespans(
-  bounds GEOMETRY,
+  bounds GEOMETRY DEFAULT NULL,
   filter_tags TEXT[] DEFAULT NULL,
   numer_id TEXT DEFAULT NULL,
   denom_id TEXT DEFAULT NULL,
@@ -300,12 +300,12 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableTimespans(
   timespan_name TEXT,
   timespan_description TEXT,
   timespan_weight NUMERIC,
+  timespan_aggregate TEXT,
   timespan_license TEXT,
   timespan_source TEXT,
   valid_numer BOOLEAN,
   valid_denom BOOLEAN,
-  valid_geom BOOLEAN,
-  stats JSONB -- information about # of geoms, avg geom size, etc.
+  valid_geom BOOLEAN
 ) AS $$
 DECLARE
   geom_clause TEXT;
@@ -331,8 +331,7 @@ BEGIN
            NULL::TEXT source,
     $1 = ANY(numers) valid_numer,
     $2 = ANY(denoms) valid_denom,
-    $3 = ANY(geoms) valid_geom_id,
-    NULL::JSONB stats
+    $3 = ANY(geoms) valid_geom_id
     FROM observatory.obs_meta_timespan
     WHERE %s (timespan_tags ?& $4 OR CARDINALITY($4) = 0)
   $string$, geom_clause)

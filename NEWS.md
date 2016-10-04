@@ -1,3 +1,25 @@
+1.1.0 (2016-10-04)
+
+__Bugfixes__
+
+* Fixed some minor errors in test suite
+
+__Improvements__
+
+* We now generate test fixtures from local data instead of remote server
+  ([#120](https://github.com/CartoDB/observatory-extension/issues/120))
+
+__API Changes__
+
+* New function, `OBS_LegacyBuilderMetadata`, which resolves
+  ([#133]( https://github.com/CartoDB/observatory-extension/issues/133))
+* Creates "dimensional" metadata grabbing functions
+  (`OBS_GetAvailableNumerators`, `OBS_GetAvailableDenominators`,
+  `OBS_GetAvailableGeometries`, `OBS_GetAvailableTimespans`) which will be
+  used for obtaining metadata in the replacement for the Data Library
+  ([CartoDB/design#104](https://github.com/CartoDB/design/issues/104)). This
+  is also referred to here ([CartoDB/design#68](https://github.com/CartoDB/design/issues/68)).
+
 1.0.7 (2016-09-20)
 
 __Bugfixes__

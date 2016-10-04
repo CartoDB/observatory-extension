@@ -38,29 +38,86 @@ FROM cdb_observatory.OBS_GetAvailableBoundaries(
 -- OBS_GetAvailableNumerators tests
 --
 
---SELECT *
---FROM cdb_observatory.OBS_GetAvailableNumerators(
---  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
---  NULL, NULL, NULL, NULL
---)
---AS t(numer_id, numer_name, numer_description, numer_weight, numer_license,
---     numer_source, numer_type, numer_extra, numer_tags, valid_denom, valid_geom,
---     valid_timespan)
---where 
---  numer_id = 'us.census.acs.B01001002'
---;
---
---SELECT count(*) = 1 AS one_male_pop_numerator_for_pop_denom_census_tract_2010_2014
---FROM cdb_observatory.OBS_GetAvailableNumerators(
---  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
---  NULL, 'us.census.acs.B01003001', 'us.census.tiger.census_tract', '2010 - 2014'
---)
---AS t(numer_id, numer_name, numer_description, numer_weight, numer_license,
---     numer_source, numer_type, numer_extra, numer_tags, valid_denom, valid_geom,
---     valid_timespan)
---where valid_denom IS true and valid_geom IS true AND valid_timespan IS true
---  AND numer_id = 'us.census.acs.B01001002'
---;
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators())
+AS _obs_getavilablenumerators_usa_pop_in_all;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, NULL, NULL, NULL
+)) AS _obs_getavilablenumerators_usa_pop_in_nyc_point;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakeEnvelope(
+      -169.8046875, 21.289374355860424,
+      -47.4609375, 72.0739114882038
+  ), 4326),
+  NULL, NULL, NULL, NULL
+)) AS _obs_getavilablenumerators_usa_pop_in_usa_extents;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(0, 0), 4326),
+  NULL, NULL, NULL, NULL
+)) AS _obs_getavilablenumerators_no_usa_pop_not_in_zero_point;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  ARRAY['subsection/tags.age_gender']
+))
+AS _obs_getavilablenumerators_usa_pop_in_age_gender_subsection;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  ARRAY['subsection/tags.income']
+))
+AS _obs_getavilablenumerators_no_pop_in_income_subsection;
+
+SELECT 'us.census.acs.B01001002' IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, 'us.census.acs.B01003001'
+) WHERE valid_denom = True)
+AS _obs_getavilablenumerators_male_pop_denominated_by_total_pop;
+
+SELECT 'us.census.acs.B19013001' NOT IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, 'us.census.acs.B01003001'
+) WHERE valid_denom = True)
+AS _obs_getavilablenumerators_no_income_denominated_by_total_pop;
+
+SELECT 'us.zillow.AllHomes_Zhvi' IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, NULL, 'us.census.tiger.zcta5'
+) WHERE valid_geom = True)
+AS _obs_getavilablenumerators_zillow_at_zcta5;
+
+SELECT 'us.zillow.AllHomes_Zhvi' NOT IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, NULL, 'us.census.tiger.block_group'
+) WHERE valid_geom = True)
+AS _obs_getavilablenumerators_no_zillow_at_block_group;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, NULL, NULL, '2010 - 2014'
+) WHERE valid_timespan = True)
+AS _obs_getavilablenumerators_total_pop_2010_2014;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory.OBS_GetAvailableNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, NULL, NULL, '1996'
+) WHERE valid_timespan = True)
+AS _obs_getavilablenumerators_no_total_pop_1996;
 
 /*
 SELECT * FROM  cdb_observatory.OBS_GetAvailableNumerators(

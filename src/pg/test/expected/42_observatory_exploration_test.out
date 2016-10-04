@@ -12,3 +12,15 @@ t
 _obs_getavailableboundariesexist
 t
 (1 row)
+_total_pop_in_legacy_builder_metadata
+t
+(1 row)
+_median_income_in_legacy_builder_metadata
+t
+(1 row)
+_total_pop_in_legacy_builder_metadata_sums
+t
+(1 row)
+_median_income_not_in_legacy_builder_metadata_sums
+t
+(1 row)

@@ -38,12 +38,31 @@ FROM cdb_observatory.OBS_GetAvailableBoundaries(
 -- OBS_GetAvailableNumerators tests
 --
 
-/*
-SELECT * FROM  cdb_observatory.OBS_GetAvailableNumerators(
-  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
-  NULL, 'us.census.acs.B01003001', 'us.census.tiger.census_tract', ''
-) where valid_denom IS true and valid_geom IS true;
+--SELECT *
+--FROM cdb_observatory.OBS_GetAvailableNumerators(
+--  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+--  NULL, NULL, NULL, NULL
+--)
+--AS t(numer_id, numer_name, numer_description, numer_weight, numer_license,
+--     numer_source, numer_type, numer_extra, numer_tags, valid_denom, valid_geom,
+--     valid_timespan)
+--where 
+--  numer_id = 'us.census.acs.B01001002'
+--;
+--
+--SELECT count(*) = 1 AS one_male_pop_numerator_for_pop_denom_census_tract_2010_2014
+--FROM cdb_observatory.OBS_GetAvailableNumerators(
+--  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+--  NULL, 'us.census.acs.B01003001', 'us.census.tiger.census_tract', '2010 - 2014'
+--)
+--AS t(numer_id, numer_name, numer_description, numer_weight, numer_license,
+--     numer_source, numer_type, numer_extra, numer_tags, valid_denom, valid_geom,
+--     valid_timespan)
+--where valid_denom IS true and valid_geom IS true AND valid_timespan IS true
+--  AND numer_id = 'us.census.acs.B01001002'
+--;
 
+/*
 SELECT * FROM  cdb_observatory.OBS_GetAvailableNumerators(
   ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
   ARRAY['unit/tags.money'], '', '', ''
@@ -87,3 +106,26 @@ SELECT * FROM cdb_observatory.OBS_GetAvailableTimespans(
   NULL, 'us.census.acs.B03002006', 'us.census.acs.B01003001', 'us.census.tiger.census_tract'
 ) where valid_numer IS true and valid_denom IS true AND valid_geom IS true;
 */
+
+-- OBS_LegacyBuilderMetadata tests
+
+SELECT 'us.census.acs.B01003001' IN (SELECT
+  (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
+  FROM cdb_observatory.OBS_LegacyBuilderMetadata()
+) AS _total_pop_in_legacy_builder_metadata;
+
+SELECT 'us.census.acs.B19013001' IN (SELECT
+  (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
+  FROM cdb_observatory.OBS_LegacyBuilderMetadata()
+) AS _median_income_in_legacy_builder_metadata;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT
+  (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
+  FROM cdb_observatory.OBS_LegacyBuilderMetadata('sum')
+) AS _total_pop_in_legacy_builder_metadata_sums;
+
+SELECT 'us.census.acs.B19013001' NOT IN (SELECT
+  (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
+  FROM cdb_observatory.OBS_LegacyBuilderMetadata('sum')
+) AS _median_income_not_in_legacy_builder_metadata_sums;
+

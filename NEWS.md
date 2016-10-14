@@ -1,3 +1,9 @@
+1.1.1 (2016-10-14)
+
+__Improvements__
+
+* Test points for Canada and France ([#204](https://github.com/CartoDB/observatory-extension/issues/120))
+
 1.1.0 (2016-10-04)
 
 __Bugfixes__

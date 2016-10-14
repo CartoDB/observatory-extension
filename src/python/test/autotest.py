@@ -111,7 +111,6 @@ def default_point(column_id):
     elif column_id.startswith('mx.'):
         return 'ST_SetSRID(ST_MakePoint(-99.17019367218018, 19.41347699386547), 4326)'
     elif column_id.startswith('ca.'):
-        raise SkipTest('Skipping Canada until validation of data complete')
         return 'ST_SetSRID(ST_MakePoint(-79.39716339111328, 43.65694347778308), 4326)'
     elif column_id.startswith('th.'):
         return 'ST_SetSRID(ST_MakePoint(100.49263000488281, 13.725377712079784), 4326)'

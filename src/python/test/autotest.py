@@ -111,10 +111,27 @@ def default_point(column_id):
     elif column_id.startswith('mx.'):
         return 'ST_SetSRID(ST_MakePoint(-99.17019367218018, 19.41347699386547), 4326)'
     elif column_id.startswith('ca.'):
-        raise SkipTest('Skipping Canada until validation of data complete')
         return 'ST_SetSRID(ST_MakePoint(-79.39716339111328, 43.65694347778308), 4326)'
     elif column_id.startswith('th.'):
         return 'ST_SetSRID(ST_MakePoint(100.49263000488281, 13.725377712079784), 4326)'
+    # cols for French Guyana only
+    elif column_id in ('fr.insee.P12_RP_CHOS', 'fr.insee.P12_RP_HABFOR'
+                       , 'fr.insee.P12_RP_EAUCH', 'fr.insee.P12_RP_BDWC'
+                       , 'fr.insee.P12_RP_MIDUR', 'fr.insee.P12_RP_CLIM'
+                       , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
+                       , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
+                       , 'fr.insee.P12_ACTOCC15P_ILT45D'
+                       , 'fr.insee.P12_RP_CHOS', 'fr.insee.P12_RP_HABFOR'
+                       , 'fr.insee.P12_RP_EAUCH', 'fr.insee.P12_RP_BDWC'
+                       , 'fr.insee.P12_RP_MIDUR', 'fr.insee.P12_RP_CLIM'
+                       , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
+                       , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
+                       , 'fr.insee.P12_ACTOCC15P_ILT45D'):
+        return 'ST_SetSRID(ST_MakePoint(-52.32908248901367, 4.938408371206558), 4326)'
+    elif column_id.startswith('fr'):
+        return 'ST_SetSRID(ST_MakePoint(2.3613739013671875, 48.860875144709475), 4326)'
+    elif column_id.startswith('ca'):
+        return 'ST_SetSRID(ST_MakePoint(-79.37965393066406, 43.65594991256823), 4326)'
     else:
         return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
 

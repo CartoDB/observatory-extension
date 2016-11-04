@@ -440,7 +440,7 @@ BEGIN
     FROM (
       WITH clipped_geom AS (
         SELECT column_id, table_id
-          , CASE WHEN $1 IS NOT NULL THEN st_clip(tile, $1, True)
+          , CASE WHEN $1 IS NOT NULL THEN ST_Clip(tile, $1, True)
                  ELSE tile END clipped_tile
           , tile
         FROM observatory.obs_column_table_tile

@@ -144,6 +144,36 @@ t
 _obs_getavailablegeometries_foobarbaz_denom_not_in_2010_2014
 t
 (1 row)
+_obs_geometryscores_500m_buffer
+t
+(1 row)
+_obs_geometryscores_5km_buffer
+t
+(1 row)
+_obs_geometryscores_50km_buffer
+t
+(1 row)
+_obs_geometryscores_500km_buffer
+t
+(1 row)
+_obs_geometryscores_2500km_buffer
+t
+(1 row)
+_obs_geometryscores_numgeoms_500m_buffer
+t
+(1 row)
+_obs_geometryscores_numgeoms_5km_buffer
+t
+(1 row)
+_obs_geometryscores_numgeoms_50km_buffer
+t
+(1 row)
+_obs_geometryscores_numgeoms_500km_buffer
+t
+(1 row)
+_obs_geometryscores_numgeoms_2500km_buffer
+t
+(1 row)
 _total_pop_in_legacy_builder_metadata
 t
 (1 row)

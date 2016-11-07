@@ -346,7 +346,98 @@ FROM cdb_observatory.OBS_GetAvailableTimespans(
 ) WHERE valid_denom = True)
 AS _obs_getavailablegeometries_foobarbaz_denom_not_in_2010_2014;
 
+--
+-- _OBS_GetGeometryScores tests
+--
+
+SELECT ARRAY_AGG(geom_id ORDER BY score DESC) =
+       ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+             'us.census.tiger.county', 'us.census.tiger.zcta5']
+       AS _obs_geometryscores_500m_buffer
+       FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT ARRAY_AGG(geom_id ORDER BY score DESC) =
+       ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+             'us.census.tiger.county', 'us.census.tiger.zcta5']
+       AS _obs_geometryscores_5km_buffer
+       FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 5000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT ARRAY_AGG(geom_id ORDER BY score DESC) =
+       ARRAY['us.census.tiger.census_tract', 'us.census.tiger.county',
+             'us.census.tiger.zcta5', 'us.census.tiger.block_group']
+       AS _obs_geometryscores_50km_buffer
+       FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT ARRAY_AGG(geom_id ORDER BY score DESC) =
+       ARRAY[ 'us.census.tiger.county', 'us.census.tiger.zcta5',
+             'us.census.tiger.census_tract', 'us.census.tiger.block_group']
+      AS _obs_geometryscores_500km_buffer
+      FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT ARRAY_AGG(geom_id ORDER BY score DESC) =
+       ARRAY['us.census.tiger.county', 'us.census.tiger.zcta5',
+             'us.census.tiger.census_tract', 'us.census.tiger.block_group']
+      AS _obs_geometryscores_2500km_buffer
+      FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 2500000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT JSON_Object_Agg(geom_id, numgeoms::int ORDER BY numgeoms DESC)::Text
+      = '{ "us.census.tiger.block_group" : 3960, "us.census.tiger.census_tract" : 1444, "us.census.tiger.zcta5" : 178, "us.census.tiger.county" : 4 }'
+      AS _obs_geometryscores_numgeoms_500m_buffer
+      FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT JSON_Object_Agg(geom_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
+      '{ "us.census.tiger.block_group" : 3960, "us.census.tiger.census_tract" : 1444, "us.census.tiger.zcta5" : 178, "us.census.tiger.county" : 4 }'
+      AS _obs_geometryscores_numgeoms_5km_buffer
+      FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 5000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT JSON_Object_Agg(geom_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
+      '{ "us.census.tiger.block_group" : 12112, "us.census.tiger.census_tract" : 3792, "us.census.tiger.zcta5" : 550, "us.census.tiger.county" : 13 }'
+      AS _obs_geometryscores_numgeoms_50km_buffer
+      FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT JSON_Object_Agg(geom_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
+      '{ "us.census.tiger.block_group" : 48415, "us.census.tiger.census_tract" : 15776, "us.census.tiger.zcta5" : 6534, "us.census.tiger.county" : 295 }'
+      AS _obs_geometryscores_numgeoms_500km_buffer
+      FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+SELECT JSON_Object_Agg(geom_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
+      '{ "us.census.tiger.block_group" : 165489, "us.census.tiger.census_tract" : 55152, "us.census.tiger.zcta5" : 26500, "us.census.tiger.county" : 2551 }'
+      AS _obs_geometryscores_numgeoms_2500km_buffer
+      FROM cdb_observatory._OBS_GetGeometryScores(
+  ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 2500000)::Geometry(Geometry, 4326),
+  ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
+        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+
+--
 -- OBS_LegacyBuilderMetadata tests
+--
 
 SELECT 'us.census.acs.B01003001' IN (SELECT
   (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
@@ -367,4 +458,3 @@ SELECT 'us.census.acs.B19013001' NOT IN (SELECT
   (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
   FROM cdb_observatory.OBS_LegacyBuilderMetadata('sum')
 ) AS _median_income_not_in_legacy_builder_metadata_sums;
-

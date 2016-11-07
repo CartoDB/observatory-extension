@@ -454,26 +454,26 @@ BEGIN
         GROUP BY column_id, table_id
       ) SELECT
         count(*)::BIGINT, a.column_id
-        , (CASE WHEN FIRST(notnull_pixels) > 0
-                THEN FIRST(notnull_pixels) / FIRST(pixels)
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
+                THEN cdb_observatory.FIRST(notnull_pixels) / cdb_observatory.FIRST(pixels)
                 ELSE 1
           END)::Numeric AS notnull_percent
-        , (CASE WHEN FIRST(notnull_pixels) > 0
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
                 THEN (ST_SummaryStatsAgg(clipped_tile, 2, True)).sum
-                ELSE COALESCE(ST_Value(FIRST(tile), 2, ST_PointOnSurface($1)), 0)
+                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 2, ST_PointOnSurface($1)), 0)
           END)::Numeric AS numgeoms
-        , (CASE WHEN FIRST(notnull_pixels) > 0
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
                 THEN (ST_SummaryStatsAgg(clipped_tile, 3, True)).mean
-                ELSE COALESCE(ST_Value(FIRST(tile), 3, ST_PointOnSurface($1)), 0)
+                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 3, ST_PointOnSurface($1)), 0)
           END)::Numeric AS percentfill
         , ((ST_Area(ST_Transform($1, 3857)) / 1000000) / NullIf(
-            CASE WHEN FIRST(notnull_pixels) > 0
+            CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
                  THEN (ST_SummaryStatsAgg(clipped_tile, 1, True)).mean
-                 ELSE Coalesce(ST_Value(FIRST(tile), 1, ST_PointOnSurface($1)), 0)
+                 ELSE Coalesce(ST_Value(cdb_observatory.FIRST(tile), 1, ST_PointOnSurface($1)), 0)
             END, 0))::Numeric AS estnumgeoms
-        , (CASE WHEN FIRST(notnull_pixels) > 0
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
                 THEN (ST_SummaryStatsAgg(clipped_tile, 1, True)).mean
-                ELSE COALESCE(ST_Value(FIRST(tile), 1, ST_PointOnSurface($1)), 0)
+                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 1, ST_PointOnSurface($1)), 0)
           END)::Numeric AS meanmediansize
       FROM clipped_geom_countagg a, clipped_geom b
       WHERE a.table_id = b.table_id

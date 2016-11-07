@@ -416,7 +416,8 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   bounds Geometry(Geometry, 4326) DEFAULT NULL,
-  filter_geom_ids TEXT[] DEFAULT NULL
+  filter_geom_ids TEXT[] DEFAULT NULL,
+  desired_num_geoms INTEGER DEFAULT 3000
 ) RETURNS TABLE (
   score NUMERIC,
   numtiles BIGINT,
@@ -432,9 +433,9 @@ BEGIN
   RETURN QUERY
   EXECUTE format($string$
     SELECT
-      (1 / (abs(numgeoms - 3000)
-        * (1 / Coalesce(NullIf(notnull_percent, 0), 1))
-        * (1 / Coalesce(NullIf(percentfill, 0), 0.0001))
+      (1 / (abs(numgeoms - $3)
+        --* (1 / Coalesce(NullIf(notnull_percent, 0), 1))
+        --* (1 / Coalesce(NullIf(percentfill, 0), 0.0001))
       ))::Numeric
       AS score, *
     FROM (
@@ -460,7 +461,7 @@ BEGIN
           END)::Numeric AS notnull_percent
         , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
                 THEN (ST_SummaryStatsAgg(clipped_tile, 2, True)).sum
-                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 2, ST_PointOnSurface($1)), 0)
+                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 2, ST_PointOnSurface($1)), 0) * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(cdb_observatory.FIRST(tile), 0, 0)) * cdb_observatory.FIRST(pixels))
           END)::Numeric AS numgeoms
         , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
                 THEN (ST_SummaryStatsAgg(clipped_tile, 3, True)).mean
@@ -481,7 +482,7 @@ BEGIN
       GROUP BY a.column_id, a.table_id
       ORDER BY a.column_id, a.table_id
     ) foo
-  $string$) USING bounds, filter_geom_ids;
+  $string$) USING bounds, filter_geom_ids, desired_num_geoms;
   RETURN;
 END
 $$ LANGUAGE plpgsql;

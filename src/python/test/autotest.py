@@ -86,34 +86,32 @@ SKIP_COLUMNS = set([
 #        return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
 
 
-def default_point(column_id):
+def default_lonlat(column_id):
     '''
     Returns default test point for the column_id.
     '''
     if column_id == 'whosonfirst.wof_disputed_geom':
-        return 'ST_SetSRID(ST_MakePoint(76.57, 33.78), 4326)'
+        return (76.57, 33.78)
     elif column_id == 'whosonfirst.wof_marinearea_geom':
-        return 'ST_SetSRID(ST_MakePoint(-68.47, 43.33), 4326)'
+        return (-68.47, 43.33)
     elif column_id in ('us.census.tiger.school_district_elementary',
                        'us.census.tiger.school_district_secondary',
                        'us.census.tiger.school_district_elementary_clipped',
                        'us.census.tiger.school_district_secondary_clipped'):
-        return 'ST_SetSRID(ST_MakePoint(-73.7067, 40.7025), 4326)'
+        return (40.7025, -73.7067)
     elif column_id.startswith('uk'):
         if 'WA' in column_id:
-            return 'ST_SetSRID(ST_MakePoint(-3.184833526611328, 51.46844551219723), 4326)'
+            return (51.46844551219723, -3.184833526611328)
         else:
-            return 'ST_SetSRID(ST_MakePoint(-0.08883476257324219, 51.51461834694225), 4326)'
+            return (51.51461834694225, -0.08883476257324219)
     elif column_id.startswith('es'):
-        return 'ST_SetSRID(ST_MakePoint(-2.51141249535454, 42.8226119029222), 4326)'
+        return (42.8226119029222, -2.51141249535454)
     elif column_id.startswith('us.zillow'):
-        return 'ST_SetSRID(ST_MakePoint(-81.3544048197256, 28.3305906291771), 4326)'
+        return (28.3305906291771, -81.3544048197256)
     elif column_id.startswith('mx.'):
-        return 'ST_SetSRID(ST_MakePoint(-99.17019367218018, 19.41347699386547), 4326)'
-    elif column_id.startswith('ca.'):
-        return 'ST_SetSRID(ST_MakePoint(-79.39716339111328, 43.65694347778308), 4326)'
+        return (19.41347699386547, -99.17019367218018)
     elif column_id.startswith('th.'):
-        return 'ST_SetSRID(ST_MakePoint(100.49263000488281, 13.725377712079784), 4326)'
+        return (13.725377712079784, 100.49263000488281)
     # cols for French Guyana only
     elif column_id in ('fr.insee.P12_RP_CHOS', 'fr.insee.P12_RP_HABFOR'
                        , 'fr.insee.P12_RP_EAUCH', 'fr.insee.P12_RP_BDWC'
@@ -127,13 +125,35 @@ def default_point(column_id):
                        , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
                        , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
                        , 'fr.insee.P12_ACTOCC15P_ILT45D'):
-        return 'ST_SetSRID(ST_MakePoint(-52.32908248901367, 4.938408371206558), 4326)'
-    elif column_id.startswith('fr'):
-        return 'ST_SetSRID(ST_MakePoint(2.3613739013671875, 48.860875144709475), 4326)'
-    elif column_id.startswith('ca'):
-        return 'ST_SetSRID(ST_MakePoint(-79.37965393066406, 43.65594991256823), 4326)'
+        return (4.938408371206558, -52.32908248901367)
+    elif column_id.startswith('fr.'):
+        return (48.860875144709475, 2.3613739013671875)
+    elif column_id.startswith('ca.'):
+        return (43.65594991256823, -79.37965393066406)
+    elif column_id.startswith('us.census.'):
+        return (40.7, -73.9)
+    elif column_id.startswith('us.dma.'):
+        return (40.7, -73.9)
+    elif column_id.startswith('us.ihme.'):
+        return (40.7, -73.9)
+    elif column_id.startswith('us.bls.'):
+        return (40.7, -73.9)
+    elif column_id.startswith('us.qcew.'):
+        return (40.7, -73.9)
+    elif column_id.startswith('whosonfirst.'):
+        return (40.7, -73.9)
+    elif column_id.startswith('us.epa.'):
+        return (40.7, -73.9)
+    elif column_id.startswith('eu.'):
+        return (52.52207036136366, 13.40606689453125)
     else:
-        return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
+        raise Exception('No catalog point set for {}'.format(column_id))
+
+
+def default_point(column_id):
+    lat, lng = default_lonlat(column_id)
+    return 'ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326)'.format(
+        lat=lat, lng=lng)
 
 
 def default_area(column_id):

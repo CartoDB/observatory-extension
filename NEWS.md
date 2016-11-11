@@ -1,3 +1,18 @@
+1.1.2 (2016-11-09)
+
+__Improvements__
+
+* Update public `OBS_GetMeasure` to use highest ranked boundary, aiming for 500
+  geoms. ([#190](https://github.com/CartoDB/observatory-extension/issues/190))
+* Update test generation to capture our raster tiles
+* Standardize the way we generate our test points for `autotest.py`
+* Add points for epa and eurostat
+* Should support database dump generated 20161109
+
+__API Changes (Internal)__
+
+* Add internal `_OBS_GetGeometryScores`
+
 1.1.1 (2016-10-14)
 
 __Improvements__

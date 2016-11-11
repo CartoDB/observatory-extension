@@ -360,6 +360,7 @@ DECLARE
   geom_colname TEXT;
   geom_geomref_colname TEXT;
   geom_tablename TEXT;
+  geom_id TEXT;
   result NUMERIC;
   sql TEXT;
   numer_name TEXT;
@@ -370,23 +371,6 @@ BEGIN
 
   geom := ST_SnapToGrid(geom, 0.000001);
 
-  EXECUTE
-     $query$
-     SELECT numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
-            denom_colname, denom_geomref_colname, denom_tablename,
-            geom_colname, geom_geomref_colname, geom_tablename, numer_name
-             FROM observatory.obs_meta
-             WHERE (geom_id = $1 OR ($1 = ''))
-               AND numer_id = $2
-               AND (numer_timespan = $3 OR ($3 = ''))
-             ORDER BY geom_weight DESC, numer_timespan DESC
-             LIMIT 1
-     $query$
-    INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
-         denom_colname, denom_geomref_colname, denom_tablename,
-         geom_colname, geom_geomref_colname, geom_tablename, numer_name
-    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
-
   IF ST_GeometryType(geom) = 'ST_Point' THEN
     geom_type := 'point';
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
@@ -396,6 +380,37 @@ BEGIN
     RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
                     ST_GeometryType(geom);
   END IF;
+
+
+  EXECUTE
+     $query$
+      WITH meta AS (SELECT numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
+                    denom_colname, denom_geomref_colname, denom_tablename,
+                    geom_colname, geom_geomref_colname, geom_tablename,
+                    numer_name, geom_id
+                     FROM observatory.obs_meta
+                     WHERE (geom_id = $1 OR ($1 = ''))
+                       AND numer_id = $2
+                       AND (numer_timespan = $3 OR ($3 = ''))),
+           scores AS (SELECT *
+                      FROM cdb_observatory._OBS_GetGeometryScores($4,
+                           (SELECT Array_Agg(geom_id) FROM meta), 500))
+     SELECT meta.*
+     FROM meta, scores
+     WHERE meta.geom_id = scores.geom_id
+     ORDER BY score DESC
+     LIMIT 1
+    $query$
+    INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
+         denom_colname, denom_geomref_colname, denom_tablename,
+         geom_colname, geom_geomref_colname, geom_tablename, numer_name, geom_id
+    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, ''),
+      CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN
+                st_buffer(geom::geography, 10)::geometry(geometry, 4326)
+           ELSE geom
+      END;
+
+  raise notice 'Using boundary %', geom_id;
 
   IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
     map_type := 'areaNormalized';

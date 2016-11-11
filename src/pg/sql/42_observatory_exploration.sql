@@ -254,7 +254,14 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableGeometries(
   geom_source TEXT,
   valid_numer BOOLEAN,
   valid_denom BOOLEAN,
-  valid_timespan BOOLEAN
+  valid_timespan BOOLEAN,
+  score NUMERIC,
+  numtiles BIGINT,
+  notnull_percent NUMERIC,
+  numgeoms NUMERIC,
+  percentfill NUMERIC,
+  estnumgeoms NUMERIC,
+  meanmediansize NUMERIC
 ) AS $$
 DECLARE
   geom_clause TEXT;
@@ -271,18 +278,27 @@ BEGIN
   RETURN QUERY
   EXECUTE
   format($string$
-    SELECT geom_id::TEXT,
-           geom_name::TEXT,
-           geom_description::TEXT,
-           geom_weight::NUMERIC,
-           NULL::TEXT geom_aggregate,
-           NULL::TEXT license,
-           NULL::TEXT source,
-    $1 = ANY(numers) valid_numer,
-    $2 = ANY(denoms) valid_denom,
-    $3 = ANY(timespans) valid_timespan
-    FROM observatory.obs_meta_geom
-    WHERE %s (geom_tags ?& $4 OR CARDINALITY($4) = 0)
+    WITH available_geoms AS (
+      SELECT geom_id::TEXT,
+             geom_name::TEXT,
+             geom_description::TEXT,
+             geom_weight::NUMERIC,
+             NULL::TEXT geom_aggregate,
+             NULL::TEXT license,
+             NULL::TEXT source,
+      $1 = ANY(numers) valid_numer,
+      $2 = ANY(denoms) valid_denom,
+      $3 = ANY(timespans) valid_timespan
+      FROM observatory.obs_meta_geom
+      WHERE %s (geom_tags ?& $4 OR CARDINALITY($4) = 0)
+    ), scores AS (
+      SELECT * FROM cdb_observatory._OBS_GetGeometryScores($5,
+        (SELECT ARRAY_AGG(geom_id) FROM available_geoms)
+      )
+    ) SELECT available_geoms.*, score, numtiles, notnull_percent, numgeoms,
+             percentfill, estnumgeoms, meanmediansize
+      FROM available_geoms, scores
+      WHERE available_geoms.geom_id = scores.geom_id
   $string$, geom_clause)
   USING numer_id, denom_id, timespan, filter_tags, bounds;
   RETURN;
@@ -394,6 +410,79 @@ BEGIN
   FROM full_expansion
   GROUP BY section_name
   $string$, aggregate_condition);
+  RETURN;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
+  bounds Geometry(Geometry, 4326) DEFAULT NULL,
+  filter_geom_ids TEXT[] DEFAULT NULL,
+  desired_num_geoms INTEGER DEFAULT 3000
+) RETURNS TABLE (
+  score NUMERIC,
+  numtiles BIGINT,
+  geom_id TEXT,
+  notnull_percent NUMERIC,
+  numgeoms NUMERIC,
+  percentfill NUMERIC,
+  estnumgeoms NUMERIC,
+  meanmediansize NUMERIC
+) AS $$
+BEGIN
+  filter_geom_ids := COALESCE(filter_geom_ids, (ARRAY[])::TEXT[]);
+  RETURN QUERY
+  EXECUTE format($string$
+    SELECT
+      (1 / (abs(numgeoms - $3)
+        --* (1 / Coalesce(NullIf(notnull_percent, 0), 1))
+        --* (1 / Coalesce(NullIf(percentfill, 0), 0.0001))
+      ))::Numeric
+      AS score, *
+    FROM (
+      WITH clipped_geom AS (
+        SELECT column_id, table_id
+          , CASE WHEN $1 IS NOT NULL THEN ST_Clip(tile, $1, True)
+                 ELSE tile END clipped_tile
+          , tile
+        FROM observatory.obs_column_table_tile
+        WHERE ($1 IS NULL OR ST_Intersects($1, tile))
+          AND (column_id = ANY($2) OR cardinality($2) = 0)
+      ), clipped_geom_countagg AS (
+        SELECT column_id, table_id
+          , ST_CountAgg(clipped_tile, 2, True)::Numeric notnull_pixels
+          , ST_CountAgg(clipped_tile, 2, False)::Numeric pixels
+        FROM clipped_geom
+        GROUP BY column_id, table_id
+      ) SELECT
+        count(*)::BIGINT, a.column_id
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
+                THEN cdb_observatory.FIRST(notnull_pixels) / cdb_observatory.FIRST(pixels)
+                ELSE 1
+          END)::Numeric AS notnull_percent
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
+                THEN (ST_SummaryStatsAgg(clipped_tile, 2, True)).sum
+                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 2, ST_PointOnSurface($1)), 0) * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(cdb_observatory.FIRST(tile), 0, 0)) * cdb_observatory.FIRST(pixels))
+          END)::Numeric AS numgeoms
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
+                THEN (ST_SummaryStatsAgg(clipped_tile, 3, True)).mean
+                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 3, ST_PointOnSurface($1)), 0)
+          END)::Numeric AS percentfill
+        , ((ST_Area(ST_Transform($1, 3857)) / 1000000) / NullIf(
+            CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
+                 THEN (ST_SummaryStatsAgg(clipped_tile, 1, True)).mean
+                 ELSE Coalesce(ST_Value(cdb_observatory.FIRST(tile), 1, ST_PointOnSurface($1)), 0)
+            END, 0))::Numeric AS estnumgeoms
+        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
+                THEN (ST_SummaryStatsAgg(clipped_tile, 1, True)).mean
+                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 1, ST_PointOnSurface($1)), 0)
+          END)::Numeric AS meanmediansize
+      FROM clipped_geom_countagg a, clipped_geom b
+      WHERE a.table_id = b.table_id
+        AND a.column_id = b.column_id
+      GROUP BY a.column_id, a.table_id
+      ORDER BY a.column_id, a.table_id
+    ) foo
+  $string$) USING bounds, filter_geom_ids, desired_num_geoms;
   RETURN;
 END
 $$ LANGUAGE plpgsql;

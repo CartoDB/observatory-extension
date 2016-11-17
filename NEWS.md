@@ -1,3 +1,7 @@
+1.1.3 (2016-11-15)
+
+* Temporarily ignore EU data for the sake of testing
+
 1.1.2 (2016-11-09)
 
 __Improvements__

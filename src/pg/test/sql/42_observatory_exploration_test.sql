@@ -494,3 +494,12 @@ SELECT 'us.census.acs.B19013001' NOT IN (SELECT
   (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
   FROM cdb_observatory.OBS_LegacyBuilderMetadata('sum')
 ) AS _median_income_not_in_legacy_builder_metadata_sums;
+
+SELECT COUNT(*) = 0 _no_dupe_subsections_in_legacy_builder_metadata FROM (
+  SELECT name, subsection, count(*) FROM
+    (SELECT name, ((JSONB_Array_Elements(subsection))->'f1')->>'id' subsection
+    FROM cdb_observatory.obs_legacybuildermetadata()) foo
+  GROUP BY name, subsection
+  HAVING count(*) > 1
+) bar;
+

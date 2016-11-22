@@ -374,41 +374,39 @@ BEGIN
   END IF;
   RETURN QUERY
   EXECUTE format($string$
-  WITH expanded_subsections AS (
-    SELECT numer_id,
-           numer_name,
-           numer_tags,
-           jsonb_each_text(numer_tags) as subsection_tag_id_name
-      FROM cdb_observatory.OBS_GetAvailableNumerators()
-      WHERE numer_weight > 0 %s
-  ), expanded_sections AS (
-    SELECT JSONB_Agg(JSONB_Build_Object(
-           'f1', JSONB_Build_Object('id', numer_id, 'name', numer_name))) columns,
-         SUBSTR((subsection_tag_id_name).key, 12) subsection_id,
-         (subsection_tag_id_name).value subsection_name,
-         jsonb_each_text(numer_tags) as section_tag_id_name
-    FROM expanded_subsections
-    WHERE (subsection_tag_id_name).key LIKE 'subsection/%%'
-    GROUP BY (subsection_tag_id_name).key, (subsection_tag_id_name).value,
-             numer_tags
-  ), full_expansion AS (
-    SELECT columns, subsection_id, subsection_name,
-           SUBSTR((section_tag_id_name).key, 9) section_id,
-           (section_tag_id_name).value section_name
-    FROM expanded_sections
-    WHERE (section_tag_id_name).key LIKE 'section/%%'
-  )
-  SELECT section_name AS name, JSONB_Agg(
-    JSONB_Build_Object(
-      'f1', JSONB_Build_Object(
-        'name', subsection_name,
-        'id', subsection_id,
-        'columns', columns
+    WITH expanded AS (
+        SELECT JSONB_Build_Object('id', numer_id, 'name', numer_name) "column",
+               SUBSTR((sections).key, 9) section_id, (sections).value section_name,
+               SUBSTR((subsections).key, 12) subsection_id, (subsections).value subsection_name
+        FROM (
+          SELECT numer_id, numer_name,
+                 jsonb_each_text(numer_tags) as sections,
+                 jsonb_each_text as subsections
+          FROM (SELECT numer_id, numer_name, numer_tags,
+                       jsonb_each_text(numer_tags)
+                FROM cdb_observatory.obs_getavailablenumerators()
+                WHERE numer_weight > 0 %s
+               ) foo
+        ) bar
+        WHERE (sections).key LIKE 'section/%%'
+          AND (subsections).key LIKE 'subsection/%%'
+      ), grouped_by_subsections AS (
+        SELECT JSONB_Agg(JSONB_Build_Object('f1', "column")) AS columns,
+               section_id, section_name, subsection_id, subsection_name
+        FROM expanded
+        GROUP BY section_id, section_name, subsection_id, subsection_name
       )
-    )
-  ) as subsection
-  FROM full_expansion
-  GROUP BY section_name
+    SELECT section_name as name, JSONB_Agg(
+      JSONB_Build_Object(
+        'f1', JSONB_Build_Object(
+          'name', subsection_name,
+          'id', subsection_id,
+          'columns', columns
+        )
+      )
+    ) as subsection
+    FROM grouped_by_subsections
+    GROUP BY section_name
   $string$, aggregate_condition);
   RETURN;
 END

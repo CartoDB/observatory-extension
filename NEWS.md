@@ -1,3 +1,10 @@
+1.1.4 (2016-11-21)
+
+__Bugfixes__
+
+* Fix duplicate subsections with only a partial set of measures appearing from
+  `OBS_GetLegacyMetadata` ([#216](https://github.com/CartoDB/observatory-extension/issues/216)).
+
 1.1.3 (2016-11-15)
 
 * Temporarily ignore EU data for the sake of testing

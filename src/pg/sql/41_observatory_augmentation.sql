@@ -410,7 +410,12 @@ BEGIN
            ELSE geom
       END;
 
-  raise notice 'Using boundary %', geom_id;
+  IF geom_id IS NULL THEN
+    RAISE NOTICE 'No boundary found for geom';
+    RETURN NULL;
+  ELSE
+    RAISE NOTICE 'Using boundary %', geom_id;
+  END IF;
 
   IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
     map_type := 'areaNormalized';

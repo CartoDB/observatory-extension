@@ -1,3 +1,10 @@
+1.1.5 (2016-11-29)
+
+__Bugfixes__
+
+* Return `NULL` instead of raising an exception when a measure is requested for
+  a geometry where it does not exist ([#220](https://github.com/CartoDB/observatory-extension/issues/220)).
+
 1.1.4 (2016-11-21)
 
 __Bugfixes__

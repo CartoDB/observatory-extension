@@ -203,10 +203,15 @@ SELECT abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._ProblemTestArea(),
   'us.census.acs.B01003001') - 96230.2929825897) / 96230.2929825897 < 0.001 As OBS_GetMeasure_bad_geometry;
 
--- OBS_GetMeasure with NULL Input
+-- OBS_GetMeasure with NULL Input geometry
 SELECT cdb_observatory.OBS_GetMeasure(
   NULL,
-  'us.census.acs.B01003001') IS NULL As OBS_GetMeasure_null;
+  'us.census.acs.B01003001') IS NULL As OBS_GetMeasure_null_geometry;
+
+-- OBS_GetMeasure where there is no data
+SELECT cdb_observatory.OBS_GetMeasure(
+  ST_SetSRID(st_point(0, 0), 4326),
+  'us.census.acs.B01003001') IS NULL As OBS_GetMeasure_out_of_bounds_geometry;
 
 -- Point-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(

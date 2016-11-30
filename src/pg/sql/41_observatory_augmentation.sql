@@ -340,7 +340,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
   measure_id TEXT,
   normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
-  time_span TEXT DEFAULT NULL
+  time_span TEXT DEFAULT NULL,
+  simplification NUMERIC DEFAULT 0.0001
 )
 RETURNS NUMERIC
 AS $$
@@ -366,13 +367,16 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  geom := ST_SnapToGrid(geom, 0.000001);
+  IF simplification IS NOT NULL THEN
+    geom := ST_Simplify(geom, simplification);
+  END IF;
 
   IF ST_GeometryType(geom) = 'ST_Point' THEN
     geom_type := 'point';
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
     geom_type := 'polygon';
-    geom := ST_Buffer(geom, 0.000001);
+    --geom := ST_Buffer(geom, 0.000001);
+    geom := ST_CollectionExtract(ST_MakeValid(geom), 3);
   ELSE
     RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
                     ST_GeometryType(geom);
@@ -404,7 +408,7 @@ BEGIN
     USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, ''),
       CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN
                 st_buffer(geom::geography, 10)::geometry(geometry, 4326)
-           ELSE geom
+           ELSE ST_Envelope(geom)
       END;
 
   IF geom_id IS NULL THEN
@@ -463,22 +467,28 @@ BEGIN
     END IF;
   ELSIF geom_type = 'polygon' THEN
     IF map_type = 'areaNormalized' THEN
-      sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection($1, geom.%I))
-                                        / ST_Area(geom.%I) overlap, geom.%I geom_ref
-                                   FROM observatory.%I geom
-                                   WHERE ST_Intersects($1, geom.%I))
+      sql = format('WITH _subdivided AS (
+                          SELECT ST_Subdivide($1) AS geom
+                        ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
+                                        / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap, geom.%I geom_ref
+                                   FROM observatory.%I geom, _subdivided s
+                                   WHERE ST_Intersects(s.geom, geom.%I)
+                                   GROUP BY geom.%I)
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
                            (ST_Area($1::Geography) / 1000000)
                     FROM observatory.%I numer
                     WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom_colname, geom_colname, geom_geomref_colname, geom_tablename,
-                geom_colname, numer_colname,
+                geom_colname, geom_geomref_colname, numer_colname,
                 numer_geomref_colname, numer_tablename, numer_geomref_colname);
     ELSIF map_type = 'denominated' THEN
-      sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection($1, geom.%I))
-                                        / ST_Area(geom.%I) overlap, geom.%I geom_ref
-                                   FROM observatory.%I geom
-                                   WHERE ST_Intersects($1, geom.%I)),
+      sql = format('WITH _subdivided AS (
+                          SELECT ST_Subdivide($1) AS geom
+                        ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
+                                        / ST_Area(FIRST(geom.%I)) overlap, geom.%I geom_ref
+                                   FROM observatory.%I geom, _subdivided s
+                                   WHERE ST_Intersects(s.geom, geom.%I)
+                                   GROUP BY geom.%I),
                         _denom AS (SELECT denom.%I, denom.%I geom_ref
                                    FROM observatory.%I denom
                                    WHERE denom.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[]))
@@ -490,7 +500,7 @@ BEGIN
                     FROM observatory.%I numer
                     WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom_colname, geom_colname, geom_geomref_colname,
-                geom_tablename, geom_colname,
+                geom_tablename, geom_colname, geom_geomref_colname,
                 denom_colname, denom_geomref_colname, denom_tablename,
                 denom_geomref_colname, numer_colname, numer_geomref_colname,
                 denom_colname, numer_geomref_colname,
@@ -500,15 +510,20 @@ BEGIN
         RAISE EXCEPTION 'Cannot calculate "%" (%) for custom area as it cannot be summed, use ST_PointOnSurface instead',
                         numer_name, measure_id;
       ELSE
-        sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection($1, geom.%I))
-                                          / ST_Area(geom.%I) overlap, geom.%I geom_ref
-                                     FROM observatory.%I geom
-                                     WHERE ST_Intersects($1, geom.%I))
+        sql = format('WITH _subdivided AS (
+                        SELECT ST_Subdivide($1) AS geom
+                      ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
+                                          / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap,
+                                          geom.%I geom_ref
+                                     FROM observatory.%I geom, _subdivided s
+                                     WHERE ST_Intersects(s.geom, geom.%I)
+                                     GROUP BY geom.%I
+                                  )
                       SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
                       FROM observatory.%I numer
                       WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                   geom_colname, geom_colname, geom_geomref_colname,
-                  geom_tablename, geom_colname,
+                  geom_tablename, geom_colname, geom_geomref_colname,
                   numer_colname, numer_geomref_colname, numer_tablename,
                   numer_geomref_colname);
       END IF;

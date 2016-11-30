@@ -466,21 +466,19 @@ BEGIN
       sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection($1, geom.%I))
                                         / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                    FROM observatory.%I geom
-                                   WHERE ST_Intersects($1, geom.%I)
-                                     AND ST_Area(ST_Intersection($1, geom.%I)) / ST_Area(geom.%I) > 0)
+                                   WHERE ST_Intersects($1, geom.%I))
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
                            (ST_Area($1::Geography) / 1000000)
                     FROM observatory.%I numer
                     WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom_colname, geom_colname, geom_geomref_colname, geom_tablename,
-                geom_colname, geom_colname, geom_colname, numer_colname,
+                geom_colname, numer_colname,
                 numer_geomref_colname, numer_tablename, numer_geomref_colname);
     ELSIF map_type = 'denominated' THEN
       sql = format('WITH _geom AS (SELECT ST_Area(ST_Intersection($1, geom.%I))
                                         / ST_Area(geom.%I) overlap, geom.%I geom_ref
                                    FROM observatory.%I geom
-                                   WHERE ST_Intersects($1, geom.%I)
-                                     AND ST_Area(ST_Intersection($1, geom.%I)) / ST_Area(geom.%I) > 0),
+                                   WHERE ST_Intersects($1, geom.%I)),
                         _denom AS (SELECT denom.%I, denom.%I geom_ref
                                    FROM observatory.%I denom
                                    WHERE denom.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[]))
@@ -492,7 +490,7 @@ BEGIN
                     FROM observatory.%I numer
                     WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom_colname, geom_colname, geom_geomref_colname,
-                geom_tablename, geom_colname, geom_colname, geom_colname,
+                geom_tablename, geom_colname,
                 denom_colname, denom_geomref_colname, denom_tablename,
                 denom_geomref_colname, numer_colname, numer_geomref_colname,
                 denom_colname, numer_geomref_colname,

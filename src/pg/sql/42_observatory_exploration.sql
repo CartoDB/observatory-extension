@@ -434,7 +434,7 @@ BEGIN
       (1 / (abs(numgeoms - $3)
         --* (1 / Coalesce(NullIf(notnull_percent, 0), 1))
         --* (1 / Coalesce(NullIf(percentfill, 0), 0.0001))
-      ))::Numeric
+      ))::Numeric * percentfill
       AS score, *
     FROM (
       WITH clipped_geom AS (

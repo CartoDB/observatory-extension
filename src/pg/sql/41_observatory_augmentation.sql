@@ -341,7 +341,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
   normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
   time_span TEXT DEFAULT NULL,
-  simplification NUMERIC DEFAULT 0.0001
+  simplification NUMERIC DEFAULT 0.00001
 )
 RETURNS NUMERIC
 AS $$
@@ -408,7 +408,7 @@ BEGIN
     USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, ''),
       CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN
                 st_buffer(geom::geography, 10)::geometry(geometry, 4326)
-           ELSE ST_Envelope(geom)
+           ELSE geom
       END;
 
   IF geom_id IS NULL THEN
@@ -485,7 +485,7 @@ BEGIN
       sql = format('WITH _subdivided AS (
                           SELECT ST_Subdivide($1) AS geom
                         ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
-                                        / ST_Area(FIRST(geom.%I)) overlap, geom.%I geom_ref
+                                        / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap, geom.%I geom_ref
                                    FROM observatory.%I geom, _subdivided s
                                    WHERE ST_Intersects(s.geom, geom.%I)
                                    GROUP BY geom.%I),

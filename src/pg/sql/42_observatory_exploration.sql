@@ -431,10 +431,7 @@ BEGIN
   RETURN QUERY
   EXECUTE format($string$
     SELECT
-      (1 / (abs(numgeoms - $3)
-        --* (1 / Coalesce(NullIf(notnull_percent, 0), 1))
-        --* (1 / Coalesce(NullIf(percentfill, 0), 0.0001))
-      ))::Numeric * percentfill
+      ((100.0 / (1+abs(log(1 + $3) - log(1 + numgeoms)))) * percentfill)::Numeric
       AS score, *
     FROM (
       WITH clipped_geom AS (

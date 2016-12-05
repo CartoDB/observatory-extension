@@ -1,5 +1,5 @@
 comment = 'CartoDB Observatory backend extension'
-default_version = '1.1.4'
+default_version = '1.1.5'
 requires = 'postgis, postgres_fdw'
 superuser = true
 schema = cdb_observatory

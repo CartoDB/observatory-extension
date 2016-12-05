@@ -5,6 +5,9 @@ from util import query, commit
 
 from time import time
 
+import json
+import os
+
 USE_SCHEMA = True
 
 for q in (
@@ -58,6 +61,22 @@ ARGS = {
     ('OBS_GetCategory', None): "{}, 'us.census.spielman_singleton_segments.X10'",
 }
 
+
+def record(params, results):
+    sha = os.environ['OBS_EXTENSION_SHA']
+    fpath = os.path.join(os.environ['OBS_PERFTEST_DIR'], sha + '.json')
+    if os.path.isfile(fpath):
+        tests = json.load(open(fpath, 'r'))
+    else:
+        tests = {}
+    with open(fpath, 'w') as fhandle:
+        tests[json.dumps(params)] = {
+            'params': params,
+            'results': results
+        }
+        json.dump(tests, fhandle)
+
+
 @parameterized([
     ('simple', 'OBS_GetMeasureByID', None, 'us.census.tiger.census_tract'),
     ('complex', 'OBS_GetMeasureByID', None, 'us.census.tiger.county'),
@@ -75,31 +94,49 @@ ARGS = {
     ('simple', 'OBS_GetCategory', None, 'geom'),
     ('simple', 'OBS_GetCategory', None, 'offset_geom'),
 
-    ('complex', 'OBS_GetMeasure', 'predenominated', 'point'),
-    ('complex', 'OBS_GetMeasure', 'predenominated', 'geom'),
-    ('complex', 'OBS_GetMeasure', 'predenominated', 'offset_geom'),
-    ('complex', 'OBS_GetMeasure', 'area', 'point'),
-    ('complex', 'OBS_GetMeasure', 'area', 'geom'),
-    ('complex', 'OBS_GetMeasure', 'area', 'offset_geom'),
-    ('complex', 'OBS_GetMeasure', 'denominator', 'point'),
-    ('complex', 'OBS_GetMeasure', 'denominator', 'geom'),
-    ('complex', 'OBS_GetMeasure', 'denominator', 'offset_geom'),
-    ('complex', 'OBS_GetCategory', None, 'point'),
-    ('complex', 'OBS_GetCategory', None, 'geom'),
-    ('complex', 'OBS_GetCategory', None, 'offset_geom'),
+    #('complex', 'OBS_GetMeasure', 'predenominated', 'point'),
+    #('complex', 'OBS_GetMeasure', 'predenominated', 'geom'),
+    #('complex', 'OBS_GetMeasure', 'predenominated', 'offset_geom'),
+    #('complex', 'OBS_GetMeasure', 'area', 'point'),
+    #('complex', 'OBS_GetMeasure', 'area', 'geom'),
+    #('complex', 'OBS_GetMeasure', 'area', 'offset_geom'),
+    #('complex', 'OBS_GetMeasure', 'denominator', 'point'),
+    #('complex', 'OBS_GetMeasure', 'denominator', 'geom'),
+    #('complex', 'OBS_GetMeasure', 'denominator', 'offset_geom'),
+    #('complex', 'OBS_GetCategory', None, 'point'),
+    #('complex', 'OBS_GetCategory', None, 'geom'),
+    #('complex', 'OBS_GetCategory', None, 'offset_geom'),
 ])
 def test_performance(geom_complexity, api_method, normalization, geom):
     print api_method, geom_complexity, normalization, geom
     col = 'measure' if 'measure' in api_method.lower() else 'category'
+    results = []
+
     for rows in (1, 5, 10, ):
-        q = 'UPDATE obs_perftest_{complexity} SET {col} = {schema}{api_method}({args}) WHERE cartodb_id < {n}'.format(
-            col=col,
-            complexity=geom_complexity,
-            schema='cdb_observatory.' if USE_SCHEMA else '',
-            api_method=api_method,
-            args=ARGS[api_method, normalization].format(geom),
-            n=rows+1)
+        stmt = '''UPDATE obs_perftest_{complexity}
+                   SET {col} = {schema}{api_method}({args})
+                   WHERE cartodb_id < {n}'''.format(
+                       col=col,
+                       complexity=geom_complexity,
+                       schema='cdb_observatory.' if USE_SCHEMA else '',
+                       api_method=api_method,
+                       args=ARGS[api_method, normalization].format(geom),
+                       n=rows+1)
         start = time()
-        query(q)
+        query(stmt)
         end = time()
-        print rows, ': ', (rows / (end - start)), ' QPS'
+        qps = (rows / (end - start))
+        results.append({
+            'rows': rows,
+            'qps': qps,
+            'stmt': stmt
+        })
+        print rows, ': ', qps, ' QPS'
+
+    if 'OBS_RECORD_TEST' in os.environ:
+        record({
+            'geom_complexity': geom_complexity,
+            'api_method': api_method,
+            'normalization': normalization,
+            'geom': geom
+        }, results)

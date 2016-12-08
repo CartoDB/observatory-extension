@@ -146,7 +146,8 @@ def default_lonlat(column_id):
         return (40.7, -73.9)
     elif column_id.startswith('eu.'):
         raise SkipTest('No tests for Eurostat!')
-        #return (52.52207036136366, 13.40606689453125)
+    elif column_id.startswith('br.'):
+        return (-22.9, -43.19)
     else:
         raise Exception('No catalog point set for {}'.format(column_id))
 

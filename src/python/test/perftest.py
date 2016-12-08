@@ -27,7 +27,7 @@ for q in (
                                  -73.81885528564453,40.745696344339564, 4326),
                  'us.census.tiger.census_tract_clipped')) foo
            ORDER BY ST_NPoints(the_geom) ASC
-           LIMIT 50''',
+           LIMIT 500''',
         'DROP TABLE IF EXISTS obs_perftest_complex',
         '''CREATE TABLE obs_perftest_complex (cartodb_id SERIAL PRIMARY KEY,
            point GEOMETRY,
@@ -45,7 +45,7 @@ for q in (
                  'us.census.tiger.county_clipped')) foo
            ORDER BY ST_NPoints(the_geom) DESC
            LIMIT 50;''',
-        '''SET statement_timeout = 5000;'''
+        #'''SET statement_timeout = 5000;'''
 ):
     query(q.format(
         schema='cdb_observatory.' if USE_SCHEMA else '',
@@ -94,25 +94,26 @@ def record(params, results):
     ('simple', 'OBS_GetCategory', None, 'geom'),
     ('simple', 'OBS_GetCategory', None, 'offset_geom'),
 
-    #('complex', 'OBS_GetMeasure', 'predenominated', 'point'),
-    #('complex', 'OBS_GetMeasure', 'predenominated', 'geom'),
-    #('complex', 'OBS_GetMeasure', 'predenominated', 'offset_geom'),
-    #('complex', 'OBS_GetMeasure', 'area', 'point'),
-    #('complex', 'OBS_GetMeasure', 'area', 'geom'),
-    #('complex', 'OBS_GetMeasure', 'area', 'offset_geom'),
-    #('complex', 'OBS_GetMeasure', 'denominator', 'point'),
-    #('complex', 'OBS_GetMeasure', 'denominator', 'geom'),
-    #('complex', 'OBS_GetMeasure', 'denominator', 'offset_geom'),
-    #('complex', 'OBS_GetCategory', None, 'point'),
-    #('complex', 'OBS_GetCategory', None, 'geom'),
-    #('complex', 'OBS_GetCategory', None, 'offset_geom'),
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'point'),
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'geom'),
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'offset_geom'),
+    ('complex', 'OBS_GetMeasure', 'area', 'point'),
+    ('complex', 'OBS_GetMeasure', 'area', 'geom'),
+    ('complex', 'OBS_GetMeasure', 'area', 'offset_geom'),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'point'),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'geom'),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'offset_geom'),
+    ('complex', 'OBS_GetCategory', None, 'point'),
+    ('complex', 'OBS_GetCategory', None, 'geom'),
+    ('complex', 'OBS_GetCategory', None, 'offset_geom'),
 ])
 def test_performance(geom_complexity, api_method, normalization, geom):
     print api_method, geom_complexity, normalization, geom
     col = 'measure' if 'measure' in api_method.lower() else 'category'
     results = []
 
-    for rows in (1, 5, 10, ):
+    rownums = (1, 5, 10, ) if geom_complexity == 'complex' else (5, 25, 50 )
+    for rows in rownums:
         stmt = '''UPDATE obs_perftest_{complexity}
                    SET {col} = {schema}{api_method}({args})
                    WHERE cartodb_id < {n}'''.format(

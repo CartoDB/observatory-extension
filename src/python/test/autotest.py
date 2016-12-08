@@ -34,6 +34,7 @@ AND 'us.census.acs.acs' = ANY (subsection_tags)
 AND numer_weight > 0
 ''').fetchall()
 
+
 SKIP_COLUMNS = set([
     u'mx.inegi_columns.INDI18',
     u'mx.inegi_columns.ECO40',
@@ -61,6 +62,10 @@ SKIP_COLUMNS = set([
     u'mx.inegi_columns.POB33',
     u'mx.inegi_columns.POB58',
     u'mx.inegi_columns.DISC4',
+    u'mx.inegi_columns.VIV41',
+    u'mx.inegi_columns.VIV40',
+    u'mx.inegi_columns.VIV17',
+    u'mx.inegi_columns.EDU10'
 ])
 
 #def default_geometry_id(column_id):

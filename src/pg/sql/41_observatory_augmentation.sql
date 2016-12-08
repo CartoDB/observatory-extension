@@ -493,10 +493,10 @@ BEGIN
                                    FROM observatory.%I denom
                                    WHERE denom.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[]))
                     SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
-                           SUM((SELECT _denom.%I * (SELECT _geom.overlap
+                           NullIf(SUM((SELECT _denom.%I * (SELECT _geom.overlap
                                                     FROM _geom
                                                     WHERE _geom.geom_ref = _denom.geom_ref)
-                                FROM _denom WHERE _denom.geom_ref = numer.%I))
+                                FROM _denom WHERE _denom.geom_ref = numer.%I)), 0)
                     FROM observatory.%I numer
                     WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
                 geom_colname, geom_colname, geom_geomref_colname,

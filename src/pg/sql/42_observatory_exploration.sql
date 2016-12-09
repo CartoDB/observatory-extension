@@ -459,23 +459,33 @@ BEGIN
         SELECT column_id, table_id
           , ST_CountAgg(clipped_tile, 2, True)::Numeric notnull_pixels
           , ST_CountAgg(clipped_tile, 2, False)::Numeric pixels
-          --, ST_CountAgg(clipped_tile, 1, True)::Numeric notnull_pixels
-          --, ST_CountAgg(clipped_tile, 1, False)::Numeric pixels
         FROM clipped_geom
         GROUP BY column_id, table_id
+      ), clipped_geom_reagg AS (
+        SELECT COUNT(*)::BIGINT cnt, a.column_id,
+               cdb_observatory.FIRST(pixels) first_pixel,
+               cdb_observatory.FIRST(notnull_pixels) first_notnull_pixel,
+               cdb_observatory.FIRST(tile) first_tile,
+               (ST_SummaryStatsAgg(clipped_tile, 2, True)).sum sum_geoms,
+               (ST_SummaryStatsAgg(clipped_tile, 3, True)).mean mean_fill
+        FROM clipped_geom_countagg a, clipped_geom b
+        WHERE a.table_id = b.table_id
+          AND a.column_id = b.column_id
+        GROUP BY a.column_id, a.table_id
       ) SELECT
-        count(*)::BIGINT, a.column_id
-        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                THEN cdb_observatory.FIRST(notnull_pixels) / cdb_observatory.FIRST(pixels)
+        cnt, column_id
+        , (CASE WHEN first_notnull_pixel > 0
+                THEN first_notnull_pixel / first_pixel
                 ELSE 1
           END)::Numeric AS notnull_percent
-        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                THEN (ST_SummaryStatsAgg(clipped_tile, 2, True)).sum
-                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 2, ST_PointOnSurface($1)), 0) * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(cdb_observatory.FIRST(tile), 0, 0)) * cdb_observatory.FIRST(pixels))
+        , (CASE WHEN first_notnull_pixel > 0
+                THEN sum_geoms
+                ELSE COALESCE(ST_Value(first_tile, 2, ST_PointOnSurface($1)), 0)
+                  * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0)) * first_pixel)
           END)::Numeric AS numgeoms
-        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                THEN (ST_SummaryStatsAgg(clipped_tile, 3, True)).mean
-                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 3, ST_PointOnSurface($1)), 0)
+        , (CASE WHEN first_notnull_pixel > 0
+                THEN mean_fill
+                ELSE COALESCE(ST_Value(first_tile, 3, ST_PointOnSurface($1)), 0)
           END)::Numeric AS percentfill
         , null::numeric estnumgeoms, null::numeric meanmediansize
         --, ((ST_Area(ST_Transform($1, 3857)) / 1000000) / NullIf(
@@ -487,11 +497,7 @@ BEGIN
         --        THEN (ST_SummaryStatsAgg(clipped_tile, 1, True)).mean
         --        ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 1, ST_PointOnSurface($1)), 0)
         --  END)::Numeric AS meanmediansize
-      FROM clipped_geom_countagg a, clipped_geom b
-      WHERE a.table_id = b.table_id
-        AND a.column_id = b.column_id
-      GROUP BY a.column_id, a.table_id
-      ORDER BY a.column_id, a.table_id
+      FROM clipped_geom_reagg
     ) foo
   $string$) USING bounds, filter_geom_ids, desired_num_geoms;
   RETURN;

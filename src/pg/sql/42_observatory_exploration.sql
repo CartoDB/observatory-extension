@@ -434,6 +434,11 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
 ) AS $$
 BEGIN
   filter_geom_ids := COALESCE(filter_geom_ids, (ARRAY[])::TEXT[]);
+  -- Very complex geometries simply fail.  For a boundary check, we can
+  -- comfortably get away with the simplicity of an envelope
+  IF ST_Npoints(bounds) > 10000 THEN
+    bounds := ST_Envelope(bounds);
+  END IF;
   RETURN QUERY
   EXECUTE format($string$
     SELECT

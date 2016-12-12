@@ -79,10 +79,10 @@ for q in (
 
 ARGS = {
     ('OBS_GetMeasureByID', None): "name, 'us.census.acs.B01001002', '{}'",
-    ('OBS_GetMeasure', 'predenominated'): "{}, 'us.census.acs.B01003001'",
-    ('OBS_GetMeasure', 'area'): "{}, 'us.census.acs.B01001002', 'area'",
-    ('OBS_GetMeasure', 'denominator'): "{}, 'us.census.acs.B01001002', 'denominator'",
-    ('OBS_GetCategory', None): "{}, 'us.census.spielman_singleton_segments.X10'",
+    ('OBS_GetMeasure', 'predenominated'): "{}, 'us.census.acs.B01003001', NULL, {}",
+    ('OBS_GetMeasure', 'area'): "{}, 'us.census.acs.B01001002', 'area', {}",
+    ('OBS_GetMeasure', 'denominator'): "{}, 'us.census.acs.B01001002', 'denominator', {}",
+    ('OBS_GetCategory', None): "{}, 'us.census.spielman_singleton_segments.X10', {}",
     ('_OBS_GetGeometryScores', None): "{}, NULL"
 }
 
@@ -153,37 +153,63 @@ def test_getgeometryscores_performance(geom_complexity, api_method, filters, tar
         }, results)
 
 @parameterized([
-    ('simple', 'OBS_GetMeasureByID', None, 'us.census.tiger.census_tract'),
-    ('complex', 'OBS_GetMeasureByID', None, 'us.census.tiger.county'),
+    ('simple', 'OBS_GetMeasureByID', None, 'us.census.tiger.census_tract', None),
+    ('complex', 'OBS_GetMeasureByID', None, 'us.census.tiger.county', None),
 
-    ('simple', 'OBS_GetMeasure', 'predenominated', 'point'),
-    ('simple', 'OBS_GetMeasure', 'predenominated', 'geom'),
-    ('simple', 'OBS_GetMeasure', 'predenominated', 'offset_geom'),
-    ('simple', 'OBS_GetMeasure', 'area', 'point'),
-    ('simple', 'OBS_GetMeasure', 'area', 'geom'),
-    ('simple', 'OBS_GetMeasure', 'area', 'offset_geom'),
-    ('simple', 'OBS_GetMeasure', 'denominator', 'point'),
-    ('simple', 'OBS_GetMeasure', 'denominator', 'geom'),
-    ('simple', 'OBS_GetMeasure', 'denominator', 'offset_geom'),
-    ('simple', 'OBS_GetCategory', None, 'point'),
-    ('simple', 'OBS_GetCategory', None, 'geom'),
-    ('simple', 'OBS_GetCategory', None, 'offset_geom'),
+    ('simple', 'OBS_GetMeasure', 'predenominated', 'point', None),
+    ('simple', 'OBS_GetMeasure', 'predenominated', 'geom', None),
+    ('simple', 'OBS_GetMeasure', 'predenominated', 'offset_geom', None),
+    ('simple', 'OBS_GetMeasure', 'area', 'point', None),
+    ('simple', 'OBS_GetMeasure', 'area', 'geom', None),
+    ('simple', 'OBS_GetMeasure', 'area', 'offset_geom', None),
+    ('simple', 'OBS_GetMeasure', 'denominator', 'point', None),
+    ('simple', 'OBS_GetMeasure', 'denominator', 'geom', None),
+    ('simple', 'OBS_GetMeasure', 'denominator', 'offset_geom', None),
+    ('simple', 'OBS_GetCategory', None, 'point', None),
+    ('simple', 'OBS_GetCategory', None, 'geom', None),
+    ('simple', 'OBS_GetCategory', None, 'offset_geom', None),
 
-    ('complex', 'OBS_GetMeasure', 'predenominated', 'point'),
-    ('complex', 'OBS_GetMeasure', 'predenominated', 'geom'),
-    ('complex', 'OBS_GetMeasure', 'predenominated', 'offset_geom'),
-    ('complex', 'OBS_GetMeasure', 'area', 'point'),
-    ('complex', 'OBS_GetMeasure', 'area', 'geom'),
-    ('complex', 'OBS_GetMeasure', 'area', 'offset_geom'),
-    ('complex', 'OBS_GetMeasure', 'denominator', 'point'),
-    ('complex', 'OBS_GetMeasure', 'denominator', 'geom'),
-    ('complex', 'OBS_GetMeasure', 'denominator', 'offset_geom'),
-    ('complex', 'OBS_GetCategory', None, 'point'),
-    ('complex', 'OBS_GetCategory', None, 'geom'),
-    ('complex', 'OBS_GetCategory', None, 'offset_geom'),
+    ('simple', 'OBS_GetMeasure', 'predenominated', 'point', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'predenominated', 'geom', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'predenominated', 'offset_geom', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'area', 'point', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'area', 'geom', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'area', 'offset_geom', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'denominator', 'point', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'denominator', 'geom', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetMeasure', 'denominator', 'offset_geom', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetCategory', None, 'point', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetCategory', None, 'geom', "'us.census.tiger.census_tract'"),
+    ('simple', 'OBS_GetCategory', None, 'offset_geom', "'us.census.tiger.census_tract'"),
+
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'point', None),
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'geom', None),
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'offset_geom', None),
+    ('complex', 'OBS_GetMeasure', 'area', 'point', None),
+    ('complex', 'OBS_GetMeasure', 'area', 'geom', None),
+    ('complex', 'OBS_GetMeasure', 'area', 'offset_geom', None),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'point', None),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'geom', None),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'offset_geom', None),
+    ('complex', 'OBS_GetCategory', None, 'point', None),
+    ('complex', 'OBS_GetCategory', None, 'geom', None),
+    ('complex', 'OBS_GetCategory', None, 'offset_geom', None),
+
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'point', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'geom', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'predenominated', 'offset_geom', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'area', 'point', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'area', 'geom', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'area', 'offset_geom', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'point', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'geom', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetMeasure', 'denominator', 'offset_geom', "'us.census.tiger.county'"),
+    ('complex', 'OBS_GetCategory', None, 'point', "'us.census.tiger.census_tract'"),
+    ('complex', 'OBS_GetCategory', None, 'geom', "'us.census.tiger.census_tract'"),
+    ('complex', 'OBS_GetCategory', None, 'offset_geom', "'us.census.tiger.census_tract'"),
 ])
-def test_getmeasure_performance(geom_complexity, api_method, normalization, geom):
-    print api_method, geom_complexity, normalization, geom
+def test_getmeasure_performance(geom_complexity, api_method, normalization, geom, boundary):
+    print api_method, geom_complexity, normalization, geom, boundary
     col = 'measure' if 'measure' in api_method.lower() else 'category'
     results = []
 
@@ -196,7 +222,7 @@ def test_getmeasure_performance(geom_complexity, api_method, normalization, geom
                        complexity=geom_complexity,
                        schema='cdb_observatory.' if USE_SCHEMA else '',
                        api_method=api_method,
-                       args=ARGS[api_method, normalization].format(geom),
+                       args=ARGS[api_method, normalization].format(geom, boundary),
                        n=rows+1)
         start = time()
         query(stmt)

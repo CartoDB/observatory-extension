@@ -4,7 +4,7 @@
 
 There are hundreds of measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](https://cartodb.github.io/bigmetadata/index.html).
 
-You can [access](https://carto.com/docs/carto-engine/data/accessing) measures through the CARTO Editor. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](https://carto.com/docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access](https://carto.com/docs/carto-engine/data/accessing) measures through CARTO Builder. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](https://carto.com/docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetUSCensusMeasure(point geometry, measure_name text)
 

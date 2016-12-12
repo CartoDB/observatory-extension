@@ -335,88 +335,82 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureMeta(
   geom geometry(Geometry, 4326),
   measure_id TEXT,
   normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
-  time_span TEXT DEFAULT NULL,
-  simplification NUMERIC DEFAULT 0.00001
+  time_span TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+  numer_aggregate VARCHAR,
+  numer_colname VARCHAR,
+  numer_geomref_colname VARCHAR,
+  numer_tablename VARCHAR,
+  denom_colname VARCHAR,
+  denom_geomref_colname VARCHAR,
+  denom_tablename VARCHAR,
+  geom_colname VARCHAR,
+  geom_geomref_colname VARCHAR,
+  geom_tablename VARCHAR,
+  numer_name VARCHAR,
+  denom_name VARCHAR,
+  geom_name VARCHAR,
+  denom_id VARCHAR,
+  geom_id VARCHAR
+) AS $$
+BEGIN
+  RETURN QUERY
+  EXECUTE $string$
+    WITH meta AS (SELECT numer_aggregate, numer_colname, numer_geomref_colname,
+                         numer_tablename, denom_colname, denom_geomref_colname,
+                         denom_tablename, geom_colname, geom_geomref_colname,
+                         geom_tablename, numer_name, denom_name, geom_name,
+                         denom_id, geom_id
+                   FROM observatory.obs_meta
+                   WHERE (geom_id = $1 OR ($1 = ''))
+                     AND numer_id = $2
+                     AND (numer_timespan = $3 OR ($3 = ''))),
+         scores AS (SELECT *
+                    FROM cdb_observatory._OBS_GetGeometryScores($4,
+                         (SELECT Array_Agg(geom_id) FROM meta), 500))
+    SELECT meta.*
+    FROM meta, scores
+    WHERE meta.geom_id = scores.geom_id
+    ORDER BY score DESC
+    LIMIT 1
+  $string$ USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, ''),
+    CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN
+              ST_Buffer(geom::geography, 200)::geometry(geometry, 4326)
+         ELSE geom
+    END;
+  RETURN;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureData(
+  geom geometry(Geometry, 4326),
+  geom_type TEXT,
+  normalize TEXT,
+  numer_aggregate TEXT,
+  numer_colname TEXT,
+  numer_geomref_colname TEXT,
+  numer_tablename TEXT,
+  denom_colname TEXT,
+  denom_geomref_colname TEXT,
+  denom_tablename TEXT,
+  geom_colname TEXT,
+  geom_geomref_colname TEXT,
+  geom_tablename TEXT
 )
 RETURNS NUMERIC
 AS $$
 DECLARE
-  geom_type TEXT;
-  map_type TEXT;
-  numer_aggregate TEXT;
-  numer_colname TEXT;
-  numer_geomref_colname TEXT;
-  numer_tablename TEXT;
-  denom_colname TEXT;
-  denom_geomref_colname TEXT;
-  denom_tablename TEXT;
-  geom_colname TEXT;
-  geom_geomref_colname TEXT;
-  geom_tablename TEXT;
-  geom_id TEXT;
-  result NUMERIC;
   sql TEXT;
-  numer_name TEXT;
+  map_type TEXT;
+  result NUMERIC;
 BEGIN
-  IF geom IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  IF simplification IS NOT NULL THEN
-    geom := ST_Simplify(geom, simplification);
-  END IF;
-
-  IF ST_GeometryType(geom) = 'ST_Point' THEN
-    geom_type := 'point';
-  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
-    geom_type := 'polygon';
-    --geom := ST_Buffer(geom, 0.000001);
-    geom := ST_CollectionExtract(ST_MakeValid(geom), 3);
-  ELSE
-    RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
-                    ST_GeometryType(geom);
-  END IF;
-
-
-  EXECUTE
-     $query$
-      WITH meta AS (SELECT numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
-                    denom_colname, denom_geomref_colname, denom_tablename,
-                    geom_colname, geom_geomref_colname, geom_tablename,
-                    numer_name, geom_id
-                     FROM observatory.obs_meta
-                     WHERE (geom_id = $1 OR ($1 = ''))
-                       AND numer_id = $2
-                       AND (numer_timespan = $3 OR ($3 = ''))),
-           scores AS (SELECT *
-                      FROM cdb_observatory._OBS_GetGeometryScores($4,
-                           (SELECT Array_Agg(geom_id) FROM meta), 500))
-     SELECT meta.*
-     FROM meta, scores
-     WHERE meta.geom_id = scores.geom_id
-     ORDER BY score DESC
-     LIMIT 1
-    $query$
-    INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
-         denom_colname, denom_geomref_colname, denom_tablename,
-         geom_colname, geom_geomref_colname, geom_tablename, numer_name, geom_id
-    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, ''),
-      CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN
-                st_buffer(geom::geography, 10)::geometry(geometry, 4326)
-           ELSE geom
-      END;
-
-  IF geom_id IS NULL THEN
-    RAISE NOTICE 'No boundary found for geom';
-    RETURN NULL;
-  ELSE
-    RAISE NOTICE 'Using boundary %', geom_id;
-  END IF;
 
   IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
     map_type := 'areaNormalized';
@@ -534,8 +528,81 @@ BEGIN
   RETURN result;
 
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql IMMUTABLE;
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
+  geom geometry(Geometry, 4326),
+  measure_id TEXT,
+  normalize TEXT DEFAULT NULL,
+  boundary_id TEXT DEFAULT NULL,
+  time_span TEXT DEFAULT NULL,
+  simplification NUMERIC DEFAULT 0.00001
+)
+RETURNS NUMERIC
+AS $$
+DECLARE
+  geom_type TEXT;
+  numer_aggregate TEXT;
+  numer_colname TEXT;
+  numer_geomref_colname TEXT;
+  numer_tablename TEXT;
+  denom_colname TEXT;
+  denom_geomref_colname TEXT;
+  denom_tablename TEXT;
+  geom_colname TEXT;
+  geom_geomref_colname TEXT;
+  geom_tablename TEXT;
+  geom_id TEXT;
+  result NUMERIC;
+  numer_name TEXT;
+  denom_name TEXT;
+  geom_name TEXT;
+  denom_id TEXT;
+BEGIN
+  IF geom IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  IF simplification IS NOT NULL THEN
+    geom := ST_Simplify(geom, simplification);
+  END IF;
+
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    geom_type := 'point';
+  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
+    geom_type := 'polygon';
+    --geom := ST_Buffer(geom, 0.000001);
+    geom := ST_CollectionExtract(ST_MakeValid(geom), 3);
+  ELSE
+    RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
+                    ST_GeometryType(geom);
+  END IF;
+
+  SELECT * FROM cdb_observatory.OBS_GetMeasureMeta(geom, measure_id, normalize,
+                                              boundary_id, time_span)
+  INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
+       denom_colname, denom_geomref_colname, denom_tablename,
+       geom_colname, geom_geomref_colname, geom_tablename, numer_name,
+       denom_name, geom_name, denom_id, geom_id;
+
+  IF geom_id IS NULL THEN
+    RAISE NOTICE 'No boundary found for geom';
+    RETURN NULL;
+  ELSE
+    RAISE NOTICE 'Using boundary %', geom_id;
+  END IF;
+
+  SELECT cdb_observatory.OBS_GetMeasureData(geom, geom_type, normalize,
+       numer_aggregate, numer_colname,
+       numer_geomref_colname, numer_tablename,
+       denom_colname, denom_geomref_colname, denom_tablename,
+       geom_colname, geom_geomref_colname, geom_tablename)
+  INTO result;
+
+  RETURN result;
+
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureById(
   geom_ref TEXT,

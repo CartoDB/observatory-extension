@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS observatory.obs_meta_denom;
 DROP TABLE IF EXISTS observatory.obs_meta_geom;
 DROP TABLE IF EXISTS observatory.obs_meta_timespan;
 DROP TABLE IF EXISTS observatory.obs_column_table_tile;
+DROP TABLE IF EXISTS observatory.obs_column_table_tile_simple;
 DROP TABLE IF EXISTS observatory.obs_fcd4e4f5610f6764973ef8c0c215b2e80bec8963;
 DROP TABLE IF EXISTS observatory.obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308;
 DROP TABLE IF EXISTS observatory.obs_6c1309a64d8f3e6986061f4d1ca7b57743e75e74;

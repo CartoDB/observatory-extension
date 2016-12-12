@@ -45,6 +45,30 @@ for q in (
                  'us.census.tiger.county_clipped')) foo
            ORDER BY ST_NPoints(the_geom) DESC
            LIMIT 50;''',
+        'DROP TABLE IF EXISTS obs_perftest_country_simple',
+        '''CREATE TABLE obs_perftest_country_simple (cartodb_id SERIAL PRIMARY KEY,
+           geom GEOMETRY,
+           name TEXT) ''',
+        '''INSERT INTO obs_perftest_country_simple (geom, name)
+           SELECT the_geom geom,
+                  geom_refs AS name
+           FROM (SELECT * FROM {schema}OBS_GetBoundariesByGeometry(
+                 st_makeenvelope(-179,-89, 179,89, 4326),
+                 'whosonfirst.wof_country_geom')) foo
+           ORDER BY ST_NPoints(the_geom) ASC
+           LIMIT 50;''',
+        'DROP TABLE IF EXISTS obs_perftest_country_complex',
+        '''CREATE TABLE obs_perftest_country_complex (cartodb_id SERIAL PRIMARY KEY,
+           geom GEOMETRY,
+           name TEXT) ''',
+        '''INSERT INTO obs_perftest_country_complex (geom, name)
+           SELECT the_geom geom,
+                  geom_refs AS name
+           FROM (SELECT * FROM {schema}OBS_GetBoundariesByGeometry(
+                 st_makeenvelope(-179,-89, 179,89, 4326),
+                 'whosonfirst.wof_country_geom')) foo
+           ORDER BY ST_NPoints(the_geom) DESC
+           LIMIT 50;''',
         #'''SET statement_timeout = 5000;'''
 ):
     query(q.format(
@@ -59,6 +83,7 @@ ARGS = {
     ('OBS_GetMeasure', 'area'): "{}, 'us.census.acs.B01001002', 'area'",
     ('OBS_GetMeasure', 'denominator'): "{}, 'us.census.acs.B01001002', 'denominator'",
     ('OBS_GetCategory', None): "{}, 'us.census.spielman_singleton_segments.X10'",
+    ('_OBS_GetGeometryScores', None): "{}, NULL"
 }
 
 
@@ -76,6 +101,56 @@ def record(params, results):
         }
         json.dump(tests, fhandle)
 
+@parameterized([
+    ('simple', '_OBS_GetGeometryScores', 'NULL', 1),
+    ('simple', '_OBS_GetGeometryScores', 'NULL', 500),
+    ('simple', '_OBS_GetGeometryScores', 'NULL', 3000),
+
+    ('complex', '_OBS_GetGeometryScores', 'NULL', 1),
+    ('complex', '_OBS_GetGeometryScores', 'NULL', 500),
+    ('complex', '_OBS_GetGeometryScores', 'NULL', 3000),
+
+    ('country_simple', '_OBS_GetGeometryScores', 'NULL', 1),
+    ('country_simple', '_OBS_GetGeometryScores', 'NULL', 500),
+    ('country_simple', '_OBS_GetGeometryScores', 'NULL', 5000),
+
+    ('country_complex', '_OBS_GetGeometryScores', 'NULL', 1),
+    ('country_complex', '_OBS_GetGeometryScores', 'NULL', 500),
+    ('country_complex', '_OBS_GetGeometryScores', 'NULL', 5000),
+])
+def test_getgeometryscores_performance(geom_complexity, api_method, filters, target_geoms):
+    print api_method, geom_complexity, filters, target_geoms
+
+    rownums = (1, 5, 10, ) if 'complex' in geom_complexity else (5, 25, 50,)
+    results = []
+    for rows in rownums:
+        stmt = '''SELECT {schema}{api_method}(geom, {filters}, {target_geoms})
+                   FROM obs_perftest_{complexity}
+                   WHERE cartodb_id < {n}'''.format(
+                       complexity=geom_complexity,
+                       schema='cdb_observatory.' if USE_SCHEMA else '',
+                       api_method=api_method,
+                       filters=filters,
+                       target_geoms=target_geoms,
+                       n=rows+1)
+        start = time()
+        query(stmt)
+        end = time()
+        qps = (rows / (end - start))
+        results.append({
+            'rows': rows,
+            'qps': qps,
+            'stmt': stmt
+        })
+        print rows, ': ', qps, ' QPS'
+
+    if 'OBS_RECORD_TEST' in os.environ:
+        record({
+            'geom_complexity': geom_complexity,
+            'api_method': api_method,
+            'filters': filters,
+            'target_geoms': target_geoms
+        }, results)
 
 @parameterized([
     ('simple', 'OBS_GetMeasureByID', None, 'us.census.tiger.census_tract'),
@@ -107,7 +182,7 @@ def record(params, results):
     ('complex', 'OBS_GetCategory', None, 'geom'),
     ('complex', 'OBS_GetCategory', None, 'offset_geom'),
 ])
-def test_performance(geom_complexity, api_method, normalization, geom):
+def test_getmeasure_performance(geom_complexity, api_method, normalization, geom):
     print api_method, geom_complexity, normalization, geom
     col = 'measure' if 'measure' in api_method.lower() else 'category'
     results = []

@@ -1,3 +1,29 @@
+1.1.6 (2016-12-08)
+
+__Bugfixes__
+
+* Fix divide by zero condition in "denominator" branch of `OBS_GetMeasure`
+  when passing in a polygon ([#233](https://github.com/CartoDB/observatory-extension/pull/233)).
+
+__Improvements__
+
+* Use `ST_Subdivide` to improve performance when functions are called on very
+  complex geometries (with many points) ([#232](https://github.com/CartoDB/observatory-extension/pull/232))
+* Improve raster scoring to more heavily weight boundaries with nearer to
+  correct number of points, and penalize boundaries with lots of blank space
+  ([#232](https://github.com/CartoDB/observatory-extension/pull/232))
+* Remove some redundant area calculations in `OBS_GetMeasure`
+  ([#232](https://github.com/CartoDB/observatory-extension/pull/232))
+* Replace use of `format('%L', var)` with proper use of `EXECUTE` and `$1` etc.
+  variables ([#231](https://github.com/CartoDB/observatory-extension/pull/231))
+* Add test point for Brazil
+  ([#229](https://github.com/CartoDB/observatory-extension/pull/229))
+* Improvements to performance tests
+  ([#229](https://github.com/CartoDB/observatory-extension/pull/229))
+  - Support simple and complex geometries
+  - Handle all code branches
+  - Add ability to persist results to JSON for graph visualization later
+
 1.1.5 (2016-11-29)
 
 __Bugfixes__

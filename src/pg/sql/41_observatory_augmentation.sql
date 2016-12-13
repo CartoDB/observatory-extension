@@ -338,9 +338,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureMeta(
   geom geometry(Geometry, 4326),
   measure_id TEXT,
-  normalize TEXT DEFAULT NULL,
   boundary_id TEXT DEFAULT NULL,
-  time_span TEXT DEFAULT NULL
+  time_span TEXT DEFAULT NULL,
+  target_geoms INTEGER DEFAULT NULL
 )
 RETURNS TABLE (
   numer_aggregate VARCHAR,
@@ -373,7 +373,7 @@ BEGIN
                      AND (numer_timespan = $3 OR ($3 = ''))),
          scores AS (SELECT *
                     FROM cdb_observatory._OBS_GetGeometryScores($4,
-                         (SELECT Array_Agg(geom_id) FROM meta), 500))
+                         (SELECT Array_Agg(geom_id) FROM meta), $5))
     SELECT meta.*
     FROM meta, scores
     WHERE meta.geom_id = scores.geom_id
@@ -383,7 +383,7 @@ BEGIN
     CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN
               ST_Buffer(geom::geography, 200)::geometry(geometry, 4326)
          ELSE geom
-    END;
+    END, target_geoms;
   RETURN;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -578,8 +578,8 @@ BEGIN
                     ST_GeometryType(geom);
   END IF;
 
-  SELECT * FROM cdb_observatory.OBS_GetMeasureMeta(geom, measure_id, normalize,
-                                              boundary_id, time_span)
+  SELECT * FROM cdb_observatory.OBS_GetMeasureMeta(geom, measure_id,
+                                              boundary_id, time_span, 500)
   INTO numer_aggregate, numer_colname, numer_geomref_colname, numer_tablename,
        denom_colname, denom_geomref_colname, denom_tablename,
        geom_colname, geom_geomref_colname, geom_tablename, numer_name,

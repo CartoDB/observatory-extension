@@ -416,7 +416,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   bounds Geometry(Geometry, 4326) DEFAULT NULL,
   filter_geom_ids TEXT[] DEFAULT NULL,
-  desired_num_geoms INTEGER DEFAULT 3000
+  desired_num_geoms INTEGER DEFAULT NULL
 ) RETURNS TABLE (
   score NUMERIC,
   numtiles BIGINT,
@@ -428,6 +428,9 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   meanmediansize NUMERIC
 ) AS $$
 BEGIN
+  IF desired_num_geoms IS NULL THEN
+    desired_num_geoms := 3000;
+  END IF;
   filter_geom_ids := COALESCE(filter_geom_ids, (ARRAY[])::TEXT[]);
   -- Very complex geometries simply fail.  For a boundary check, we can
   -- comfortably get away with the simplicity of an envelope

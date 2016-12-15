@@ -1,3 +1,15 @@
+1.1.7 (2016-12-15)
+
+__Improvements__
+
+* Use simpler raster table and simplified `_OBSGetGeometryScores` functions to
+  improve performance
+* In cases where geometry passed into geometry scoring function has greater
+  than 10K points, simply use its buffer instead
+* Add `IMMUTABLE` to `_OBSGetGeometryScores`
+* Add tests explicitly for `_OBSGetGeometryScores` in perftest.py
+* Yields a ~50% improvement in performance for `_OBSGetGeomeryScores`.
+
 1.1.6 (2016-12-08)
 
 __Bugfixes__

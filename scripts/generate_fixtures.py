@@ -61,7 +61,8 @@ def get_tablename_query(column_id, boundary_id, timespan):
 METADATA_TABLES = ['obs_table', 'obs_column_table', 'obs_column', 'obs_column_tag',
                    'obs_tag', 'obs_column_to_column', 'obs_dump_version', 'obs_meta',
                    'obs_meta_numer', 'obs_meta_denom', 'obs_meta_geom',
-                   'obs_meta_timespan', 'obs_column_table_tile', ]
+                   'obs_meta_timespan', 'obs_column_table_tile',
+                   'obs_column_table_tile_simple']
 
 FIXTURES = [
     ('us.census.acs.B01003001_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
@@ -290,7 +291,8 @@ def main():
                 "column_id IN ('{}', '{}')".format(numer_id, geom_id)
                 for numer_id, geom_id, timespan in FIXTURES
             ])
-        elif tablename in ('obs_column_table', 'obs_column_table_tile', ):
+        elif tablename in ('obs_column_table', 'obs_column_table_tile',
+                           'obs_column_table_tile_simple'):
             where = 'WHERE column_id IN ({numer_ids}) ' \
                     'OR column_id IN ({geom_ids}) ' \
                     'OR table_id IN ({table_ids}) '.format(

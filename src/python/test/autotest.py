@@ -65,6 +65,7 @@ SKIP_COLUMNS = set([
     u'mx.inegi_columns.VIV41',
     u'mx.inegi_columns.VIV40',
     u'mx.inegi_columns.VIV17',
+    u'mx.inegi_columns.VIV25',
     u'mx.inegi_columns.EDU10'
 ])
 

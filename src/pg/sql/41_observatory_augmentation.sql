@@ -371,7 +371,8 @@ BEGIN
       FROM observatory.obs_meta m JOIN _filters f
         ON m.numer_id = f.numer_id
       WHERE
-        (m.denom_id = f.denom_id OR COALESCE(f.denom_id, '') = '')
+        m.numer_id = ANY ($6)
+        AND (m.denom_id = f.denom_id OR COALESCE(f.denom_id, '') = '')
         AND (m.geom_id = f.geom_id OR COALESCE(f.geom_id, '') = '')
         AND (m.numer_timespan = f.timespan OR COALESCE(f.timespan, '') = '')
     ), scores AS (
@@ -423,7 +424,9 @@ BEGIN
     target_geoms,
     (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]),
     max_timespan_rank,
-    max_score_rank;
+    max_score_rank,
+    (SELECT Array_Agg(val) from (select (JSON_Array_Elements(params))->>'numer_id' val) foo)
+    ;
   RETURN result;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;

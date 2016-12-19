@@ -126,13 +126,13 @@ def test_getgeometryscores_performance(geom_complexity, api_method, filters, tar
     for rows in rownums:
         stmt = '''SELECT {schema}{api_method}(geom, {filters}, {target_geoms})
                    FROM obs_perftest_{complexity}
-                   WHERE cartodb_id < {n}'''.format(
+                   WHERE cartodb_id <= {n}'''.format(
                        complexity=geom_complexity,
                        schema='cdb_observatory.' if USE_SCHEMA else '',
                        api_method=api_method,
                        filters=filters,
                        target_geoms=target_geoms,
-                       n=rows+1)
+                       n=rows)
         start = time()
         query(stmt)
         end = time()
@@ -292,19 +292,17 @@ def test_getmeasure_split_performance(geom_complexity, normalization, geom, boun
     rownums = (1, 5, 10, ) if geom_complexity == 'complex' else (5, 25, 50, )
     for rows in rownums:
         stmt = '''
-WITH meta AS (SELECT * FROM {schema}{api_method}meta(
-                              (SELECT ST_SetSRID(ST_Extent(geom), 4326)
-                              FROM obs_perftest_{complexity}),
-                              'us.census.acs.B01001002', {boundary}))
-, data AS (SELECT cartodb_id, {schema}{api_method}data(
-  {geom}, '{point_or_poly}', '{normalization}', numer_aggregate,
-  numer_colname, numer_geomref_colname, numer_tablename,
-  denom_colname, denom_geomref_colname, denom_tablename,
-  geom_colname, geom_geomref_colname, geom_tablename
-) AS measure
-FROM meta, obs_perftest_{complexity}
-WHERE cartodb_id <= {n}
-)
+with data as (
+  SELECT * FROM {schema}{api_method}datamulti(
+    (SELECT array_agg((geom, cartodb_id)::geomval)
+     FROM obs_perftest_{complexity}
+     WHERE cartodb_id <= {n}),
+    (SELECT {schema}{api_method}metamulti(
+      (SELECT st_setsrid(st_extent(geom),4326) from obs_perftest_{complexity}),
+      json_build_array(json_build_object('numer_id', 'us.census.acs.B01001002'))
+    ))
+  )
+AS x(cartodb_id INTEGER, measure Numeric))
 UPDATE obs_perftest_{complexity}
 SET measure = data.measure
 FROM data

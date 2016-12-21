@@ -765,14 +765,14 @@ BEGIN
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
             '   END) / '
-            ' SUM(' || denom_tablename || '.' || denom_colname || ' ' ||
+            ' NULLIF(SUM(' || denom_tablename || '.' || denom_colname || ' ' ||
             ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
             '         THEN ST_Area(_geoms.geom) / ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
             '         THEN 1 ' ||
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
-            '   END) '
+            '   END), 0) '
             ' END '
           -- areaNormalized
           WHEN LOWER(normalization) LIKE 'area%' OR (normalization IS NULL AND numer_aggregate ILIKE 'sum')

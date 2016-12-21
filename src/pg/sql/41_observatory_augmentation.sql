@@ -760,18 +760,25 @@ BEGIN
             ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
             '      / NullIf(' || denom_tablename || '.' || denom_colname || ', 0))' ||
             -- denominated polygon interpolation
-            -- SUM ((numer / denom) * (% user geom in OBS geom))
+            -- SUM (numer * (% OBS geom in user geom)) / SUM (denom * (% OBS geom in user geom))
             ' ELSE ' ||
-            --' NULL END '
-            ' SUM((' || numer_tablename || '.' || numer_colname || '/' ||
-            '      NullIf(' || denom_tablename || '.' || denom_colname || ', 0)) ' ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') THEN 1 ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) THEN ' ||
-            '          ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
-            '          / ST_Area(_geoms.geom)' ||
+            ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
+            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
+            '         THEN ST_Area(_geoms.geom) / ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
+            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
+            '         THEN 1 ' ||
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / ST_Area(_geoms.geom))' ||
-            '   END) END '
+            '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
+            '   END) / '
+            ' SUM(' || denom_tablename || '.' || denom_colname || ' ' ||
+            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
+            '         THEN ST_Area(_geoms.geom) / ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
+            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
+            '         THEN 1 ' ||
+            '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
+            '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
+            '   END) '
+            ' END '
           -- areaNormalized
           WHEN LOWER(normalization) LIKE 'area%' OR (normalization IS NULL AND numer_aggregate ILIKE 'sum')
             THEN ' CASE ' ||

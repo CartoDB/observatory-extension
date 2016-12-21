@@ -9,18 +9,6 @@ t
 obs_get_median_income_at_null_island
 t
 (1 row)
-obs_getpoints_for_test_point_value|obs_getpoints_for_test_point_name|obs_getpoints_for_test_point_tablename|obs_getpoints_for_test_point_aggregate|obs_getpoints_for_test_point_type|obs_getpoints_for_test_point_description
-t|t|t|t|t|t
-(1 row)
-obs_getpoints_for_null_island
-t
-(1 row)
-obs_getpolygons_for_test_point
-t
-(1 row)
-obs_getpolygons_for_null_island
-t
-(1 row)
 test_point_segmentation
 t
 (1 row)

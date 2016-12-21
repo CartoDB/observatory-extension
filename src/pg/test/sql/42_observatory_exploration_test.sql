@@ -278,9 +278,9 @@ AS _obs_getavailablegeometries_foobarbaz_denom_not_in_usa_bg;
 SELECT 'us.census.tiger.block_group' IN (SELECT geom_id
 FROM cdb_observatory.OBS_GetAvailableGeometries(
   ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
-  NULL, NULL, NULL, '2014'
+  NULL, NULL, NULL, '2015'
 ) WHERE valid_timespan = True)
-AS _obs_getavailablegeometries_bg_2014;
+AS _obs_getavailablegeometries_bg_2015;
 
 SELECT 'us.census.tiger.block_group' NOT IN (SELECT geom_id
 FROM cdb_observatory.OBS_GetAvailableGeometries(
@@ -357,7 +357,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.county', 'us.census.tiger.zcta5']);
+        'us.census.tiger.county', 'us.census.tiger.zcta5'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
@@ -366,7 +367,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 5000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.county', 'us.census.tiger.zcta5']);
+        'us.census.tiger.county', 'us.census.tiger.zcta5'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        ARRAY['us.census.tiger.census_tract', 'us.census.tiger.block_group',
@@ -375,7 +377,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        ARRAY[ 'us.census.tiger.zcta5', 'us.census.tiger.census_tract',
@@ -384,7 +387,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        ARRAY['us.census.tiger.county', 'us.census.tiger.zcta5',
@@ -393,7 +397,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 2500000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text
       = '{ "us.census.tiger.block_group" : 9, "us.census.tiger.census_tract" : 3, "us.census.tiger.zcta5" : 0, "us.census.tiger.county" : 0 }'
@@ -401,7 +406,8 @@ SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
       '{ "us.census.tiger.block_group" : 899, "us.census.tiger.census_tract" : 328, "us.census.tiger.zcta5" : 45, "us.census.tiger.county" : 1 }'
@@ -409,7 +415,8 @@ SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 5000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
       '{ "us.census.tiger.block_group" : 12112, "us.census.tiger.census_tract" : 3792, "us.census.tiger.zcta5" : 550, "us.census.tiger.county" : 14 }'
@@ -417,32 +424,36 @@ SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
-      '{ "us.census.tiger.block_group" : 48420, "us.census.tiger.census_tract" : 15774, "us.census.tiger.zcta5" : 6533, "us.census.tiger.county" : 304 }'
+      '{ "us.census.tiger.block_group" : 48420, "us.census.tiger.census_tract" : 15775, "us.census.tiger.zcta5" : 6533, "us.census.tiger.county" : 304 }'
       AS _obs_geometryscores_numgeoms_500km_buffer
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 500000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT JSON_Object_Agg(column_id, numgeoms::int ORDER BY numgeoms DESC)::Text =
-      '{ "us.census.tiger.block_group" : 165475, "us.census.tiger.census_tract" : 55128, "us.census.tiger.zcta5" : 26499, "us.census.tiger.county" : 2622 }'
+      '{ "us.census.tiger.block_group" : 169119, "us.census.tiger.census_tract" : 56380, "us.census.tiger.zcta5" : 26498, "us.census.tiger.county" : 2704 }'
       AS _obs_geometryscores_numgeoms_2500km_buffer
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 2500000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county']);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'])
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
-       ARRAY['us.census.tiger.county', 'us.census.tiger.zcta5',
-             'us.census.tiger.census_tract', 'us.census.tiger.block_group']
+       ARRAY['us.census.tiger.county', 'us.census.tiger.census_tract',
+             'us.census.tiger.zcta5', 'us.census.tiger.block_group']
       AS _obs_geometryscores_500km_buffer_50_geoms
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county'], 50);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'], 50)
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC)
       = ARRAY['us.census.tiger.zcta5', 'us.census.tiger.census_tract',
@@ -451,7 +462,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC)
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county'], 500);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'], 500)
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        ARRAY['us.census.tiger.census_tract', 'us.census.tiger.block_group',
@@ -460,7 +472,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county'], 2500);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'], 2500)
+      WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
        ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
@@ -469,7 +482,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
   ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-        'us.census.tiger.zcta5', 'us.census.tiger.county'], 25000);
+        'us.census.tiger.zcta5', 'us.census.tiger.county'], 25000)
+      WHERE table_id LIKE '%2015%';
 
 --
 -- OBS_LegacyBuilderMetadata tests

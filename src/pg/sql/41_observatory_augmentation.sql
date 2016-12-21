@@ -630,18 +630,13 @@ BEGIN
       map_type := 'predenominated';
     END IF;
   END IF;
-  RAISE NOTICE 'map_type: %, geom_type: %', map_type, geom_type;
   params := (SELECT cdb_observatory.OBS_GetMeasureMetaMulti(
     geom, JSON_Build_Array(JSON_Build_Object('numer_id', measure_id,
                                              'geom_id', boundary_id,
                                              'timespan', time_span
                                             )), 1, 1, 500));
 
-  --IF normalize IS NOT NULL THEN
   params := JSON_Build_Array(JSONB_Set((params::JSONB)->0, '{normalization}', to_jsonb(map_type))::JSON);
-  --END IF;
-
-  RAISE NOTICE '%', params;
 
   IF params->0->>'geom_id' IS NULL THEN
     RAISE NOTICE 'No boundary found for geom';

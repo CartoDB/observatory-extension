@@ -168,10 +168,11 @@ FIXTURES = [
     ('us.census.acs.B19001015', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19001016', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19001017', 'us.census.tiger.block_group', '2010 - 2014'),
+    ('us.census.tiger.census_tract', 'us.census.tiger.census_tract', '2015'),
     ('us.census.tiger.census_tract', 'us.census.tiger.census_tract', '2014'),
-    ('us.census.tiger.block_group', 'us.census.tiger.block_group', '2014'),
-    ('us.census.tiger.zcta5', 'us.census.tiger.zcta5', '2014'),
-    ('us.census.tiger.county', 'us.census.tiger.county', '2014'),
+    ('us.census.tiger.block_group', 'us.census.tiger.block_group', '2015'),
+    ('us.census.tiger.zcta5', 'us.census.tiger.zcta5', '2015'),
+    ('us.census.tiger.county', 'us.census.tiger.county', '2015'),
     ('us.census.acs.B01001002', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B01003001', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.acs.B01003001_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
@@ -204,6 +205,7 @@ def dump(cols, tablename, where=''):
                           ' | sed "s:SET search_path.*::" '
                           ' | sed "s:CREATE TABLE :CREATE TABLE observatory.:" '
                           ' | sed "s:ALTER TABLE.*OWNER.*::" '
+                          ' | sed "s:SET idle_in_transaction_session_timeout.*::" '
                           ' >> {outfile}'.format(
                               tablename=tablename,
                               outfile=OUTFILE_PATH,

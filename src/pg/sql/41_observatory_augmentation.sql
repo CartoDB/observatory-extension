@@ -361,7 +361,7 @@ BEGIN
         (unnest($3))->>'geom_id' geom_id,
         (unnest($3))->>'timespan' timespan
     ), meta AS (SELECT
-        id,
+        id, geom_tid,
         numer_aggregate, numer_colname, numer_geomref_colname,
         numer_tablename, denom_aggregate, denom_colname, denom_geomref_colname,
         denom_tablename, geom_colname, geom_geomref_colname,
@@ -409,7 +409,8 @@ BEGIN
           'geom_id', meta.geom_id
         ) metadata
       FROM meta, scores
-      WHERE meta.geom_id = scores.geom_id
+      WHERE meta.geom_id = scores.column_id
+        AND meta.geom_tid = scores.table_id
     ) SELECT JSON_AGG(metadata ORDER BY id)
       FROM groups
       WHERE timespan_rank <= $4
@@ -432,146 +433,150 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureData(
-  geom geometry(Geometry, 4326),
-  geom_type TEXT,
-  normalize TEXT,
-  numer_aggregate TEXT,
-  numer_colname TEXT,
-  numer_geomref_colname TEXT,
-  numer_tablename TEXT,
-  denom_colname TEXT,
-  denom_geomref_colname TEXT,
-  denom_tablename TEXT,
-  geom_colname TEXT,
-  geom_geomref_colname TEXT,
-  geom_tablename TEXT
-)
-RETURNS NUMERIC
-AS $$
-DECLARE
-  sql TEXT;
-  map_type TEXT;
-  result NUMERIC;
-BEGIN
-
-  IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
-    map_type := 'areaNormalized';
-  ELSIF normalize ILIKE 'denominator' THEN
-    map_type := 'denominated';
-  ELSE
-    -- defaults: area normalization for point if it's possible and none for
-    -- polygon or non-summable point
-    IF geom_type = 'point' AND numer_aggregate ILIKE 'sum' THEN
-      map_type := 'areaNormalized';
-    ELSE
-      map_type := 'predenominated';
-    END IF;
-  END IF;
-
-  IF geom_type = 'point' THEN
-    IF map_type = 'areaNormalized' THEN
-      sql = format('WITH _geom AS (SELECT ST_Area(geom.%I::Geography) / 1000000 area, geom.%I geom_ref
-                                   FROM observatory.%I geom
-                                   WHERE ST_Within($1, geom.%I)
-                                   LIMIT 1)
-                    SELECT numer.%I / (SELECT area FROM _geom)
-                    FROM observatory.%I numer
-                    WHERE numer.%I = (SELECT geom_ref FROM _geom)',
-                geom_colname, geom_geomref_colname, geom_tablename,
-                geom_colname, numer_colname, numer_tablename,
-                numer_geomref_colname);
-    ELSIF map_type = 'denominated' THEN
-      sql = format('SELECT numer.%I / NULLIF((SELECT denom.%I FROM observatory.%I denom WHERE denom.%I = numer.%I LIMIT 1), 0)
-                    FROM observatory.%I numer
-                    WHERE numer.%I =
-                      (SELECT geom.%I
-                       FROM observatory.%I geom
-                       WHERE ST_Within($1, geom.%I) LIMIT 1)',
-                        numer_colname, denom_colname, denom_tablename,
-                        denom_geomref_colname, numer_geomref_colname,
-                        numer_tablename, numer_geomref_colname,
-                        geom_geomref_colname, geom_tablename, geom_colname);
-    ELSIF map_type = 'predenominated' THEN
-      sql = format('SELECT numer.%I
-                    FROM observatory.%I numer
-                    WHERE numer.%I =
-                      (SELECT geom.%I
-                       FROM observatory.%I geom
-                       WHERE ST_Within($1, geom.%I) LIMIT 1)',
-                        numer_colname, numer_tablename, numer_geomref_colname,
-                        geom_geomref_colname, geom_tablename, geom_colname);
-    END IF;
-  ELSIF geom_type = 'polygon' THEN
-    IF map_type = 'areaNormalized' THEN
-      sql = format('WITH _subdivided AS (
-                          SELECT ST_Subdivide($1) AS geom
-                        ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
-                                        / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap, geom.%I geom_ref
-                                   FROM observatory.%I geom, _subdivided s
-                                   WHERE ST_Intersects(s.geom, geom.%I)
-                                   GROUP BY geom.%I)
-                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
-                           (ST_Area($1::Geography) / 1000000)
-                    FROM observatory.%I numer
-                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
-                geom_colname, geom_colname, geom_geomref_colname, geom_tablename,
-                geom_colname, geom_geomref_colname, numer_colname,
-                numer_geomref_colname, numer_tablename, numer_geomref_colname);
-    ELSIF map_type = 'denominated' THEN
-      sql = format('WITH _subdivided AS (
-                          SELECT ST_Subdivide($1) AS geom
-                        ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
-                                        / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap, geom.%I geom_ref
-                                   FROM observatory.%I geom, _subdivided s
-                                   WHERE ST_Intersects(s.geom, geom.%I)
-                                   GROUP BY geom.%I),
-                        _denom AS (SELECT denom.%I, denom.%I geom_ref
-                                   FROM observatory.%I denom
-                                   WHERE denom.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[]))
-                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
-                           NullIf(SUM((SELECT _denom.%I * (SELECT _geom.overlap
-                                                    FROM _geom
-                                                    WHERE _geom.geom_ref = _denom.geom_ref)
-                                FROM _denom WHERE _denom.geom_ref = numer.%I)), 0)
-                    FROM observatory.%I numer
-                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
-                geom_colname, geom_colname, geom_geomref_colname,
-                geom_tablename, geom_colname, geom_geomref_colname,
-                denom_colname, denom_geomref_colname, denom_tablename,
-                denom_geomref_colname, numer_colname, numer_geomref_colname,
-                denom_colname, numer_geomref_colname,
-                numer_tablename, numer_geomref_colname);
-    ELSIF map_type = 'predenominated' THEN
-      IF numer_aggregate NOT ILIKE 'sum' THEN
-        RAISE EXCEPTION 'Cannot calculate "%" (%) for custom area as it cannot be summed, use ST_PointOnSurface instead',
-                        numer_name, measure_id;
-      ELSE
-        sql = format('WITH _subdivided AS (
-                        SELECT ST_Subdivide($1) AS geom
-                      ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
-                                          / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap,
-                                          geom.%I geom_ref
-                                     FROM observatory.%I geom, _subdivided s
-                                     WHERE ST_Intersects(s.geom, geom.%I)
-                                     GROUP BY geom.%I
-                                  )
-                      SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
-                      FROM observatory.%I numer
-                      WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
-                  geom_colname, geom_colname, geom_geomref_colname,
-                  geom_tablename, geom_colname, geom_geomref_colname,
-                  numer_colname, numer_geomref_colname, numer_tablename,
-                  numer_geomref_colname);
-      END IF;
-    END IF;
-  END IF;
-
-  EXECUTE sql INTO result USING geom;
-  RETURN result;
-
-END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+--CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureData(
+--  geom geometry(Geometry, 4326),
+--  geom_type TEXT,
+--  normalize TEXT,
+--  numer_aggregate TEXT,
+--  numer_colname TEXT,
+--  numer_geomref_colname TEXT,
+--  numer_tablename TEXT,
+--  denom_colname TEXT,
+--  denom_geomref_colname TEXT,
+--  denom_tablename TEXT,
+--  geom_colname TEXT,
+--  geom_geomref_colname TEXT,
+--  geom_tablename TEXT
+--)
+--RETURNS NUMERIC
+--AS $$
+--DECLARE
+--  sql TEXT;
+--  map_type TEXT;
+--  result NUMERIC;
+--BEGIN
+--
+--  IF normalize ILIKE 'area' AND numer_aggregate ILIKE 'sum' THEN
+--    map_type := 'areaNormalized';
+--  ELSIF normalize ILIKE 'denominator' THEN
+--    map_type := 'denominated';
+--  ELSE
+--    -- defaults: area normalization for point if it's possible and none for
+--    -- polygon or non-summable point
+--    IF geom_type = 'point' AND numer_aggregate ILIKE 'sum' THEN
+--      map_type := 'areaNormalized';
+--    ELSE
+--      map_type := 'predenominated';
+--    END IF;
+--  END IF;
+--
+--  IF geom_type = 'point' THEN
+--    IF map_type = 'areaNormalized' THEN
+--      sql = format('WITH _geom AS (SELECT ST_Area(geom.%I::Geography) / 1000000 area, geom.%I geom_ref
+--                                   FROM observatory.%I geom
+--                                   WHERE ST_Within($1, geom.%I)
+--                                   LIMIT 1)
+--                    SELECT numer.%I / (SELECT area FROM _geom)
+--                    FROM observatory.%I numer
+--                    WHERE numer.%I = (SELECT geom_ref FROM _geom)',
+--                geom_colname, geom_geomref_colname, geom_tablename,
+--                geom_colname, numer_colname, numer_tablename,
+--                numer_geomref_colname);
+--    ELSIF map_type = 'denominated' THEN
+--      sql = format('SELECT numer.%I / NULLIF((SELECT denom.%I FROM observatory.%I denom WHERE denom.%I = numer.%I LIMIT 1), 0)
+--                    FROM observatory.%I numer
+--                    WHERE numer.%I =
+--                      (SELECT geom.%I
+--                       FROM observatory.%I geom
+--                       WHERE ST_Within($1, geom.%I) LIMIT 1)',
+--                        numer_colname, denom_colname, denom_tablename,
+--                        denom_geomref_colname, numer_geomref_colname,
+--                        numer_tablename, numer_geomref_colname,
+--                        geom_geomref_colname, geom_tablename, geom_colname);
+--    ELSIF map_type = 'predenominated' THEN
+--      sql = format('SELECT numer.%I
+--                    FROM observatory.%I numer
+--                    WHERE numer.%I =
+--                      (SELECT geom.%I
+--                       FROM observatory.%I geom
+--                       WHERE ST_Within($1, geom.%I) LIMIT 1)',
+--                        numer_colname, numer_tablename, numer_geomref_colname,
+--                        geom_geomref_colname, geom_tablename, geom_colname);
+--    END IF;
+--  ELSIF geom_type = 'polygon' THEN
+--    IF map_type = 'areaNormalized' THEN
+--      sql = format('WITH _subdivided AS (
+--                          SELECT ST_Subdivide($1) AS geom
+--                        ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
+--                                        / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap, geom.%I geom_ref
+--                                   FROM observatory.%I geom, _subdivided s
+--                                   WHERE ST_Intersects(s.geom, geom.%I)
+--                                   GROUP BY geom.%I)
+--                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
+--                           (ST_Area($1::Geography) / 1000000)
+--                    FROM observatory.%I numer
+--                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
+--                geom_colname, geom_colname, geom_geomref_colname, geom_tablename,
+--                geom_colname, geom_geomref_colname, numer_colname,
+--                numer_geomref_colname, numer_tablename, numer_geomref_colname);
+--    ELSIF map_type = 'denominated' THEN
+--      sql = format('WITH _subdivided AS (
+--                          SELECT ST_Subdivide($1) AS geom
+--                        ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
+--                                        / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap, geom.%I geom_ref
+--                                   FROM observatory.%I geom, _subdivided s
+--                                   WHERE ST_Intersects(s.geom, geom.%I)
+--                                   GROUP BY geom.%I),
+--                        _denom AS (SELECT denom.%I, denom.%I geom_ref
+--                                   FROM observatory.%I denom
+--                                   WHERE denom.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[]))
+--                    SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I)) /
+--                           NullIf(SUM((SELECT _denom.%I * (SELECT _geom.overlap
+--                                                    FROM _geom
+--                                                    WHERE _geom.geom_ref = _denom.geom_ref)
+--                                FROM _denom WHERE _denom.geom_ref = numer.%I)), 0)
+--                    FROM observatory.%I numer
+--                    WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
+--                geom_colname, geom_colname, geom_geomref_colname,
+--                geom_tablename, geom_colname, geom_geomref_colname,
+--                denom_colname, denom_geomref_colname, denom_tablename,
+--                denom_geomref_colname, numer_colname, numer_geomref_colname,
+--                denom_colname, numer_geomref_colname,
+--                numer_tablename, numer_geomref_colname);
+--    ELSIF map_type = 'predenominated' THEN
+--      IF numer_aggregate NOT ILIKE 'sum' THEN
+--        RAISE EXCEPTION 'Cannot calculate "%" (%) for custom area as it cannot be summed, use ST_PointOnSurface instead',
+--                        numer_name, measure_id;
+--      ELSE
+--        sql = format('WITH _subdivided AS (
+--                        SELECT ST_Subdivide($1) AS geom
+--                      ), _geom AS (SELECT SUM(ST_Area(ST_Intersection(s.geom, geom.%I)))
+--                                          / ST_Area(cdb_observatory.FIRST(geom.%I)) overlap,
+--                                          geom.%I geom_ref
+--                                     FROM observatory.%I geom, _subdivided s
+--                                     WHERE ST_Intersects(s.geom, geom.%I)
+--                                     GROUP BY geom.%I
+--                                  )
+--                      SELECT SUM(numer.%I * (SELECT _geom.overlap FROM _geom WHERE _geom.geom_ref = numer.%I))
+--                      FROM observatory.%I numer
+--                      WHERE numer.%I = ANY ((SELECT ARRAY_AGG(geom_ref) FROM _geom)::TEXT[])',
+--                  geom_colname, geom_colname, geom_geomref_colname,
+--                  geom_tablename, geom_colname, geom_geomref_colname,
+--                  numer_colname, numer_geomref_colname, numer_tablename,
+--                  numer_geomref_colname);
+--      END IF;
+--    END IF;
+--  END IF;
+--
+--  EXECUTE SELECT cdb_observatory.OBS_GetMeasureDataMulti(
+--    array[($1, 1)::geomval, $2
+--  )
+--
+--  INTO result USING geom, params;
+--  RETURN result;
+--
+--END;
+--$$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
   geom geometry(Geometry, 4326),
@@ -591,6 +596,7 @@ DECLARE
   denom_name TEXT;
   geom_name TEXT;
   denom_id TEXT;
+  map_type TEXT;
 BEGIN
   IF geom IS NULL THEN
     RETURN NULL;
@@ -611,32 +617,42 @@ BEGIN
                     ST_GeometryType(geom);
   END IF;
 
+  IF normalize ILIKE 'area%' THEN --AND numer_aggregate ILIKE 'sum' THEN
+    map_type := 'areaNormalized';
+  ELSIF normalize ILIKE 'denom%' THEN
+    map_type := 'denominated';
+  ELSE
+    -- defaults: area normalization for point if it's possible and none for
+    -- polygon or non-summable point
+    IF geom_type = 'point' THEN --AND numer_aggregate ILIKE 'sum' THEN
+      map_type := 'areaNormalized';
+    ELSE
+      map_type := 'predenominated';
+    END IF;
+  END IF;
+  RAISE NOTICE 'map_type: %, geom_type: %', map_type, geom_type;
   params := (SELECT cdb_observatory.OBS_GetMeasureMetaMulti(
     geom, JSON_Build_Array(JSON_Build_Object('numer_id', measure_id,
-                            'geom_id', boundary_id,
-                            'timespan', time_span
-                    )), 500))->>0;
+                                             'geom_id', boundary_id,
+                                             'timespan', time_span
+                                            )), 1, 1, 500));
 
-  IF params->>'geom_id' IS NULL THEN
+  --IF normalize IS NOT NULL THEN
+  params := JSON_Build_Array(JSONB_Set((params::JSONB)->0, '{normalization}', to_jsonb(map_type))::JSON);
+  --END IF;
+
+  RAISE NOTICE '%', params;
+
+  IF params->0->>'geom_id' IS NULL THEN
     RAISE NOTICE 'No boundary found for geom';
     RETURN NULL;
   ELSE
-    RAISE NOTICE 'Using boundary %', params->>'geom_id';
+    RAISE NOTICE 'Using boundary %', params->0->>'geom_id';
   END IF;
 
-  SELECT cdb_observatory.OBS_GetMeasureData(geom,
-       geom_type,
-       normalize,
-       params->>'numer_aggregate',
-       params->>'numer_colname',
-       params->>'numer_geomref_colname',
-       params->>'numer_tablename',
-       params->>'denom_colname',
-       params->>'denom_geomref_colname',
-       params->>'denom_tablename',
-       params->>'geom_colname',
-       params->>'geom_geomref_colname',
-       params->>'geom_tablename')
+  SELECT measure FROM
+    cdb_observatory.OBS_GetMeasureDataMulti(ARRAY[(geom, 1)::geomval], params)
+    AS (id INT, measure NUMERIC)
   INTO result;
 
   RETURN result;
@@ -693,8 +709,9 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureDataMulti(
-  --geoms Geometry(Geometry, 4326)[], params json)
-  geomvals geomval[], params JSON)
+  geomvals geomval[],
+  params JSON
+)
 RETURNS SETOF RECORD
 AS $$
 DECLARE
@@ -730,11 +747,13 @@ BEGIN
           (unnest($1))->>'geom_geomref_colname' geom_geomref_colname,
           (unnest($1))->>'geom_tablename' geom_tablename,
           (unnest($1))->>'geom_type' geom_type,
-          (unnest($1))->>'timespan' timespan
+          (unnest($1))->>'timespan' timespan,
+          (unnest($1))->>'normalization' normalization
         )
         SELECT String_Agg(CASE
           -- denominated
-          WHEN denom_id IS NOT NULL THEN ' CASE ' ||
+          WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
+            THEN ' CASE ' ||
             -- denominated point-in-poly or user polygon is same as OBS polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
             '      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
@@ -744,7 +763,8 @@ BEGIN
             -- SUM ((numer / denom) * (% user geom in OBS geom))
             ' ELSE ' ||
             --' NULL END '
-            ' SUM((' || numer_tablename || '.' || numer_colname || '/NullIf(' || denom_tablename || '.' || denom_colname || ', 0)) ' ||
+            ' SUM((' || numer_tablename || '.' || numer_colname || '/' ||
+            '      NullIf(' || denom_tablename || '.' || denom_colname || ', 0)) ' ||
             ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') THEN 1 ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) THEN ' ||
             '          ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
@@ -753,7 +773,8 @@ BEGIN
             '         / ST_Area(_geoms.geom))' ||
             '   END) END '
           -- areaNormalized
-          WHEN numer_aggregate ILIKE 'sum' THEN ' CASE ' ||
+          WHEN LOWER(normalization) LIKE 'area%' OR (normalization IS NULL AND numer_aggregate ILIKE 'sum')
+            THEN ' CASE ' ||
             -- areaNormalized point-in-poly or user polygon is the same as OBS polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
             '      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
@@ -763,24 +784,6 @@ BEGIN
             -- SUM (numer * (% OBS geom in user geom)) / area of big geom
             ' ELSE ' ||
             --' NULL END '
-            ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
-            '         THEN ST_Area(_geoms.geom) / ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
-            '         THEN 1 ' ||
-            '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
-            '   END) END '
-          -- prenormalized
-          ELSE ' CASE ' ||
-            -- predenominated point-in-poly or user polygon is the same as OBS- polygon
-            ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
-            '      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
-            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
-            ' ELSE ' ||
-            -- predenominated polygon interpolation
-            -- TODO should weight by universe instead of area
-            -- SUM (numer * (% user geom in OBS geom))
             ' SUM((' || numer_tablename || '.' || numer_colname || ') ' ||
             ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') THEN 1 ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) THEN ' ||
@@ -788,6 +791,24 @@ BEGIN
             '          / ST_Area(_geoms.geom)' ||
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(_geoms.geom))' ||
+            '   END) END '
+          -- prenormalized
+          ELSE ' CASE ' ||
+            -- predenominated point-in-poly or user polygon is the same as OBS- polygon
+            ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
+            --'      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
+            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
+            ' ELSE ' ||
+            -- predenominated polygon interpolation
+            -- TODO should weight by universe instead of area
+            -- SUM (numer * (% user geom in OBS geom))
+            ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
+            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
+            '         THEN ST_Area(_geoms.geom) / ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
+            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
+            '         THEN 1 ' ||
+            '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
+            '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
             '   END) END '
           END || ':: ' || numer_type || ' AS ' || numer_colname, ', ') AS colspecs,
 

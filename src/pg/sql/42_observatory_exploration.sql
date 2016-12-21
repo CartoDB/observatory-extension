@@ -298,7 +298,7 @@ BEGIN
     ) SELECT available_geoms.*, score, numtiles, notnull_percent, numgeoms,
              percentfill, estnumgeoms, meanmediansize
       FROM available_geoms, scores
-      WHERE available_geoms.geom_id = scores.geom_id
+      WHERE available_geoms.geom_id = scores.column_id
   $string$, geom_clause)
   USING numer_id, denom_id, timespan, filter_tags, bounds;
   RETURN;
@@ -420,7 +420,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
 ) RETURNS TABLE (
   score NUMERIC,
   numtiles BIGINT,
-  geom_id TEXT,
+  table_id TEXT,
+  column_id TEXT,
   notnull_percent NUMERIC,
   numgeoms NUMERIC,
   percentfill NUMERIC,
@@ -454,20 +455,20 @@ BEGIN
       FROM clipped_geom
       GROUP BY column_id, table_id
     ), clipped_geom_reagg AS (
-      SELECT COUNT(*)::BIGINT cnt, a.column_id,
+      SELECT COUNT(*)::BIGINT cnt, a.column_id, a.table_id,
              cdb_observatory.FIRST(pixels) first_pixel,
              cdb_observatory.FIRST(notnull_pixels) first_notnull_pixel,
              cdb_observatory.FIRST(tile) first_tile,
              (ST_SummaryStatsAgg(clipped_tile, 1, True)).sum::Numeric sum_geoms, -- ND
              (ST_SummaryStatsAgg(clipped_tile, 2, True)).mean::Numeric / 255 mean_fill --ND
+             --(ST_SummaryStatsAgg(clipped_tile, 2, True)).mean::Numeric / 255 mean_fill --ND
       FROM clipped_geom_countagg a, clipped_geom b
       WHERE a.table_id = b.table_id
         AND a.column_id = b.column_id
       GROUP BY a.column_id, a.table_id
     ), final AS (
       SELECT
-        cnt, column_id
-
+        cnt, table_id, column_id
         , (CASE WHEN first_notnull_pixel > 0
                 THEN first_notnull_pixel / first_pixel
                 ELSE 1
@@ -480,7 +481,6 @@ BEGIN
                     * first_pixel) -- -20
           END)::Numeric
         AS numgeoms
-
         , (CASE WHEN first_notnull_pixel > 0
                 THEN mean_fill
                 ELSE COALESCE(ST_Value(first_tile, 2, ST_PointOnSurface($1))::Numeric / 255, 0) -- -2

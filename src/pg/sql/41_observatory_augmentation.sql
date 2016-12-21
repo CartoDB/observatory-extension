@@ -791,12 +791,12 @@ BEGIN
             '          / ST_Area(_geoms.geom)' ||
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(_geoms.geom))' ||
-            '   END) END '
+            '   END / (ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography) / 1000000)) END  '
           -- prenormalized
           ELSE ' CASE ' ||
             -- predenominated point-in-poly or user polygon is the same as OBS- polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
-            --'      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
+            '      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
             ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
             ' ELSE ' ||
             -- predenominated polygon interpolation
@@ -836,7 +836,6 @@ BEGIN
 
     RETURN QUERY EXECUTE format($query$
       WITH _geoms AS (SELECT
-                     --generate_series(1, array_length($1, 1)) id,
                      (UNNEST($1)).val as id,
                      (UNNEST($1)).geom AS geom)
       SELECT _geoms.id::INT, %s

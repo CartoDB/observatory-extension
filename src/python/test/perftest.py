@@ -89,6 +89,7 @@ ARGS = {
 
 def record(params, results):
     sha = os.environ['OBS_EXTENSION_SHA']
+    msg = os.environ.get('OBS_EXTENSION_MSG')
     fpath = os.path.join(os.environ['OBS_PERFTEST_DIR'], sha + '.json')
     if os.path.isfile(fpath):
         tests = json.load(open(fpath, 'r'))
@@ -340,5 +341,6 @@ WHERE obs_perftest_{complexity}.cartodb_id = data.cartodb_id
             'geom_complexity': geom_complexity,
             'api_method': 'OBS_GetMeasureMeta/OBS_GetMeasureData',
             'normalization': normalization,
+            'boundary': boundary,
             'geom': geom
         }, results)

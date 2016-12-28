@@ -837,11 +837,19 @@ BEGIN
     USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]);
 
     RETURN QUERY EXECUTE format($query$
-      WITH _geoms AS (SELECT
-                     (UNNEST($1)).val as id,
-                     (UNNEST($1)).geom AS geom)
+      WITH _geoms AS (
+        SELECT
+        (UNNEST($1)).val as id,
+        (UNNEST($1)).geom AS geom
+      ), _simple_geoms AS (
+        SELECT id,
+          CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN geom
+               ELSE ST_Subdivide(geom)
+          END AS geom
+        FROM _geoms
+      )
       SELECT _geoms.id::INT, %s
-      FROM %s, _geoms
+      FROM %s, _simple_geoms _geoms
       WHERE %s
         AND %s
       GROUP BY _geoms.id

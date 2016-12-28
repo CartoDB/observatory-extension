@@ -298,7 +298,7 @@ BEGIN
     ) SELECT available_geoms.*, score, numtiles, notnull_percent, numgeoms,
              percentfill, estnumgeoms, meanmediansize
       FROM available_geoms, scores
-      WHERE available_geoms.geom_id = scores.geom_id
+      WHERE available_geoms.geom_id = scores.column_id
   $string$, geom_clause)
   USING numer_id, denom_id, timespan, filter_tags, bounds;
   RETURN;
@@ -412,14 +412,16 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   bounds Geometry(Geometry, 4326) DEFAULT NULL,
   filter_geom_ids TEXT[] DEFAULT NULL,
-  desired_num_geoms INTEGER DEFAULT 3000
+  desired_num_geoms INTEGER DEFAULT NULL
 ) RETURNS TABLE (
   score NUMERIC,
   numtiles BIGINT,
-  geom_id TEXT,
+  table_id TEXT,
+  column_id TEXT,
   notnull_percent NUMERIC,
   numgeoms NUMERIC,
   percentfill NUMERIC,
@@ -427,57 +429,66 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   meanmediansize NUMERIC
 ) AS $$
 BEGIN
+  IF desired_num_geoms IS NULL THEN
+    desired_num_geoms := 3000;
+  END IF;
   filter_geom_ids := COALESCE(filter_geom_ids, (ARRAY[])::TEXT[]);
+  -- Very complex geometries simply fail.  For a boundary check, we can
+  -- comfortably get away with the simplicity of an envelope
+  IF ST_Npoints(bounds) > 10000 THEN
+    bounds := ST_Envelope(bounds);
+  END IF;
   RETURN QUERY
-  EXECUTE format($string$
-    SELECT
-      ((100.0 / (1+abs(log(1 + $3) - log(1 + numgeoms)))) * percentfill)::Numeric
-      AS score, *
-    FROM (
-      WITH clipped_geom AS (
-        SELECT column_id, table_id
-          , CASE WHEN $1 IS NOT NULL THEN ST_Clip(tile, $1, True)
-                 ELSE tile END clipped_tile
-          , tile
-        FROM observatory.obs_column_table_tile
-        WHERE ($1 IS NULL OR ST_Intersects($1, tile))
-          AND (column_id = ANY($2) OR cardinality($2) = 0)
-      ), clipped_geom_countagg AS (
-        SELECT column_id, table_id
-          , ST_CountAgg(clipped_tile, 2, True)::Numeric notnull_pixels
-          , ST_CountAgg(clipped_tile, 2, False)::Numeric pixels
-        FROM clipped_geom
-        GROUP BY column_id, table_id
-      ) SELECT
-        count(*)::BIGINT, a.column_id
-        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                THEN cdb_observatory.FIRST(notnull_pixels) / cdb_observatory.FIRST(pixels)
-                ELSE 1
-          END)::Numeric AS notnull_percent
-        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                THEN (ST_SummaryStatsAgg(clipped_tile, 2, True)).sum
-                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 2, ST_PointOnSurface($1)), 0) * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(cdb_observatory.FIRST(tile), 0, 0)) * cdb_observatory.FIRST(pixels))
-          END)::Numeric AS numgeoms
-        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                THEN (ST_SummaryStatsAgg(clipped_tile, 3, True)).mean
-                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 3, ST_PointOnSurface($1)), 0)
-          END)::Numeric AS percentfill
-        , ((ST_Area(ST_Transform($1, 3857)) / 1000000) / NullIf(
-            CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                 THEN (ST_SummaryStatsAgg(clipped_tile, 1, True)).mean
-                 ELSE Coalesce(ST_Value(cdb_observatory.FIRST(tile), 1, ST_PointOnSurface($1)), 0)
-            END, 0))::Numeric AS estnumgeoms
-        , (CASE WHEN cdb_observatory.FIRST(notnull_pixels) > 0
-                THEN (ST_SummaryStatsAgg(clipped_tile, 1, True)).mean
-                ELSE COALESCE(ST_Value(cdb_observatory.FIRST(tile), 1, ST_PointOnSurface($1)), 0)
-          END)::Numeric AS meanmediansize
+  EXECUTE $string$
+    WITH clipped_geom AS (
+      SELECT column_id, table_id
+        , CASE WHEN $1 IS NOT NULL THEN ST_Clip(tile, $1, True) -- -20
+               ELSE tile END clipped_tile
+        , tile
+      FROM observatory.obs_column_table_tile_simple
+      WHERE ($1 IS NULL OR ST_Intersects($1, tile))
+        AND (column_id = ANY($2) OR cardinality($2) = 0)
+    ), clipped_geom_countagg AS (
+      SELECT column_id, table_id
+        , BOOL_AND(ST_BandIsNoData(clipped_tile, 1)) nodata
+        , ST_CountAgg(clipped_tile, 1, False)::Numeric pixels -- -10
+      FROM clipped_geom
+      GROUP BY column_id, table_id
+    ), clipped_geom_reagg AS (
+      SELECT COUNT(*)::BIGINT cnt, a.column_id, a.table_id,
+             cdb_observatory.FIRST(nodata) first_nodata,
+             cdb_observatory.FIRST(pixels) first_pixel,
+             cdb_observatory.FIRST(tile) first_tile,
+             (ST_SummaryStatsAgg(clipped_tile, 1, False)).sum::Numeric sum_geoms, -- ND
+             (ST_SummaryStatsAgg(clipped_tile, 2, False)).mean::Numeric / 255 mean_fill --ND
       FROM clipped_geom_countagg a, clipped_geom b
       WHERE a.table_id = b.table_id
         AND a.column_id = b.column_id
       GROUP BY a.column_id, a.table_id
-      ORDER BY a.column_id, a.table_id
-    ) foo
-  $string$) USING bounds, filter_geom_ids, desired_num_geoms;
+    ), final AS (
+      SELECT
+        cnt, table_id, column_id
+        , NULL::Numeric AS notnull_percent
+        , (CASE WHEN first_nodata IS FALSE
+                THEN sum_geoms
+                ELSE COALESCE(ST_Value(first_tile, 1, ST_PointOnSurface($1)), 0)
+                  * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0))
+                    * first_pixel) -- -20
+          END)::Numeric
+        AS numgeoms
+        , (CASE WHEN first_nodata IS FALSE
+                THEN mean_fill
+                ELSE COALESCE(ST_Value(first_tile, 2, ST_PointOnSurface($1))::Numeric / 255, 0) -- -2
+          END)::Numeric
+        AS percentfill
+        , null::numeric estnumgeoms
+        , null::numeric meanmediansize
+      FROM clipped_geom_reagg
+    ) SELECT
+      ((100.0 / (1+abs(log(1 + $3) - log(1 + numgeoms::Numeric)))) * percentfill)::Numeric
+      AS score, *
+      FROM final
+  $string$ USING bounds, filter_geom_ids, desired_num_geoms;
   RETURN;
 END
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql IMMUTABLE;

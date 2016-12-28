@@ -1,3 +1,35 @@
+1.2.0 (2016-12-28)
+
+__API Changes__
+
+* Added `OBS_GetMeasureDataMulti`, which takes an array of geomvals and
+  parameters as JSON, and returns a set of RECORDs keyed by the vals of the
+  geomvals.
+* Added `OBS_GetMeasureMetaMulti`, which takes sparse metadata as JSON (for
+  example, the measure ID) and returns a filled-out version of the metadata
+  sufficient for use with `OBS_GetMeasureDataMulti`.
+
+__Improvements__
+
+* Move tests to 2015
+* Fixes to `_OBS_GetGeometryScores` to avoid spamming NOTICEs about all pixels
+  for a band being NULL
+* Tests for `_OBS_GetGeometryScores` with complex geometries
+* Performance tests for `OBS_GetMeasureDataMulti`
+* Return both `table_id` and `column_id` from `_OBS_GetGeometryScores`
+
+1.1.7 (2016-12-15)
+
+__Improvements__
+
+* Use simpler raster table and simplified `_OBSGetGeometryScores` functions to
+  improve performance
+* In cases where geometry passed into geometry scoring function has greater
+  than 10K points, simply use its buffer instead
+* Add `IMMUTABLE` to `_OBSGetGeometryScores`
+* Add tests explicitly for `_OBSGetGeometryScores` in perftest.py
+* Yields a ~50% improvement in performance for `_OBSGetGeomeryScores`.
+
 1.1.6 (2016-12-08)
 
 __Bugfixes__

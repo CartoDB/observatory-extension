@@ -566,6 +566,8 @@ BEGIN
           geom_ct.column_id = geom_c.id AND
           geom_c.type ILIKE 'geometry' AND
           geom_c.id = '%s'
+      ORDER BY timespan DESC
+      LIMIT 1
     $string$, boundary_id, boundary_id);
   RETURN;
     --  AND geom_t.timespan = '%s' <-- put in requested year

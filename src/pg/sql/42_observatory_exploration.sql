@@ -450,18 +450,17 @@ BEGIN
         AND (column_id = ANY($2) OR cardinality($2) = 0)
     ), clipped_geom_countagg AS (
       SELECT column_id, table_id
-        , ST_CountAgg(clipped_tile, 1, True)::Numeric notnull_pixels -- -10
+        , BOOL_AND(ST_BandIsNoData(clipped_tile, 1)) nodata
         , ST_CountAgg(clipped_tile, 1, False)::Numeric pixels -- -10
       FROM clipped_geom
       GROUP BY column_id, table_id
     ), clipped_geom_reagg AS (
       SELECT COUNT(*)::BIGINT cnt, a.column_id, a.table_id,
+             cdb_observatory.FIRST(nodata) first_nodata,
              cdb_observatory.FIRST(pixels) first_pixel,
-             cdb_observatory.FIRST(notnull_pixels) first_notnull_pixel,
              cdb_observatory.FIRST(tile) first_tile,
-             (ST_SummaryStatsAgg(clipped_tile, 1, True)).sum::Numeric sum_geoms, -- ND
-             (ST_SummaryStatsAgg(clipped_tile, 2, True)).mean::Numeric / 255 mean_fill --ND
-             --(ST_SummaryStatsAgg(clipped_tile, 2, True)).mean::Numeric / 255 mean_fill --ND
+             (ST_SummaryStatsAgg(clipped_tile, 1, False)).sum::Numeric sum_geoms, -- ND
+             (ST_SummaryStatsAgg(clipped_tile, 2, False)).mean::Numeric / 255 mean_fill --ND
       FROM clipped_geom_countagg a, clipped_geom b
       WHERE a.table_id = b.table_id
         AND a.column_id = b.column_id
@@ -469,19 +468,15 @@ BEGIN
     ), final AS (
       SELECT
         cnt, table_id, column_id
-        , (CASE WHEN first_notnull_pixel > 0
-                THEN first_notnull_pixel / first_pixel
-                ELSE 1
-          END)::Numeric
-        AS notnull_percent
-        , (CASE WHEN first_notnull_pixel > 0
+        , NULL::Numeric AS notnull_percent
+        , (CASE WHEN first_nodata IS FALSE
                 THEN sum_geoms
                 ELSE COALESCE(ST_Value(first_tile, 1, ST_PointOnSurface($1)), 0)
                   * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0))
                     * first_pixel) -- -20
           END)::Numeric
         AS numgeoms
-        , (CASE WHEN first_notnull_pixel > 0
+        , (CASE WHEN first_nodata IS FALSE
                 THEN mean_fill
                 ELSE COALESCE(ST_Value(first_tile, 2, ST_PointOnSurface($1))::Numeric / 255, 0) -- -2
           END)::Numeric

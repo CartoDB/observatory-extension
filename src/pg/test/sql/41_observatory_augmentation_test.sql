@@ -33,67 +33,6 @@ WITH result as (
 ) select expected = 0 as OBS_Get_median_income_at_null_island
   from result;
 
--- OBS_GetPoints
--- obs_getpoints
--- --------------------
--- {4809.33511352425}
-
--- SELECT
---   (cdb_observatory._OBS_GetPoints(
---     cdb_observatory._TestPoint(),
---     'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- block groups (see _obs_geomtable)
---     (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
---   ))[1]::text = '{"value":10923.093200390833950,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
---   as OBS_GetPoints_for_test_point;
-WITH cte As (
-SELECT
-  (cdb_observatory._OBS_GetPoints(
-    cdb_observatory._TestPoint(),
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- block groups (see _obs_geomtable)
-    (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  ))[1]
-  as OBS_GetPoints_for_test_point)
-SELECT
-  (abs((OBS_GetPoints_for_test_point ->> 'value')::numeric - 10923.093200390833950) / 10923.093200390833950) < 0.001 As OBS_GetPoints_for_test_point_value,
-  (OBS_GetPoints_for_test_point ->> 'name') = 'Total Population' As OBS_GetPoints_for_test_point_name,
-  (OBS_GetPoints_for_test_point ->> 'tablename') = 'obs_1a098da56badf5f32e336002b0a81708c40d29cd' As OBS_GetPoints_for_test_point_tablename,
-  (OBS_GetPoints_for_test_point ->> 'aggregate') = 'sum' As OBS_GetPoints_for_test_point_aggregate,
-  (OBS_GetPoints_for_test_point ->> 'type') = 'Numeric' As OBS_GetPoints_for_test_point_type,
-  (OBS_GetPoints_for_test_point ->> 'description') = 'The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.' As OBS_GetPoints_for_test_point_description
-FROM cte;
-
--- what happens at null island
-
-SELECT
-  (cdb_observatory._OBS_GetPoints(
-    ST_SetSRID(ST_Point(0, 0), 4326),
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
-    (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  ))[1]::text  is null
-  as OBS_GetPoints_for_null_island;
-
--- OBS_GetPolygons
---   obs_getpolygons
--- --------------------
---  {12996.8172420752}
-
-SELECT
-  (cdb_observatory._OBS_GetPolygons(
-    cdb_observatory._TestArea(),
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
-    Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json]
-))[1]::text = '{"value":12327.3133495107,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
-  as OBS_GetPolygons_for_test_point;
-
--- see what happens around null island
-SELECT
-  ((cdb_observatory._OBS_GetPolygons(
-    ST_Buffer(ST_SetSRID(ST_Point(0, 0), 4326)::geography, 500)::geometry,
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
-    Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  )[1]->>'value') is null
-  as OBS_GetPolygons_for_null_island;
-
 SELECT cdb_observatory.OBS_GetSegmentSnapshot(
     cdb_observatory._TestPoint(),
     'us.census.tiger.census_tract'
@@ -196,7 +135,7 @@ SELECT (abs(cdb_observatory.OBS_GetMeasure(
 -- Poly-based OBS_GetMeasure with denominator normalization
 SELECT abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestArea(),
-  'us.census.acs.B01001002', 'denominator') - 0.49026340444793965457) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
+  'us.census.acs.B01001002', 'denominator', null, '2010 - 2014') - 0.49026340444793965457) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
 
 -- Poly-based OBS_GetMeasure with one very bad geom
 SELECT abs(cdb_observatory.OBS_GetMeasure(

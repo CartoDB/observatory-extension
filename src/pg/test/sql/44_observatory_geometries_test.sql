@@ -73,7 +73,7 @@ SELECT cdb_observatory.OBS_GetBoundaryId(
 SELECT cdb_observatory.OBS_GetBoundaryId(
   cdb_observatory._TestPoint(),
   'us.census.tiger.county',
-  '2014'
+  '2015'
 ) = '36047'::text As OBS_GetBoundaryId_cartodb_county_with_year;
 
 -- should give back null since there is not a census tract at null island
@@ -335,7 +335,7 @@ FROM (
 
 SELECT
   geoid_colname = 'geoid' As geoid_name_matches,
-  target_table = 'obs_fc050f0b8673cfe3c6aa1040f749eb40975691b7' As table_name_matches,
+  target_table = 'obs_87a814e485deabe3b12545a537f693d16ca702c2' As table_name_matches,
   geom_colname = 'the_geom' As geom_name_matches
 FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract')
      As m(geoid_colname, target_table, geom_colname);

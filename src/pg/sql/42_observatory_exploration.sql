@@ -298,7 +298,7 @@ BEGIN
     ) SELECT available_geoms.*, score, numtiles, notnull_percent, numgeoms,
              percentfill, estnumgeoms, meanmediansize
       FROM available_geoms, scores
-      WHERE available_geoms.geom_id = scores.geom_id
+      WHERE available_geoms.geom_id = scores.column_id
   $string$, geom_clause)
   USING numer_id, denom_id, timespan, filter_tags, bounds;
   RETURN;
@@ -416,11 +416,12 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   bounds Geometry(Geometry, 4326) DEFAULT NULL,
   filter_geom_ids TEXT[] DEFAULT NULL,
-  desired_num_geoms INTEGER DEFAULT 3000
+  desired_num_geoms INTEGER DEFAULT NULL
 ) RETURNS TABLE (
   score NUMERIC,
   numtiles BIGINT,
-  geom_id TEXT,
+  table_id TEXT,
+  column_id TEXT,
   notnull_percent NUMERIC,
   numgeoms NUMERIC,
   percentfill NUMERIC,
@@ -428,6 +429,9 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   meanmediansize NUMERIC
 ) AS $$
 BEGIN
+  IF desired_num_geoms IS NULL THEN
+    desired_num_geoms := 3000;
+  END IF;
   filter_geom_ids := COALESCE(filter_geom_ids, (ARRAY[])::TEXT[]);
   -- Very complex geometries simply fail.  For a boundary check, we can
   -- comfortably get away with the simplicity of an envelope
@@ -446,39 +450,33 @@ BEGIN
         AND (column_id = ANY($2) OR cardinality($2) = 0)
     ), clipped_geom_countagg AS (
       SELECT column_id, table_id
-        , ST_CountAgg(clipped_tile, 1, True)::Numeric notnull_pixels -- -10
+        , BOOL_AND(ST_BandIsNoData(clipped_tile, 1)) nodata
         , ST_CountAgg(clipped_tile, 1, False)::Numeric pixels -- -10
       FROM clipped_geom
       GROUP BY column_id, table_id
     ), clipped_geom_reagg AS (
-      SELECT COUNT(*)::BIGINT cnt, a.column_id,
+      SELECT COUNT(*)::BIGINT cnt, a.column_id, a.table_id,
+             cdb_observatory.FIRST(nodata) first_nodata,
              cdb_observatory.FIRST(pixels) first_pixel,
-             cdb_observatory.FIRST(notnull_pixels) first_notnull_pixel,
              cdb_observatory.FIRST(tile) first_tile,
-             (ST_SummaryStatsAgg(clipped_tile, 1, True)).sum::Numeric sum_geoms, -- ND
-             (ST_SummaryStatsAgg(clipped_tile, 2, True)).mean::Numeric / 255 mean_fill --ND
+             (ST_SummaryStatsAgg(clipped_tile, 1, False)).sum::Numeric sum_geoms, -- ND
+             (ST_SummaryStatsAgg(clipped_tile, 2, False)).mean::Numeric / 255 mean_fill --ND
       FROM clipped_geom_countagg a, clipped_geom b
       WHERE a.table_id = b.table_id
         AND a.column_id = b.column_id
       GROUP BY a.column_id, a.table_id
     ), final AS (
       SELECT
-        cnt, column_id
-
-        , (CASE WHEN first_notnull_pixel > 0
-                THEN first_notnull_pixel / first_pixel
-                ELSE 1
-          END)::Numeric
-        AS notnull_percent
-        , (CASE WHEN first_notnull_pixel > 0
+        cnt, table_id, column_id
+        , NULL::Numeric AS notnull_percent
+        , (CASE WHEN first_nodata IS FALSE
                 THEN sum_geoms
                 ELSE COALESCE(ST_Value(first_tile, 1, ST_PointOnSurface($1)), 0)
                   * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0))
                     * first_pixel) -- -20
           END)::Numeric
         AS numgeoms
-
-        , (CASE WHEN first_notnull_pixel > 0
+        , (CASE WHEN first_nodata IS FALSE
                 THEN mean_fill
                 ELSE COALESCE(ST_Value(first_tile, 2, ST_PointOnSurface($1))::Numeric / 255, 0) -- -2
           END)::Numeric

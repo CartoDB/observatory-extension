@@ -600,7 +600,9 @@ BEGIN
           (unnest($1))->>'timespan' timespan,
           (unnest($1))->>'normalization' normalization
         )
-        SELECT String_Agg(CASE
+        SELECT String_Agg(
+        CASE WHEN LOWER(numer_type) LIKE 'numeric' THEN
+        CASE
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
             THEN ' CASE ' ||
@@ -667,7 +669,12 @@ BEGIN
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
             '   END) END '
-          END || ':: ' || numer_type || ' AS ' || numer_colname, ', ') AS colspecs,
+          END
+        WHEN LOWER(numer_type) LIKE 'text' THEN
+          'FIRST(' || numer_tablename || '.' || numer_colname || ')'
+        ELSE ''
+        END || ':: ' || numer_type || ' AS ' || numer_colname, ', ')
+        AS colspecs,
 
           (SELECT String_Agg(tablename, ', ') FROM (SELECT JSONB_Object_Keys(JSONB_Object(
              Array_Cat(Array_Agg('observatory.' || numer_tablename),

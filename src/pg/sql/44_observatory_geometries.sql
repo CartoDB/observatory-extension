@@ -148,16 +148,16 @@ BEGIN
   END IF;
 
   EXECUTE
-    format('SELECT ct.colname
+            'SELECT ct.colname
               FROM observatory.obs_column_to_column c2c,
                    observatory.obs_column_table ct,
                    observatory.obs_table t
              WHERE c2c.reltype = ''geom_ref''
                AND ct.column_id = c2c.source_id
                AND ct.table_id = t.id
-               AND t.tablename = %L'
-   , target_table)
-  INTO geoid_colname;
+               AND t.tablename = $1'
+  INTO geoid_colname
+  USING target_table;
 
   --RAISE NOTICE 'target_table: %, geoid_colname: %', target_table, geoid_colname;
 
@@ -284,8 +284,8 @@ BEGIN
   EXECUTE format(
     'SELECT %I, %I::text
      FROM observatory.%I
-     WHERE ST_%s($1, the_geom)
-     ', geom_colname, geoid_colname, target_table, overlap_type)
+     WHERE ST_%s($1, %I)
+     ', geom_colname, geoid_colname, target_table, overlap_type, geom_colname)
   USING geom;
   RETURN;
 
@@ -545,8 +545,7 @@ AS $$
 BEGIN
 
   RETURN QUERY
-  EXECUTE
-  format($string$
+  EXECUTE $string$
     SELECT geoid_ct.colname::text As geoid_colname,
            tablename::text,
            geom_ct.colname::text As geom_colname
@@ -559,16 +558,17 @@ BEGIN
          SELECT source_id
          FROM observatory.obs_column_to_column
          WHERE reltype = 'geom_ref'
-           AND target_id = '%s'
+           AND target_id = $1
          )
       AND geoid_ct.table_id = geom_t.id AND
           geom_t.id = geom_ct.table_id AND
           geom_ct.column_id = geom_c.id AND
-          geom_c.type ILIKE 'geometry' AND
-          geom_c.id = '%s'
+          geom_c.type ILIKE 'geometry%' AND
+          geom_c.id = $1
       ORDER BY timespan DESC
       LIMIT 1
-    $string$, boundary_id, boundary_id);
+    $string$
+  USING boundary_id;
   RETURN;
     --  AND geom_t.timespan = '%s' <-- put in requested year
     -- TODO: filter by clipped vs. not so appropriate tablename are unique

@@ -115,6 +115,35 @@ SELECT cdb_observatory.OBS_GetBoundaryById(
 
 -- _OBS_GetBoundariesByGeometry
 
+SELECT
+  array_agg(geom_refs) = Array[ '1104486618765', '1104486642837',
+                                '1104991798384', '1105044325367',
+                                '1105089330200', '1105089331758']
+As _OBS_GetBoundariesByGeometry_roads_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory._OBS_GetBoundariesByGeometry(
+    -- near CartoDB's office
+    ST_MakeEnvelope(-74,40.69,-73.99,40.7,
+                    4326),
+    'us.census.tiger.prisecroads')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
+SELECT
+  array_agg(geom_refs) = Array['1102654301684', '1102654307106',
+                               '1102654326686', '1102654351507' ]
+As _OBS_GetBoundariesByGeometry_points_around_cartodb
+FROM (
+  SELECT *
+  FROM cdb_observatory._OBS_GetBoundariesByGeometry(
+    -- near CartoDB's office
+    ST_MakeEnvelope(-73.9452409744,40.6988851644,-73.9280319214,40.7101254524,
+                    4326),
+    'us.census.tiger.pointlm')
+  ORDER BY geom_refs ASC
+) As m(the_geom, geom_refs);
+
 -- check that all census tracts intersecting with the geometry are returned
 -- order them to ensure that the same values are returned
 SELECT

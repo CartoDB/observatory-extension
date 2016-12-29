@@ -187,6 +187,8 @@ FIXTURES = [
     ('us.census.tiger.zcta5_clipped', 'us.census.tiger.zcta5_clipped', '2014'),
     ('us.census.tiger.block_group_clipped', 'us.census.tiger.block_group_clipped', '2014'),
     ('us.census.tiger.census_tract_clipped', 'us.census.tiger.census_tract_clipped', '2014'),
+    ('us.census.tiger.pointlm', 'us.census.tiger.pointlm', '2016'),
+    ('us.census.tiger.prisecroads', 'us.census.tiger.prisecroads', '2016'),
 ]
 
 OUTFILE_PATH = os.path.join(os.path.dirname(__file__), '..',
@@ -322,6 +324,10 @@ def main():
         if 'zcta5' in boundary_id:
             where = '\'11%\''
             compare = 'LIKE'
+        elif boundary_id in ('us.census.tiger.prisecroads',
+                             'us.census.tiger.pointlm'):
+            dump('*', tablename, 'WHERE geom && ST_MakeEnvelope(-74,40.69,-73.9,40.72, 4326)')
+            continue
         elif 'whosonfirst' in boundary_id:
             where = '(\'85632785\',\'85633051\',\'85633111\',\'85633147\',\'85633253\',\'85633267\')'
             compare = 'IN'

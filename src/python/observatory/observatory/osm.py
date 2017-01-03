@@ -18,7 +18,20 @@ way
 40.704301, -73.936658))
     '''
 
-    api = API()
-    response = api.Get(query, responseformat='json')
+    '''
+(node [amenity] (around:400, 40.704301, -73.936658); way [amenity] (around:400, 40.704301, -73.936658))
+    '''
 
-    return [(el['lat'], el['lon'], el['type'], el['id'], json.dumps(el['tags']), ) for el in response['elements'] if 'lat' in el]
+    api = API()
+    response = api.Get(query)
+
+    return response['features']
+    #return [(el['lat'], el['lon'], el['type'], el['id'], json.dumps(el['tags']) )
+    #        for el in response['elements'] if 'lat' in el][0]
+
+
+def get_overpass_poi(within_geom, geom, filters=None, name=None):
+    '''
+    Simplified access to overpass API
+    '''
+    pass

@@ -684,11 +684,13 @@ BEGIN
                Array_Cat(Array_Agg(geom_tablename),
                          Array_Agg(denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL)))
            )) tablename) bar) tablenames,
+
           String_Agg(numer_tablename || '.' || numer_geomref_colname || ' = ' ||
                      geom_tablename || '.' || geom_geomref_colname ||
            Coalesce(' AND ' || numer_tablename || '.' || numer_geomref_colname || ' = ' ||
                                denom_tablename || '.' || denom_geomref_colname, ''),
            ' AND ') AS obs_wheres,
+
           String_Agg('ST_Intersects(' || geom_tablename || '.' ||  geom_colname
              || ', _geoms.geom)', ' AND ')
              AS user_wheres

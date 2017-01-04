@@ -83,7 +83,10 @@ BEGIN
     WITH filters AS (SELECT UNNEST($1) as filter)
     SELECT ' ( '
      'node ["name"]["amenity"~"' || String_Agg(filter, '|') || '"] (' || $2 || '); ' ||
-     'way  ["name"]["amenity"~"' || String_Agg(filter, '|') || '"] (' || $2 || ')) '
+     'way  ["name"]["amenity"~"' || String_Agg(filter, '|') || '"] (' || $2 || '); ' ||
+     'node ["name"][shop] (' || $2 || '); ' ||
+     'way  ["name"][shop] (' || $2 || '); ' ||
+     'relation  ["name"][shop] (' || $2 || ')) '
     FROM filters
   $string$
   INTO query

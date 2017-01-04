@@ -359,20 +359,39 @@ BEGIN
         (unnest($3))->>'numer_id' numer_id,
         (unnest($3))->>'denom_id' denom_id,
         (unnest($3))->>'geom_id' geom_id,
-        (unnest($3))->>'timespan' timespan
+        (unnest($3))->>'timespan' timespan,
+        (unnest($3))->>'normalization' normalization
     ), meta AS (SELECT
-        id, geom_tid,
-        numer_aggregate, numer_colname, numer_geomref_colname,
-        numer_tablename, denom_aggregate, denom_colname, denom_geomref_colname,
-        denom_tablename, geom_colname, geom_geomref_colname,
-        geom_tablename, numer_name, denom_name, geom_name,
-        numer_type, denom_type, geom_type,
-        m.denom_id, m.geom_id, m.numer_timespan
+        id,
+        f.numer_id,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_aggregate END numer_aggregate,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_colname END numer_colname,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_geomref_colname END numer_geomref_colname,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_tablename END numer_tablename,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_type END numer_type,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_name END numer_name,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE m.numer_timespan END numer_timespan,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE m.denom_id END denom_id,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_aggregate END denom_aggregate,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_colname END denom_colname,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_geomref_colname END denom_geomref_colname,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_tablename END denom_tablename,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_name END denom_name,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_type END denom_type,
+        m.geom_id,
+        geom_colname,
+        geom_tid,
+        geom_geomref_colname,
+        geom_tablename,
+        geom_name,
+        geom_type,
+        normalization
       FROM observatory.obs_meta m JOIN _filters f
-        ON m.numer_id = f.numer_id
+      ON CASE WHEN f.numer_id IS NULL THEN m.geom_id ELSE m.numer_id END =
+         CASE WHEN f.numer_id IS NULL THEN f.geom_id ELSE f.numer_id END
       WHERE
-        m.numer_id = ANY ($6)
-        AND (m.denom_id = f.denom_id OR COALESCE(f.denom_id, '') = '')
+        -- m.numer_id = ANY ($6) AND
+        (m.denom_id = f.denom_id OR COALESCE(f.denom_id, '') = '')
         AND (m.geom_id = f.geom_id OR COALESCE(f.geom_id, '') = '')
         AND (m.numer_timespan = f.timespan OR COALESCE(f.timespan, '') = '')
     ), scores AS (
@@ -384,33 +403,37 @@ BEGIN
         dense_rank() OVER (PARTITION BY id ORDER BY numer_timespan DESC) timespan_rank,
         dense_rank() OVER (PARTITION BY id ORDER BY score DESC) score_rank,
         json_build_object(
+          'id', id,
+          'numer_id', numer_id,
           'timespan_rank', dense_rank() OVER (PARTITION BY id ORDER BY numer_timespan DESC),
           'score_rank', dense_rank() OVER (PARTITION BY id ORDER BY score DESC),
           'score', scores.score,
-          'numer_aggregate', meta.numer_aggregate,
-          'numer_colname', meta.numer_colname,
-          'numer_geomref_colname', meta.numer_geomref_colname,
-          'numer_tablename', meta.numer_tablename,
-          'numer_type', meta.numer_type,
-          'denom_aggregate', meta.denom_aggregate,
-          'denom_colname', denom_colname,
-          'denom_geomref_colname', denom_geomref_colname,
-          'denom_tablename', denom_tablename,
-          'denom_type', meta.denom_type,
-          'geom_colname', geom_colname,
-          'geom_geomref_colname', geom_geomref_colname,
-          'geom_tablename', geom_tablename,
-          'geom_type', meta.geom_type,
-          'timespan', numer_timespan,
-          'numer_name', numer_name,
-          'denom_name', denom_name,
-          'geom_name', geom_name,
+          'numer_aggregate', cdb_observatory.FIRST(meta.numer_aggregate),
+          'numer_colname', cdb_observatory.FIRST(meta.numer_colname),
+          'numer_geomref_colname', cdb_observatory.FIRST(meta.numer_geomref_colname),
+          'numer_tablename', cdb_observatory.FIRST(meta.numer_tablename),
+          'numer_type', cdb_observatory.FIRST(meta.numer_type),
+          'denom_aggregate', cdb_observatory.FIRST(meta.denom_aggregate),
+          'denom_colname', cdb_observatory.FIRST(denom_colname),
+          'denom_geomref_colname', cdb_observatory.FIRST(denom_geomref_colname),
+          'denom_tablename', cdb_observatory.FIRST(denom_tablename),
+          'denom_type', cdb_observatory.FIRST(meta.denom_type),
+          'geom_colname', cdb_observatory.FIRST(geom_colname),
+          'geom_geomref_colname', cdb_observatory.FIRST(geom_geomref_colname),
+          'geom_tablename', cdb_observatory.FIRST(geom_tablename),
+          'geom_type', cdb_observatory.FIRST(meta.geom_type),
+          'timespan', cdb_observatory.FIRST(numer_timespan),
+          'numer_name', cdb_observatory.FIRST(numer_name),
+          'denom_name', cdb_observatory.FIRST(denom_name),
+          'geom_name', cdb_observatory.FIRST(geom_name),
+          'normalization', cdb_observatory.FIRST(normalization),
           'denom_id', denom_id,
           'geom_id', meta.geom_id
         ) metadata
       FROM meta, scores
       WHERE meta.geom_id = scores.column_id
         AND meta.geom_tid = scores.table_id
+      GROUP BY id, score, numer_id, denom_id, geom_id, numer_timespan
     ) SELECT JSON_AGG(metadata ORDER BY id)
       FROM groups
       WHERE timespan_rank <= $4
@@ -560,12 +583,14 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureDataMulti(
   geomvals geomval[],
-  params JSON
+  params JSON,
+  merge BOOLEAN DEFAULT True
 )
 RETURNS SETOF RECORD
 AS $$
 DECLARE
   colspecs TEXT;
+  geomrefs TEXT;
   tables TEXT;
   obs_wheres TEXT;
   user_wheres TEXT;
@@ -580,6 +605,7 @@ BEGIN
       $query$
         WITH _meta AS (SELECT
           generate_series(1, array_length($1, 1)) colid,
+          (unnest($1))->>'id' id,
           (unnest($1))->>'numer_id' numer_id,
           (unnest($1))->>'numer_aggregate' numer_aggregate,
           (unnest($1))->>'numer_colname' numer_colname,
@@ -669,18 +695,24 @@ BEGIN
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
             '   END) END '
-          END
+          END || ':: ' || numer_type || ' AS ' || numer_colname
         WHEN LOWER(numer_type) LIKE 'text' THEN
-          'FIRST(' || numer_tablename || '.' || numer_colname || ')'
+          'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || '):: ' ||
+            numer_type || ' AS ' || numer_colname
+        WHEN numer_id IS NULL THEN
+          'cdb_observatory.FIRST(ST_Intersection(_geoms.geom, ' || geom_tablename ||
+              '.' || geom_colname || '))::' || geom_type || ' AS ' || geom_colname
         ELSE ''
-        END || ':: ' || numer_type || ' AS ' || numer_colname, ', ')
+        END, ', ')
         AS colspecs,
 
+        STRING_AGG(geom_tablename || '.' || geom_geomref_colname, ', ') AS geomrefs,
+
           (SELECT String_Agg(tablename, ', ') FROM (SELECT JSONB_Object_Keys(JSONB_Object(
-             Array_Cat(Array_Agg('observatory.' || numer_tablename),
+             Array_Cat(Array_Agg('observatory.' || numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
                Array_Cat(Array_Agg('observatory.' || geom_tablename),
                          Array_Agg('observatory.' || denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL))),
-             Array_Cat(Array_Agg(numer_tablename),
+             Array_Cat(Array_Agg(numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
                Array_Cat(Array_Agg(geom_tablename),
                          Array_Agg(denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL)))
            )) tablename) bar) tablenames,
@@ -697,7 +729,7 @@ BEGIN
         FROM _meta
         ;
       $query$
-    INTO colspecs, tables, obs_wheres, user_wheres
+    INTO colspecs, geomrefs, tables, obs_wheres, user_wheres
     USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]);
 
     RETURN QUERY EXECUTE format($query$
@@ -706,11 +738,11 @@ BEGIN
                      (UNNEST($1)).geom AS geom)
       SELECT _geoms.id::INT, %s
       FROM %s, _geoms
-      WHERE %s
-        AND %s
-      GROUP BY _geoms.id
+      WHERE %s %s
+      GROUP BY _geoms.id %s
       ORDER BY _geoms.id
-    $query$, colspecs, tables, obs_wheres, user_wheres)
+    $query$, colspecs, tables, NULLIF(obs_wheres, '') || ' AND ', user_wheres,
+             CASE WHEN merge IS False THEN ', ' || geomrefs ELSE '' END)
     USING geomvals;
     RETURN;
 END;

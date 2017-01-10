@@ -105,3 +105,6 @@ t
 obs_getmeasurebyid_null_id
 t
 (1 row)
+obs_getdata_api
+t
+(1 row)

@@ -216,3 +216,10 @@ SELECT cdb_observatory.OBS_GetMeasureById(
   'us.census.tiger.block_group',
   '2010 - 2014'
 ) IS NULL As OBS_GetMeasureById_null_id;
+
+-- OBS_GetData with an API
+SELECT ARRAY['us.census.tiger.census_tract'] <@ array_agg(data->0->>'value') AS OBS_GetData_API
+FROM cdb_observatory.obs_getdata(array[(cdb_observatory._testarea(), 1)::geomval],
+  '[{"numer_coltype": "text", "numer_colname": "boundary_id", "numer_tablename": "cdb_observatory.obs_getavailableboundaries", "geom_tablename": "cdb_observatory.obs_getavailableboundaries", "geom_geomref_colname": "boundary_id"}]',
+  false);
+

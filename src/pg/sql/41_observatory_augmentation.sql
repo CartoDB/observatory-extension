@@ -418,14 +418,21 @@ BEGIN
         END || ' || ''}'')::JSON', ', ')
         AS colspecs,
 
-          (SELECT String_Agg(tablename, ', ') FROM (SELECT JSONB_Object_Keys(JSONB_Object(
-             Array_Cat(Array_Agg('observatory.' || numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
-               Array_Cat(Array_Agg('observatory.' || geom_tablename),
-                         Array_Agg('observatory.' || denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL))),
-             Array_Cat(Array_Agg(numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
-               Array_Cat(Array_Agg(geom_tablename),
-                         Array_Agg(denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL)))
-           )) tablename) bar) tablenames,
+          (SELECT String_Agg(DISTINCT CASE
+              -- External API
+              WHEN tablename LIKE 'cdb_observatory.%' THEN
+                'LATERAL (SELECT * FROM ' || tablename ||
+                '(_geoms.geom)) ' || REPLACE(tablename, 'cdb_observatory.', '')
+              -- Internal obs_ table
+              ELSE 'observatory.' || tablename
+            END, ', ') FROM (
+            SELECT DISTINCT UNNEST(tablenames_ary) tablename FROM (
+            SELECT ARRAY_AGG(numer_tablename) ||
+                ARRAY_AGG(denom_tablename) ||
+                ARRAY_AGG(geom_tablename)
+              tablenames_ary
+            ) tablenames_inner
+          ) tablenames_outer) tablenames,
 
           String_Agg(numer_tablename || '.' || numer_geomref_colname || ' = ' ||
                      geom_tablename || '.' || geom_geomref_colname ||
@@ -506,7 +513,14 @@ BEGIN
           (unnest($1))->>'normalization' normalization
         )
         SELECT String_Agg(
-        '(''{' ||CASE WHEN LOWER(numer_type) LIKE 'numeric' THEN
+        '(''{' || CASE
+          -- api-delivered values
+          WHEN numer_tablename LIKE 'cdb_observatory.%' THEN
+          '"value": "'' || ' ||
+            '(cdb_observatory.FIRST( ' ||
+              REPLACE(numer_tablename, 'cdb_observatory.', '') || '.' || numer_colname || '))::TEXT || ''"'''
+          -- numeric internal values
+          WHEN LOWER(numer_type) LIKE 'numeric' THEN
           '"value": '' || ' || CASE
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
@@ -593,18 +607,26 @@ BEGIN
         END || ' || ''}'')::JSON', ', ')
         AS colspecs,
 
-        STRING_AGG(geom_tablename || '.' || geom_geomref_colname, ', ') AS geomrefs,
+        STRING_AGG(REPLACE(geom_tablename, 'cdb_observatory.', '') ||
+          '.' || geom_geomref_colname, ', ') AS geomrefs,
 
-          (SELECT String_Agg(tablename, ', ') FROM (SELECT JSONB_Object_Keys(JSONB_Object(
-             Array_Cat(Array_Agg('observatory.' || numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
-               Array_Cat(Array_Agg('observatory.' || geom_tablename),
-                         Array_Agg('observatory.' || denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL))),
-             Array_Cat(Array_Agg(numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
-               Array_Cat(Array_Agg(geom_tablename),
-                         Array_Agg(denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL)))
-           )) tablename) bar) tablenames,
+          (SELECT String_Agg(DISTINCT CASE
+              -- External API
+              WHEN tablename LIKE 'cdb_observatory.%' THEN
+                'LATERAL (SELECT * FROM ' || tablename ||
+                '(_geoms.geom)) ' || REPLACE(tablename, 'cdb_observatory.', '')
+              -- Internal obs_ table
+              ELSE 'observatory.' || tablename
+            END, ', ') FROM (
+            SELECT DISTINCT UNNEST(tablenames_ary) tablename FROM (
+            SELECT ARRAY_AGG(numer_tablename) ||
+                ARRAY_AGG(denom_tablename) ||
+                ARRAY_AGG(geom_tablename)
+              tablenames_ary
+            ) tablenames_inner
+          ) tablenames_outer) tablenames,
 
-          String_Agg(numer_tablename || '.' || numer_geomref_colname || ' = ' ||
+          String_Agg(DISTINCT numer_tablename || '.' || numer_geomref_colname || ' = ' ||
                      geom_tablename || '.' || geom_geomref_colname ||
            Coalesce(' AND ' || numer_tablename || '.' || numer_geomref_colname || ' = ' ||
                                denom_tablename || '.' || denom_geomref_colname, ''),
@@ -623,12 +645,13 @@ BEGIN
       WITH _geoms AS (SELECT
                      (UNNEST($1)).val as id,
                      (UNNEST($1)).geom AS geom)
-      SELECT _geoms.id::INT, Array_to_JSON(ARRAY[%s])
-      FROM %s, _geoms
-      WHERE %s %s
+      SELECT _geoms.id::INT, Array_to_JSON(ARRAY[%s]::JSON[])
+      FROM _geoms, %s
+           %s
       GROUP BY _geoms.id %s
       ORDER BY _geoms.id
-    $query$, colspecs, tables, NULLIF(obs_wheres, '') || ' AND ', user_wheres,
+    $query$, colspecs, tables,
+             'WHERE ' || NULLIF(ARRAY_TO_STRING(ARRAY[obs_wheres, user_wheres], ' AND '), ''),
              CASE WHEN merge IS False THEN ', ' || geomrefs ELSE '' END)
     USING geomvals;
     RETURN;

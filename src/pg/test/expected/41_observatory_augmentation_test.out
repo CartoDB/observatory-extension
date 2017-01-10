@@ -3,22 +3,10 @@
 obs_getdemographicsnapshot_test_no_returns
 t
 (1 row)
-obs_get_median_income_at_test_point
-t
-(1 row)
-obs_get_median_income_at_null_island
-t
-(1 row)
 test_point_segmentation
 t
 (1 row)
 null_island_segmentation
-t
-(1 row)
-getcategories_at_test_point_1
-t
-(1 row)
-getcategories_at_null_island
 t
 (1 row)
 obs_getmeasure_zhvi_point_test

@@ -1,341 +1,105 @@
-
---For Longer term Dev
-
-
---Break out table definitions to types
---Automate type creation from a script, something like
-----CREATE OR REPLACE FUNCTION OBS_Get<%=tag_name%>(geom GEOMETRY)
-----RETURNS TABLE(
-----<%=get_dimensions_for_tag(tag_name)%>
-----AS $$
-----DECLARE
-----target_cols text[];
-----names text[];
-----vals NUMERIC[];-
-----q text;
-----BEGIN
-----target_cols := Array[<%=get_dimensions_for_tag(tag_name)%>],
-
-
 --Functions for augmenting specific tables
 --------------------------------------------------------------------------------
 
 -- Creates a table of demographic snapshot
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetDemographicSnapshot(geom geometry(Geometry, 4326),
-  time_span text DEFAULT NULL,
-  boundary_id text DEFAULT NULL)
-RETURNS SETOF JSON
-AS $$
-  DECLARE
-  target_cols text[];
-  BEGIN
-
-  IF time_span IS NULL THEN
-    time_span = '2010 - 2014';
-  END IF;
-
-  IF boundary_id IS NULL THEN
-    boundary_id = 'us.census.tiger.block_group';
-  END IF;
-
-  target_cols := Array['us.census.acs.B01003001',
-                  'us.census.acs.B01001002',
-                  'us.census.acs.B01001026',
-                  'us.census.acs.B01002001',
-                  'us.census.acs.B03002003',
-                  'us.census.acs.B03002004',
-                  'us.census.acs.B03002006',
-                  'us.census.acs.B03002012',
-                  'us.census.acs.B03002005',
-                  'us.census.acs.B03002008',
-                  'us.census.acs.B03002009',
-                  'us.census.acs.B03002002',
-                  --'not_us_citizen_pop',
-                  --'workers_16_and_over',
-                  --'commuters_by_car_truck_van',
-                  --'commuters_drove_alone',
-                  --'commuters_by_carpool',
-                  --'commuters_by_public_transportation',
-                  --'commuters_by_bus',
-                  --'commuters_by_subway_or_elevated',
-                  --'walked_to_work',
-                  --'worked_at_home',
-                  --'children',
-                  'us.census.acs.B11001001',
-                  --'population_3_years_over',
-                  --'in_school',
-                  --'in_grades_1_to_4',
-                  --'in_grades_5_to_8',
-                  --'in_grades_9_to_12',
-                  --'in_undergrad_college',
-                  'us.census.acs.B15003001',
-                  'us.census.acs.B15003017',
-                  'us.census.acs.B15003019',
-                  'us.census.acs.B15003020',
-                  'us.census.acs.B15003021',
-                  'us.census.acs.B15003022',
-                  'us.census.acs.B15003023',
-                  --'pop_5_years_over',
-                  --'speak_only_english_at_home',
-                  --'speak_spanish_at_home',
-                  --'pop_determined_poverty_status',
-                  --'poverty',
-                  'us.census.acs.B19013001',
-                  'us.census.acs.B19083001',
-                  'us.census.acs.B19301001',
-                  'us.census.acs.B25001001',
-                  'us.census.acs.B25002003',
-                  'us.census.acs.B25004002',
-                  'us.census.acs.B25004004',
-                  'us.census.acs.B25058001',
-                  'us.census.acs.B25071001',
-                  'us.census.acs.B25075001',
-                  'us.census.acs.B25075025',
-                  'us.census.acs.B25081002',
-                  --'pop_15_and_over',
-                  --'pop_never_married',
-                  --'pop_now_married',
-                  --'pop_separated',
-                  --'pop_widowed',
-                  --'pop_divorced',
-                  'us.census.acs.B08134001',
-                  'us.census.acs.B08134002',
-                  'us.census.acs.B08134003',
-                  'us.census.acs.B08134004',
-                  'us.census.acs.B08134005',
-                  'us.census.acs.B08134006',
-                  'us.census.acs.B08134007',
-                  'us.census.acs.B08134008',
-                  'us.census.acs.B08134009',
-                  'us.census.acs.B08134010',
-                  'us.census.acs.B08135001',
-                  'us.census.acs.B19001002',
-                  'us.census.acs.B19001003',
-                  'us.census.acs.B19001004',
-                  'us.census.acs.B19001005',
-                  'us.census.acs.B19001006',
-                  'us.census.acs.B19001007',
-                  'us.census.acs.B19001008',
-                  'us.census.acs.B19001009',
-                  'us.census.acs.B19001010',
-                  'us.census.acs.B19001011',
-                  'us.census.acs.B19001012',
-                  'us.census.acs.B19001013',
-                  'us.census.acs.B19001014',
-                  'us.census.acs.B19001015',
-                  'us.census.acs.B19001016',
-                  'us.census.acs.B19001017'];
-    RETURN QUERY
-    EXECUTE
-    'select * from cdb_observatory._OBS_Get($1, $2, $3, $4 )'
-    USING geom, target_cols, time_span, boundary_id
-    RETURN;
-END;
-$$ LANGUAGE plpgsql;
-
-
---Base functions for performing augmentation
-----------------------------------------------------------------------------------------
-
--- Base augmentation fucntion.
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_Get(
-  geom geometry(Geometry, 4326),
-  column_ids text[],
-  time_span text,
-  geometry_level text
-)
-RETURNS SETOF JSON
+  timespan text DEFAULT NULL,
+  boundary_id text DEFAULT NULL
+) RETURNS SETOF JSON
 AS $$
 DECLARE
-  results json[];
-  geom_table_name text;
-  names text[];
-  query text;
-  data_table_info json[];
+  meta JSON;
 BEGIN
+  boundary_id = COALESCE(boundary_id, 'us.census.tiger.census_tract');
 
-  EXECUTE
-  'SELECT array_agg(_obs_getcolumndata)
-   FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);'
-  INTO data_table_info
-  USING geometry_level, column_ids, time_span;
-
-  IF geometry_level IS NULL THEN
-    geometry_level = data_table_info[1]->>'boundary_id';
-  END IF;
-
-  geom_table_name := cdb_observatory._OBS_GeomTable(geom, geometry_level);
-
-  IF geom_table_name IS NULL
-  THEN
-     --raise notice 'Point % is outside of the data region', ST_AsText(geom);
-      -- TODO this should return JSON
-     RETURN QUERY SELECT '{}'::json;
-     RETURN;
-  END IF;
-
-  IF data_table_info IS NULL THEN
-    --raise notice 'Cannot find data table for boundary ID %, column_ids %, and time_span %', geometry_level, column_ids, time_span;
-  END IF;
-
-  IF geom IS NULL
-  THEN
-    results := NULL;
-  ELSIF ST_GeometryType(geom) = 'ST_Point'
-  THEN
-    --raise notice 'geom_table_name %, data_table_info %', geom_table_name, data_table_info::json[];
-    results := cdb_observatory._OBS_GetPoints(geom,
-                                              geom_table_name,
-                                              data_table_info);
-
-  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon')
-  THEN
-    results := cdb_observatory._OBS_GetPolygons(geom,
-                                                geom_table_name,
-                                                data_table_info);
-  END IF;
-
-  RETURN QUERY
-  EXECUTE
+  EXECUTE $query$ SELECT cdb_observatory.OBS_GetMeta($1,
+         ('[ ' ||
+'{"numer_id": "us.census.acs.B01003001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B01001002", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B01001026", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B01002001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002003", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002004", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002006", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002012", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002005", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002008", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002009", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B03002002", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B11001001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B15003001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B15003017", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B15003019", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B15003020", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B15003021", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B15003022", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B15003023", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19013001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19083001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19301001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25001001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25002003", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25004002", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25004004", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25058001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25071001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25075001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25075025", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B25081002", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134002", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134003", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134004", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134005", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134006", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134007", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134008", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134009", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08134010", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B08135001", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001002", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001003", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001004", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001005", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001006", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001007", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001008", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001009", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001010", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001011", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001012", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001013", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001014", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001015", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001016", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '},' ||
+'{"numer_id": "us.census.acs.B19001017", "numer_timespan": ' || $2 || ', "geom_id": ' || $3 || '}' ||
+      ']')::JSON)
   $query$
-    SELECT unnest($1)
+  INTO meta
+  USING geom,
+        COALESCE('"' || timespan || '"', 'null'),
+        COALESCE('"' || boundary_id || '"', 'null');
+
+  RETURN QUERY EXECUTE $query$
+    WITH vals AS (SELECT JSON_Array_Elements(data)->'value' val,
+                         JSON_Array_Elements($2) meta
+                  FROM cdb_observatory.OBS_GetData( ARRAY[($1, 1)::geomval], $2))
+    SELECT JSON_Build_Object(
+        'value', val,
+        'id', meta->'numer_id',
+        'name', meta->'numer_name',
+        'type', meta->'numer_type',
+        'description', meta->'numer_description'
+    ) FROM vals
   $query$
-  USING results;
+  USING geom, meta
   RETURN;
-
 END;
 $$ LANGUAGE plpgsql;
 
 
--- If the variable of interest is just a rate return it as such,
---  otherwise normalize it to the census block area and return that
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPoints(
-  geom geometry(Geometry, 4326),
-  geom_table_name text, -- TODO: change to boundary_id
-  data_table_info json[]
-)
-RETURNS json[]
-AS $$
-DECLARE
-  result NUMERIC[];
-  json_result json[];
-  query text;
-  i int;
-  geoid text;
-  data_geoid_colname text;
-  geom_geoid_colname text;
-  area NUMERIC;
-BEGIN
-
-  -- TODO we're assuming our geom_table has only one geom_ref column
-  --      we *really* should pass in both geom_table_name and boundary_id
-  -- TODO tablename should not be passed here (use boundary_id)
-  EXECUTE
-    'SELECT ct.colname
-              FROM observatory.obs_column_to_column c2c,
-                   observatory.obs_column_table ct,
-                   observatory.obs_table t
-             WHERE c2c.reltype = ''geom_ref''
-               AND ct.column_id = c2c.source_id
-               AND ct.table_id = t.id
-               AND t.tablename = $1'
-  INTO data_geoid_colname USING (data_table_info)[1]->>'tablename';
-  EXECUTE
-    'SELECT ct.colname
-              FROM observatory.obs_column_to_column c2c,
-                   observatory.obs_column_table ct,
-                   observatory.obs_table t
-             WHERE c2c.reltype = ''geom_ref''
-               AND ct.column_id = c2c.source_id
-               AND ct.table_id = t.id
-               AND t.tablename = $1'
-  INTO geom_geoid_colname USING geom_table_name;
-
-  EXECUTE
-    format('SELECT %I
-              FROM observatory.%I
-             WHERE ST_Within($1, the_geom)',
-            geom_geoid_colname,
-            geom_table_name)
-  USING geom
-  INTO geoid;
-
-  --raise notice 'geoid is %, geometry table is % ', geoid, geom_table_name;
-
-  EXECUTE
-    format('SELECT ST_Area(the_geom::geography) / (1000 * 1000)
-            FROM observatory.%I
-            WHERE %I = $1',
-            geom_table_name,
-            geom_geoid_colname)
-  INTO area USING geoid;
-
-  IF area IS NULL
-  THEN
-    --raise notice 'No geometry at %', ST_AsText(geom);
-  END IF;
-
-  query := 'SELECT Array[';
-  FOR i IN 1..array_upper(data_table_info, 1)
-  LOOP
-    IF area is NULL OR area = 0
-    THEN
-      -- give back null values
-      query := query || format('NULL::numeric ');
-    ELSIF ((data_table_info)[i])->>'aggregate' != 'sum'
-    THEN
-      -- give back full variable
-      query := query || format('%I ', ((data_table_info)[i])->>'colname');
-    ELSE
-      -- give back variable normalized by area of geography
-      query := query || format('%I/%s ',
-        ((data_table_info)[i])->>'colname',
-        area);
-    END IF;
-
-    IF i < array_upper(data_table_info, 1)
-    THEN
-      query := query || ',';
-    END IF;
-  END LOOP;
-
-  query := query || format(' ]::numeric[]
-    FROM observatory.%I
-    WHERE %I.%I  = %L
-  ',
-  ((data_table_info)[1])->>'tablename',
-  ((data_table_info)[1])->>'tablename',
-  data_geoid_colname,
-  geoid
-  );
-
-  EXECUTE
-    query
-  INTO result
-  USING geom;
-
-  EXECUTE
-    $query$
-     SELECT array_agg(row_to_json(t)) FROM (
-      SELECT values As value,
-              meta->>'name' As name,
-              meta->>'tablename' As tablename,
-              meta->>'aggregate' As aggregate,
-              meta->>'type' As type,
-              meta->>'description' As description
-             FROM (SELECT unnest($1) As values, unnest($2) As meta) b
-      ) t
-    $query$
-    INTO json_result
-    USING result, data_table_info;
-
-  RETURN json_result;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureMetaMulti(
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeta(
   geom geometry(Geometry, 4326),
   params JSON,
   max_timespan_rank INTEGER DEFAULT NULL, -- cutoff for timespan ranks when there's ambiguity
@@ -359,7 +123,8 @@ BEGIN
         (unnest($3))->>'numer_id' numer_id,
         (unnest($3))->>'denom_id' denom_id,
         (unnest($3))->>'geom_id' geom_id,
-        (unnest($3))->>'timespan' timespan,
+        (unnest($3))->>'numer_timespan' numer_timespan,
+        (unnest($3))->>'geom_timespan' geom_timespan,
         (unnest($3))->>'normalization' normalization
     ), meta AS (SELECT
         id,
@@ -379,6 +144,7 @@ BEGIN
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_name END denom_name,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_type END denom_type,
         m.geom_id,
+        m.geom_timespan,
         geom_colname,
         geom_tid,
         geom_geomref_colname,
@@ -390,10 +156,11 @@ BEGIN
       ON CASE WHEN f.numer_id IS NULL THEN m.geom_id ELSE m.numer_id END =
          CASE WHEN f.numer_id IS NULL THEN f.geom_id ELSE f.numer_id END
       WHERE
-        -- m.numer_id = ANY ($6) AND
+        (m.numer_id = ANY ($6) OR m.geom_id = ANY ($7)) AND
         (m.denom_id = f.denom_id OR COALESCE(f.denom_id, '') = '')
         AND (m.geom_id = f.geom_id OR COALESCE(f.geom_id, '') = '')
-        AND (m.numer_timespan = f.timespan OR COALESCE(f.timespan, '') = '')
+        AND (m.geom_timespan = f.geom_timespan OR COALESCE(f.geom_timespan, '') = '')
+        AND (m.numer_timespan = f.numer_timespan OR COALESCE(f.numer_timespan, '') = '')
     ), scores AS (
       SELECT *
       FROM cdb_observatory._OBS_GetGeometryScores($1,
@@ -422,7 +189,8 @@ BEGIN
           'geom_geomref_colname', cdb_observatory.FIRST(geom_geomref_colname),
           'geom_tablename', cdb_observatory.FIRST(geom_tablename),
           'geom_type', cdb_observatory.FIRST(meta.geom_type),
-          'timespan', cdb_observatory.FIRST(numer_timespan),
+          'geom_timespan', cdb_observatory.FIRST(meta.geom_timespan),
+          'numer_timespan', cdb_observatory.FIRST(numer_timespan),
           'numer_name', cdb_observatory.FIRST(numer_name),
           'denom_name', cdb_observatory.FIRST(denom_name),
           'geom_name', cdb_observatory.FIRST(geom_name),
@@ -449,7 +217,8 @@ BEGIN
     (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]),
     max_timespan_rank,
     max_score_rank,
-    (SELECT Array_Agg(val) from (select (JSON_Array_Elements(params))->>'numer_id' val) foo)
+    (SELECT Array_Agg(val) from (select (JSON_Array_Elements(params))->>'numer_id' val) foo),
+    (SELECT Array_Agg(val) from (select (JSON_Array_Elements(params))->>'geom_id' val) bar)
     ;
   RETURN result;
 END;
@@ -469,12 +238,9 @@ AS $$
 DECLARE
   geom_type TEXT;
   params JSON;
-  result NUMERIC;
-  numer_name TEXT;
-  denom_name TEXT;
-  geom_name TEXT;
-  denom_id TEXT;
   map_type TEXT;
+  result Numeric;
+  numer_aggregate TEXT;
 BEGIN
   IF geom IS NULL THEN
     RETURN NULL;
@@ -488,31 +254,34 @@ BEGIN
     geom_type := 'point';
   ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
     geom_type := 'polygon';
-    --geom := ST_Buffer(geom, 0.000001);
     geom := ST_CollectionExtract(ST_MakeValid(geom), 3);
   ELSE
     RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
                     ST_GeometryType(geom);
   END IF;
 
-  IF normalize ILIKE 'area%' THEN --AND numer_aggregate ILIKE 'sum' THEN
+  params := (SELECT cdb_observatory.OBS_GetMeta(
+    geom, JSON_Build_Array(JSON_Build_Object('numer_id', measure_id,
+                                             'geom_id', boundary_id,
+                                             'numer_timespan', time_span
+                                            )), 1, 1, 500));
+  numer_aggregate := params->0->>'numer_aggregate';
+
+  IF normalize ILIKE 'area%' AND numer_aggregate ILIKE 'sum' THEN
     map_type := 'areaNormalized';
   ELSIF normalize ILIKE 'denom%' THEN
     map_type := 'denominated';
+  ELSIF normalize ILIKE 'predenom%' THEN
+    map_type := 'predenominated';
   ELSE
     -- defaults: area normalization for point if it's possible and none for
     -- polygon or non-summable point
-    IF geom_type = 'point' THEN --AND numer_aggregate ILIKE 'sum' THEN
+    IF geom_type = 'point' AND numer_aggregate ILIKE 'sum' THEN
       map_type := 'areaNormalized';
     ELSE
       map_type := 'predenominated';
     END IF;
   END IF;
-  params := (SELECT cdb_observatory.OBS_GetMeasureMetaMulti(
-    geom, JSON_Build_Array(JSON_Build_Object('numer_id', measure_id,
-                                             'geom_id', boundary_id,
-                                             'timespan', time_span
-                                            )), 1, 1, 500));
 
   params := JSON_Build_Array(JSONB_Set((params::JSONB)->0, '{normalization}', to_jsonb(map_type))::JSON);
 
@@ -523,13 +292,14 @@ BEGIN
     RAISE NOTICE 'Using boundary %', params->0->>'geom_id';
   END IF;
 
-  SELECT measure FROM
-    cdb_observatory.OBS_GetMeasureDataMulti(ARRAY[(geom, 1)::geomval], params)
-    AS (id INT, measure NUMERIC)
-  INTO result;
+  EXECUTE $query$
+  SELECT (data->0->>'value')::Numeric FROM
+    cdb_observatory.OBS_GetData(ARRAY[($1, 1)::geomval], $2)
+  $query$
+  INTO result
+  USING geom, params;
 
   RETURN result;
-
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
@@ -542,65 +312,56 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureById(
 RETURNS NUMERIC
 AS $$
 DECLARE
-  target_table TEXT;
-  colname TEXT;
-  measure_val NUMERIC;
-  data_geoid_colname TEXT;
+  result NUMERIC;
 BEGIN
   IF geom_ref IS NULL THEN
     RETURN NULL;
+  ELSIF boundary_id IS NULL THEN
+    RETURN NULL;
   END IF;
 
-  EXECUTE
-     $query$
-     SELECT numer_colname, numer_geomref_colname, numer_tablename
-             FROM observatory.obs_meta
-             WHERE (geom_id = $1 OR ($1 = ''))
-               AND numer_id = $2
-               AND (numer_timespan = $3 OR ($3 = ''))
-             ORDER BY geom_weight DESC, numer_timespan DESC
-             LIMIT 1
-     $query$
-    INTO colname, data_geoid_colname, target_table
-    USING COALESCE(boundary_id, ''), measure_id, COALESCE(time_span, '');
+  EXECUTE $query$
+    SELECT data->0->>'value'
+    FROM cdb_observatory.OBS_GetData(Array[$1],
+      cdb_observatory.OBS_GetMeta(ST_MakeEnvelope(-180, -90, 180, 90, 4326),
+        JSON_Build_Array(JSON_Build_Object(
+            'numer_id', $2,
+            'geom_id', $3,
+            'numer_timespan', $4,
+            'normalization', 'predenominated'
+          ))))
+  $query$
+  INTO result
+  USING geom_ref, measure_id, boundary_id, time_span;
 
-  --RAISE DEBUG 'target_table %, colname %', target_table, colname;
-
-  EXECUTE format(
-      'SELECT %I
-       FROM observatory.%I data
-       WHERE data.%I = $1',
-       colname,
-       target_table,
-       data_geoid_colname)
-  INTO measure_val USING geom_ref;
-
-  RETURN measure_val;
-
+  RETURN result;
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureDataMulti(
-  geomvals geomval[],
-  params JSON,
-  merge BOOLEAN DEFAULT True
+-- GetData that obtains data from array of geomrefs
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetData(
+  geomrefs text[],
+  params JSON
 )
-RETURNS SETOF RECORD
+RETURNS TABLE (
+  id TEXT,
+  data JSON
+)
 AS $$
 DECLARE
   colspecs TEXT;
-  geomrefs TEXT;
   tables TEXT;
   obs_wheres TEXT;
   user_wheres TEXT;
 
-  measure_id text;
-  measures_list text;
-  measures_query text;
-  geom_table_name text;
-  data_table_name text;
+  q text;
 BEGIN
+    IF params IS NULL OR JSON_ARRAY_LENGTH(params) = 0 THEN
+      RETURN QUERY EXECUTE $query$ SELECT NULL::TEXT, NULL::JSON LIMIT 0 $query$;
+      RETURN;
+    END IF;
+
     EXECUTE
       $query$
         WITH _meta AS (SELECT
@@ -623,12 +384,130 @@ BEGIN
           (unnest($1))->>'geom_geomref_colname' geom_geomref_colname,
           (unnest($1))->>'geom_tablename' geom_tablename,
           (unnest($1))->>'geom_type' geom_type,
-          (unnest($1))->>'timespan' timespan,
+          (unnest($1))->>'geom_timespan' geom_timespan,
+          (unnest($1))->>'numer_timespan' numer_timespan,
           (unnest($1))->>'normalization' normalization
         )
         SELECT String_Agg(
-        CASE WHEN LOWER(numer_type) LIKE 'numeric' THEN
-        CASE
+        -- numeric
+        '(''{' || CASE WHEN LOWER(numer_type) LIKE 'numeric' THEN
+          '"value": '' || ' || CASE
+          -- denominated
+          WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
+            THEN 'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
+                 ' / NullIf(' || denom_tablename || '.' || denom_colname || ', 0))'
+          -- areaNormalized
+          WHEN LOWER(normalization) LIKE 'area%' OR (normalization IS NULL AND numer_aggregate ILIKE 'sum')
+            THEN 'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
+                 ' / (ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography)/1000000))'
+          -- prenormalized
+          ELSE 'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ')'
+          END || ':: ' || numer_type
+
+        -- categorical/text
+        WHEN LOWER(numer_type) LIKE 'text' THEN
+          '"value": "'' || ' || 'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') || ''"'''
+
+        -- geometry
+        WHEN numer_id IS NULL THEN
+          '"geomref": "'' || ' || 'cdb_observatory.FIRST(' || geom_tablename ||
+            '.' || geom_geomref_colname || ') || ''", ' ||
+          '"value": "'' || ' || 'cdb_observatory.FIRST(' || geom_tablename ||
+              '.' || geom_colname || ')::TEXT || ''"'''
+        ELSE ''
+        END || ' || ''}'')::JSON', ', ')
+        AS colspecs,
+
+          (SELECT String_Agg(tablename, ', ') FROM (SELECT JSONB_Object_Keys(JSONB_Object(
+             Array_Cat(Array_Agg('observatory.' || numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
+               Array_Cat(Array_Agg('observatory.' || geom_tablename),
+                         Array_Agg('observatory.' || denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL))),
+             Array_Cat(Array_Agg(numer_tablename) FILTER (WHERE numer_tablename IS NOT NULL),
+               Array_Cat(Array_Agg(geom_tablename),
+                         Array_Agg(denom_tablename) FILTER (WHERE denom_tablename IS NOT NULL)))
+           )) tablename) bar) tablenames,
+
+          String_Agg(numer_tablename || '.' || numer_geomref_colname || ' = ' ||
+                     geom_tablename || '.' || geom_geomref_colname ||
+           Coalesce(' AND ' || numer_tablename || '.' || numer_geomref_colname || ' = ' ||
+                               denom_tablename || '.' || denom_geomref_colname, ''),
+           ' AND ') AS obs_wheres,
+
+          String_Agg(geom_tablename || '.' || geom_geomref_colname || ' = ' ||
+             '_geomrefs.id', ' AND ')
+             AS user_wheres
+        FROM _meta
+        ;
+      $query$
+    INTO colspecs, tables, obs_wheres, user_wheres
+    USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]);
+
+    RETURN QUERY EXECUTE format($query$
+      WITH _geomrefs AS (SELECT UNNEST($1) as id)
+      SELECT _geomrefs.id, Array_to_JSON(ARRAY[%s])
+      FROM %s, _geomrefs
+      WHERE %s %s
+      GROUP BY _geomrefs.id
+      ORDER BY _geomrefs.id
+    $query$, colspecs, tables, NULLIF(obs_wheres, '') || ' AND ', user_wheres)
+    USING geomrefs;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- GetData that obtains data from array of (geom, id) geomvals.
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetData(
+  geomvals geomval[],
+  params JSON,
+  merge BOOLEAN DEFAULT True
+)
+RETURNS TABLE (
+  id INT,
+  data JSON
+)
+AS $$
+DECLARE
+  colspecs TEXT;
+  geomrefs TEXT;
+  tables TEXT;
+  obs_wheres TEXT;
+  user_wheres TEXT;
+BEGIN
+    IF params IS NULL OR JSON_ARRAY_LENGTH(params) = 0 THEN
+      RETURN QUERY EXECUTE $query$ SELECT NULL::INT, NULL::JSON LIMIT 0 $query$;
+      RETURN;
+    END IF;
+
+    EXECUTE
+      $query$
+        WITH _meta AS (SELECT
+          generate_series(1, array_length($1, 1)) colid,
+          (unnest($1))->>'id' id,
+          (unnest($1))->>'numer_id' numer_id,
+          (unnest($1))->>'numer_aggregate' numer_aggregate,
+          (unnest($1))->>'numer_colname' numer_colname,
+          (unnest($1))->>'numer_geomref_colname' numer_geomref_colname,
+          (unnest($1))->>'numer_tablename' numer_tablename,
+          (unnest($1))->>'numer_type' numer_type,
+          (unnest($1))->>'denom_id' denom_id,
+          (unnest($1))->>'denom_aggregate' denom_aggregate,
+          (unnest($1))->>'denom_colname' denom_colname,
+          (unnest($1))->>'denom_geomref_colname' denom_geomref_colname,
+          (unnest($1))->>'denom_tablename' denom_tablename,
+          (unnest($1))->>'denom_type' denom_type,
+          (unnest($1))->>'geom_id' geom_id,
+          (unnest($1))->>'geom_colname' geom_colname,
+          (unnest($1))->>'geom_geomref_colname' geom_geomref_colname,
+          (unnest($1))->>'geom_tablename' geom_tablename,
+          (unnest($1))->>'geom_type' geom_type,
+          (unnest($1))->>'numer_timespan' numer_timespan,
+          (unnest($1))->>'geom_timespan' geom_timespan,
+          (unnest($1))->>'normalization' normalization
+        )
+        SELECT String_Agg(
+        '(''{' ||CASE WHEN LOWER(numer_type) LIKE 'numeric' THEN
+          '"value": '' || ' || CASE
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
             THEN ' CASE ' ||
@@ -695,15 +574,23 @@ BEGIN
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
             '   END) END '
-          END || ':: ' || numer_type || ' AS ' || numer_colname
+          END || ':: ' || numer_type
+
+          -- categorical/text
         WHEN LOWER(numer_type) LIKE 'text' THEN
-          'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || '):: ' ||
-            numer_type || ' AS ' || numer_colname
+          '"value": "'' || ' || 'MODE() WITHIN GROUP (ORDER BY ' || numer_tablename || '.' || numer_colname || ') || ''"'''
+
+          -- geometry
         WHEN numer_id IS NULL THEN
-          'cdb_observatory.FIRST(ST_Intersection(_geoms.geom, ' || geom_tablename ||
-              '.' || geom_colname || '))::' || geom_type || ' AS ' || geom_colname
+          '"geomref": "'' || ' || geom_tablename || '.' || geom_geomref_colname || ' || ''", ' ||
+          '"value": "'' || ' || 'cdb_observatory.FIRST(' || geom_tablename ||
+              '.' || geom_colname || ')::TEXT || ''"'''
+          -- code below will return the intersection of the user's geom and the
+          -- OBS geom
+          --'"value": "'' || ' || 'cdb_observatory.FIRST(ST_Intersection(_geoms.geom, ' || geom_tablename ||
+          --    '.' || geom_colname || '))::TEXT || ''"'''
         ELSE ''
-        END, ', ')
+        END || ' || ''}'')::JSON', ', ')
         AS colspecs,
 
         STRING_AGG(geom_tablename || '.' || geom_geomref_colname, ', ') AS geomrefs,
@@ -736,7 +623,7 @@ BEGIN
       WITH _geoms AS (SELECT
                      (UNNEST($1)).val as id,
                      (UNNEST($1)).geom AS geom)
-      SELECT _geoms.id::INT, %s
+      SELECT _geoms.id::INT, Array_to_JSON(ARRAY[%s])
       FROM %s, _geoms
       WHERE %s %s
       GROUP BY _geoms.id %s
@@ -753,71 +640,59 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
   geom geometry(Geometry, 4326),
   category_id TEXT,
   boundary_id TEXT DEFAULT NULL,
-  time_span TEXT DEFAULT NULL
+  time_span TEXT DEFAULT NULL,
+  simplification NUMERIC DEFAULT 0.00001
 )
 RETURNS TEXT
 AS $$
 DECLARE
-  data_table TEXT;
-  geom_table TEXT;
-  colname TEXT;
-  data_geomref_colname TEXT;
-  geom_geomref_colname TEXT;
-  geom_colname TEXT;
-  category_val TEXT;
-  category_share NUMERIC;
+  geom_type TEXT;
+  params JSON;
+  map_type TEXT;
+  result TEXT;
 BEGIN
   IF geom IS NULL THEN
     RETURN NULL;
   END IF;
 
-  EXECUTE
-     $query$
-     SELECT numer_colname, numer_geomref_colname, numer_tablename,
-            geom_geomref_colname, geom_colname, geom_tablename
-             FROM observatory.obs_meta
-             WHERE (geom_id = $1 OR ($1 = ''))
-               AND numer_id = $2
-               AND (numer_timespan = $3 OR ($3 = ''))
-             ORDER BY geom_weight DESC, numer_timespan DESC
-             LIMIT 1
-     $query$
-    INTO colname, data_geomref_colname, data_table,
-         geom_geomref_colname, geom_colname, geom_table
-    USING COALESCE(boundary_id, ''), category_id, COALESCE(time_span, '');
-
-  IF ST_GeometryType(geom) = 'ST_Point' THEN
-    EXECUTE format(
-        'SELECT data.%I
-         FROM observatory.%I data, observatory.%I geom
-         WHERE data.%I = geom.%I
-           AND ST_WITHIN($1, geom.%I) ',
-         colname, data_table, geom_table, data_geomref_colname,
-         geom_geomref_colname, geom_colname)
-    INTO category_val USING geom;
-  ELSE
-    -- favor the category with the most area
-    EXECUTE format(
-       'SELECT data.%I category, SUM(overlap_fraction) category_share
-        FROM observatory.%I data, (
-          SELECT ST_Area(
-           ST_Intersection($1, a.%I)
-          ) / ST_Area($1) AS overlap_fraction, a.%I geomref
-          FROM observatory.%I as a
-          WHERE $1 && a.%I) _overlaps
-        WHERE data.%I = _overlaps.geomref
-        GROUP BY category
-        ORDER BY SUM(overlap_fraction) DESC
-        LIMIT 1',
-          colname, data_table, geom_colname, geom_geomref_colname,
-          geom_table, geom_colname, data_geomref_colname)
-    INTO category_val, category_share USING geom;
+  IF simplification IS NOT NULL THEN
+    geom := ST_Simplify(geom, simplification);
   END IF;
 
-  RETURN category_val;
+  IF ST_GeometryType(geom) = 'ST_Point' THEN
+    geom_type := 'point';
+  ELSIF ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon') THEN
+    geom_type := 'polygon';
+    geom := ST_CollectionExtract(ST_MakeValid(geom), 3);
+  ELSE
+    RAISE EXCEPTION 'Invalid geometry type (%), can only handle ''ST_Point'', ''ST_Polygon'', and ''ST_MultiPolygon''',
+                    ST_GeometryType(geom);
+  END IF;
 
+  params := (SELECT cdb_observatory.OBS_GetMeta(
+    geom, JSON_Build_Array(JSON_Build_Object('numer_id', category_id,
+                                             'geom_id', boundary_id,
+                                             'numer_timespan', time_span
+                                            )), 1, 1, 500));
+
+  IF params->0->>'geom_id' IS NULL THEN
+    RAISE NOTICE 'No boundary found for geom';
+    RETURN NULL;
+  ELSE
+    RAISE NOTICE 'Using boundary %', params->0->>'geom_id';
+  END IF;
+
+  EXECUTE $query$
+  SELECT data->0->>'value' FROM
+    cdb_observatory.OBS_GetData(ARRAY[($1, 1)::geomval], $2)
+  $query$
+  INTO result
+  USING geom, params;
+
+  RETURN result;
 END;
 $$ LANGUAGE plpgsql;
+
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
    geom geometry(Geometry, 4326),
@@ -830,7 +705,7 @@ RETURNS NUMERIC AS $$
 DECLARE
   standardized_name text;
   measure_id text;
-  result NUMERIC;
+  result Numeric;
 BEGIN
   standardized_name = cdb_observatory._OBS_StandardizeMeasureName(name);
 
@@ -852,6 +727,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusCategory(
    geom geometry(Geometry, 4326),
    name TEXT,
@@ -860,8 +736,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusCategory(
  )
 RETURNS TEXT AS $$
 DECLARE
-  standardized_name text;
-  category_id text;
+  standardized_name TEXT;
+  category_id TEXT;
   result TEXT;
 BEGIN
   standardized_name = cdb_observatory._OBS_StandardizeMeasureName(name);
@@ -882,6 +758,7 @@ BEGIN
   EXECUTE 'SELECT cdb_observatory.OBS_GetCategory($1, $2, $3, $4)'
   INTO result
   USING geom, category_id, boundary_id, time_span;
+
   RETURN result;
 END;
 $$ LANGUAGE plpgsql;
@@ -896,126 +773,21 @@ RETURNS NUMERIC
 AS $$
 DECLARE
   population_measure_id TEXT;
-  result NUMERIC;
+  result Numeric;
 BEGIN
   -- TODO use a super-column for global pop
   population_measure_id := 'us.census.acs.B01003001';
 
-  EXECUTE 'SELECT cdb_observatory.OBS_GetMeasure(
+  EXECUTE $query$ SELECT cdb_observatory.OBS_GetMeasure(
       $1, $2, $3, $4, $5
-  ) LIMIT 1'
+  ) LIMIT 1
+  $query$
   INTO result
   USING geom, population_measure_id, normalize, boundary_id, time_span;
 
-  return result;
+  RETURN result;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetPolygons(
-  geom geometry(Geometry, 4326),
-  geom_table_name text,
-  data_table_info json[]
-)
-RETURNS json[]
-AS $$
-DECLARE
-  result numeric[];
-  json_result json[];
-  q_select text;
-  q_sum text;
-  q text;
-  i NUMERIC;
-  data_geoid_colname text;
-  geom_geoid_colname text;
-BEGIN
-
-  -- TODO we're assuming our geom_table has only one geom_ref column
-  --      we *really* should pass in both geom_table_name and boundary_id
-  -- TODO tablename should not be passed here (use boundary_id)
-  EXECUTE
-    'SELECT ct.colname
-              FROM observatory.obs_column_to_column c2c,
-                   observatory.obs_column_table ct,
-                   observatory.obs_table t
-             WHERE c2c.reltype = ''geom_ref''
-               AND ct.column_id = c2c.source_id
-               AND ct.table_id = t.id
-               AND t.tablename = $1'
-  INTO data_geoid_colname USING (data_table_info)[1]->>'tablename';
-  EXECUTE
-    'SELECT ct.colname
-              FROM observatory.obs_column_to_column c2c,
-                   observatory.obs_column_table ct,
-                   observatory.obs_table t
-             WHERE c2c.reltype = ''geom_ref''
-               AND ct.column_id = c2c.source_id
-               AND ct.table_id = t.id
-               AND t.tablename = $1'
-  INTO geom_geoid_colname USING geom_table_name;
-
-  q_select := format('SELECT %I, ', data_geoid_colname);
-  q_sum    := 'SELECT Array[';
-
-  FOR i IN 1..array_upper(data_table_info, 1)
-  LOOP
-    q_select := q_select || format( '%I ', ((data_table_info)[i])->>'colname');
-
-    IF ((data_table_info)[i])->>'aggregate' ='sum'
-    THEN
-      q_sum := q_sum || format('sum(overlap_fraction * COALESCE(%I, 0)) ',((data_table_info)[i])->>'colname',((data_table_info)[i])->>'colname');
-    ELSE
-      q_sum := q_sum || ' NULL::numeric ';
-    END IF;
-
-    IF i < array_upper(data_table_info,1)
-    THEN
-      q_select := q_select || format(',');
-      q_sum := q_sum || format(',');
-    END IF;
- END LOOP;
-
-  q := format('
-    WITH _overlaps As (
-      SELECT ST_Area(
-        ST_Intersection($1, a.the_geom)
-      ) / ST_Area(a.the_geom) As overlap_fraction,
-      %I
-      FROM observatory.%I As a
-      WHERE $1 && a.the_geom
-    ),
-    values As (
-    ', geom_geoid_colname, geom_table_name);
-
-  q := q || q_select || format('FROM observatory.%I ', ((data_table_info)[1]->>'tablename'));
-
-  q := format(q || ' ) ' || q_sum || ' ]::numeric[] FROM _overlaps, values
-  WHERE values.%I = _overlaps.%I', data_geoid_colname, geom_geoid_colname);
-
-  EXECUTE
-    q
-  INTO result
-  USING geom;
-
-  EXECUTE
-    $query$
-     SELECT array_agg(row_to_json(t)) FROM (
-      SELECT values As value,
-              meta->>'name' As name,
-              meta->>'tablename' As tablename,
-              meta->>'aggregate' As aggregate,
-              meta->>'type' As type,
-              meta->>'description' As description
-             FROM (SELECT unnest($1) As values, unnest($2) As meta) b
-      ) t
-    $query$
-    INTO json_result
-    USING result, data_table_info;
-
-  RETURN json_result;
-END;
-$$ LANGUAGE plpgsql;
-
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
@@ -1025,209 +797,83 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
 RETURNS JSON
 AS $$
 DECLARE
-  target_cols text[];
-  result       json;
-  seg_name     Text;
-  geom_id      Text;
-  q            Text;
-  segment_names Text[];
+  meta JSON;
+  data JSON;
+  result JSON;
 BEGIN
-IF boundary_id IS NULL THEN
- boundary_id = 'us.census.tiger.census_tract';
-END IF;
-target_cols := Array[
-          'us.census.acs.B01003001_quantile',
-          'us.census.acs.B01001002_quantile',
-          'us.census.acs.B01001026_quantile',
-          'us.census.acs.B01002001_quantile',
-          'us.census.acs.B03002003_quantile',
-          'us.census.acs.B03002004_quantile',
-          'us.census.acs.B03002006_quantile',
-          'us.census.acs.B03002012_quantile',
-          'us.census.acs.B05001006_quantile',--
-          'us.census.acs.B08006001_quantile',--
-          'us.census.acs.B08006002_quantile',--
-          'us.census.acs.B08006008_quantile',--
-          'us.census.acs.B08006009_quantile',--
-          'us.census.acs.B08006011_quantile',--
-          'us.census.acs.B08006015_quantile',--
-          'us.census.acs.B08006017_quantile',--
-          'us.census.acs.B09001001_quantile',--
-          'us.census.acs.B11001001_quantile',
-          'us.census.acs.B14001001_quantile',--
-          'us.census.acs.B14001002_quantile',--
-          'us.census.acs.B14001005_quantile',--
-          'us.census.acs.B14001006_quantile',--
-          'us.census.acs.B14001007_quantile',--
-          'us.census.acs.B14001008_quantile',--
-          'us.census.acs.B15003001_quantile',
-          'us.census.acs.B15003017_quantile',
-          'us.census.acs.B15003022_quantile',
-          'us.census.acs.B15003023_quantile',
-          'us.census.acs.B16001001_quantile',--
-          'us.census.acs.B16001002_quantile',--
-          'us.census.acs.B16001003_quantile',--
-          'us.census.acs.B17001001_quantile',--
-          'us.census.acs.B17001002_quantile',--
-          'us.census.acs.B19013001_quantile',
-          'us.census.acs.B19083001_quantile',
-          'us.census.acs.B19301001_quantile',
-          'us.census.acs.B25001001_quantile',
-          'us.census.acs.B25002003_quantile',
-          'us.census.acs.B25004002_quantile',
-          'us.census.acs.B25004004_quantile',
-          'us.census.acs.B25058001_quantile',
-          'us.census.acs.B25071001_quantile',
-          'us.census.acs.B25075001_quantile',
-          'us.census.acs.B25075025_quantile'
-               ];
+  boundary_id = COALESCE(boundary_id, 'us.census.tiger.census_tract');
 
-    EXECUTE
-      $query$
-      SELECT array_agg(_OBS_GetCategories->>'category')
-      FROM cdb_observatory._OBS_GetCategories(
-         $1,
-         Array['us.census.spielman_singleton_segments.X10', 'us.census.spielman_singleton_segments.X55'],
-         $2)
-      $query$
-    INTO segment_names
-    USING geom, boundary_id;
+  EXECUTE $query$
+    SELECT cdb_observatory.OBS_GetMeta($1, ('[ ' ||
+            '{"numer_id": "us.census.acs.B01003001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B01001002_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B01001026_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B01002001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B03002003_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B03002004_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B03002006_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B03002012_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B05001006_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B08006001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B08006002_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B08301010_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B08006009_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B08006011_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B08006015_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B08006017_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B09001001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B11001001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B14001001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B14001002_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B14001005_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B14001006_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B14001007_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B14001008_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B15003001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B15003017_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B15003022_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B15003023_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B16001001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B16001002_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B16001003_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B17001001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B17001002_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B19013001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B19083001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B19301001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25001001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25002003_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25004002_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25004004_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25058001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25071001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25075001_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.acs.B25075025_quantile", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.spielman_singleton_segments.X10", "geom_id": ' || $2 || '},' ||
+            '{"numer_id": "us.census.spielman_singleton_segments.X55", "geom_id": ' || $2 || '}' ||
+          ']')::JSON)
+  $query$
+  INTO meta
+  USING geom, COALESCE('"' || boundary_id || '"', 'null');
 
-    q :=
-      format($query$
-      WITH a As (
-           SELECT
-             array_agg(_OBS_GET->>'name') As names,
-             array_agg(_OBS_GET->>'value') As vals
-           FROM cdb_observatory._OBS_Get($1,
-                        $2,
-                        '2010 - 2014',
-                        $3)
+  EXECUTE $query$
+    SELECT data FROM cdb_observatory.OBS_GetData(
+      ARRAY[($1, 1)::geomval], $2)
+  $query$
+  INTO data
+  USING geom, meta;
 
-        ), percentiles As (
-           %s
-         FROM  a)
-         SELECT row_to_json(r) FROM
-         ( SELECT $4 as x10_segment, $5 as x55_segment, percentiles.*
-          FROM percentiles) r
-       $query$, cdb_observatory._OBS_BuildSnapshotQuery(target_cols)) results;
+  EXECUTE $query$
+    WITH els AS (SELECT
+      REPLACE(REPLACE(JSON_Array_Elements($1)->>'numer_id',
+        'us.census.spielman_singleton_segments.X55', 'x55_segment'),
+        'us.census.spielman_singleton_segments.X10', 'x10_segment') k,
+      JSON_Array_Elements($2)->>'value' v)
+    SELECT JSON_Object_Agg(k, v) FROM els
+  $query$
+  INTO result
+  USING meta, data;
 
-
-    EXECUTE
-      q
-    into result
-    USING geom, target_cols, boundary_id, segment_names[1], segment_names[2];
-
-    return result;
-
-END;
-$$ LANGUAGE plpgsql;
-
---Get categorical variables from point
-
-CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetCategories(
-  geom geometry(Geometry, 4326),
-  dimension_names text[],
-  boundary_id text DEFAULT NULL,
-  time_span text DEFAULT NULL
-)
-RETURNS SETOF JSON as $$
-DECLARE
-  geom_table_name text;
-  geoid text;
-  names text[];
-  results text[];
-  query text;
-  data_table_info json[];
-BEGIN
-
-  IF time_span IS NULL THEN
-    time_span = '2010 - 2014';
-  END IF;
-
-  IF boundary_id IS NULL THEN
-    boundary_id = 'us.census.tiger.block_group';
-  END IF;
-
-  geom_table_name := cdb_observatory._OBS_GeomTable(geom, boundary_id);
-
-  IF geom_table_name IS NULL
-  THEN
-     --raise notice 'Point % is outside of the data region', ST_AsText(geom);
-     RETURN QUERY SELECT '{}'::text[], '{}'::text[];
-     RETURN;
-  END IF;
-
-  EXECUTE '
-    SELECT array_agg(_obs_getcolumndata)
-    FROM cdb_observatory._OBS_GetColumnData($1, $2, $3);
-    '
-  INTO data_table_info
-  USING boundary_id, dimension_names, time_span;
-
-  IF data_table_info IS NULL
-  THEN
-    --raise notice 'No data table found for this location';
-    RETURN QUERY SELECT NULL::json;
-    RETURN;
-  END IF;
-
-  EXECUTE
-    format('SELECT geoid
-            FROM observatory.%I
-            WHERE the_geom && $1',
-            geom_table_name)
-  USING geom
-  INTO geoid;
-
-  IF geoid IS NULL
-  THEN
-    --raise notice 'No geometry id for this location';
-    RETURN QUERY SELECT NULL::json;
-    RETURN;
-  END IF;
-
-  query := 'SELECT ARRAY[';
-
-  FOR i IN 1..array_upper(data_table_info, 1)
-  LOOP
-    query = query || format('%I ', lower(((data_table_info)[i])->>'colname'));
-    IF i <  array_upper(data_table_info, 1)
-    THEN
-      query := query || ',';
-    END IF;
-  END LOOP;
-
-  query := query || format(' ]::text[]
-    FROM observatory.%I
-    WHERE %I.geoid  = %L
-  ',
-  ((data_table_info)[1])->>'tablename',
-  ((data_table_info)[1])->>'tablename',
-  geoid
-  );
-
-  EXECUTE
-    query
-  INTO results
-  USING geom;
-
-  RETURN QUERY
-  EXECUTE
-    $query$
-     SELECT row_to_json(t) FROM (
-      SELECT categories As category,
-              meta->>'name' As name,
-              meta->>'tablename' As tablename,
-              meta->>'aggregate' As aggregate,
-              meta->>'type' As type,
-              meta->>'description' As description
-      FROM (SELECT unnest($1) As categories,
-                   unnest($2) As meta) As b
-      ) t
-    $query$
-    USING results, data_table_info;
-  RETURN;
-
+  RETURN result;
 END;
 $$ LANGUAGE plpgsql;

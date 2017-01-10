@@ -38,24 +38,15 @@ def get_tablename_query(column_id, boundary_id, timespan):
         timespan, give back the current table hash from the data observatory
     """
     return """
-        SELECT t.tablename, geoid_ct.colname colname, t.id table_id
-        FROM observatory.obs_table t,
-             observatory.obs_column_table geoid_ct,
-             observatory.obs_column_table data_ct
-        WHERE
-             t.id = geoid_ct.table_id AND
-             t.id = data_ct.table_id AND
-             geoid_ct.column_id =
-        (SELECT source_id
-         FROM observatory.obs_column_to_column
-         WHERE target_id = '{boundary_id}'
-         AND reltype = 'geom_ref'
-        ) AND
-        data_ct.column_id = '{column_id}' AND
-        timespan = '{timespan}'
-    """.format(column_id=column_id,
-               boundary_id=boundary_id,
-               timespan=timespan)
+        SELECT numer_tablename, numer_geomref_colname, numer_tid,
+               geom_tablename, geom_geomref_colname, geom_tid
+        FROM observatory.obs_meta
+        WHERE numer_id = '{numer_id}' AND
+              geom_id = '{geom_id}' AND
+              numer_timespan = '{numer_timespan}'
+    """.format(numer_id=column_id,
+               geom_id=boundary_id,
+               numer_timespan=timespan)
 
 
 METADATA_TABLES = ['obs_table', 'obs_column_table', 'obs_column', 'obs_column_tag',
@@ -76,7 +67,7 @@ FIXTURES = [
     ('us.census.acs.B05001006_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.acs.B08006001_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.acs.B08006002_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
-    ('us.census.acs.B08006008_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B08301010_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.acs.B08006009_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.acs.B08006011_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.acs.B08006015_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
@@ -130,7 +121,6 @@ FIXTURES = [
     ('us.census.acs.B15003022', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B15003023', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19013001', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B19083001', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19301001', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B25001001', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B25002003', 'us.census.tiger.block_group', '2010 - 2014'),
@@ -143,15 +133,6 @@ FIXTURES = [
     ('us.census.acs.B25081002', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B08134001', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B08134002', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134003', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134004', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134005', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134006', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134007', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134008', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134009', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08134010', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.acs.B08135001', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19001002', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19001003', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19001004', 'us.census.tiger.block_group', '2010 - 2014'),
@@ -168,27 +149,71 @@ FIXTURES = [
     ('us.census.acs.B19001015', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19001016', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B19001017', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.tiger.census_tract', 'us.census.tiger.census_tract', '2015'),
-    ('us.census.tiger.census_tract', 'us.census.tiger.census_tract', '2014'),
-    ('us.census.tiger.block_group', 'us.census.tiger.block_group', '2015'),
-    ('us.census.tiger.zcta5', 'us.census.tiger.zcta5', '2015'),
-    ('us.census.tiger.county', 'us.census.tiger.county', '2015'),
     ('us.census.acs.B01001002', 'us.census.tiger.block_group', '2010 - 2014'),
     ('us.census.acs.B01003001', 'us.census.tiger.census_tract', '2010 - 2014'),
-    ('us.census.acs.B01003001_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),
-    ('us.census.acs.B01003001', 'us.census.tiger.block_group', '2010 - 2014'),
-    ('us.census.spielman_singleton_segments.X2', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B01001002', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B01001026', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B01002001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002003', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002004', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002006', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002012', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002005', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002008', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002009', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B03002002', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B11001001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B15003001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B15003017', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B15003019', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B15003020', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B15003021', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B15003022', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B15003023', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19013001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19083001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19301001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25001001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25002003', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25004002', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25004004', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25058001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25071001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25075001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25075025', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B25081002', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B08134001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B08134002', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B08134008', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B08134008', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B08134010', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001002', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001003', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001004', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001005', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001006', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001007', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001008', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001009', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001010', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001011', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001012', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001013', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001014', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001015', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001016', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.acs.B19001017', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.spielman_singleton_segments.X10', 'us.census.tiger.census_tract', '2010 - 2014'),
-    ('us.census.spielman_singleton_segments.X31', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.spielman_singleton_segments.X55', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2014-01'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2016-06'),
-    ('whosonfirst.wof_country_geom', 'whosonfirst.wof_country_geom', '2016'),
-    ('us.census.tiger.zcta5_clipped', 'us.census.tiger.zcta5_clipped', '2014'),
-    ('us.census.tiger.block_group_clipped', 'us.census.tiger.block_group_clipped', '2014'),
-    ('us.census.tiger.census_tract_clipped', 'us.census.tiger.census_tract_clipped', '2014'),
-    ('us.census.tiger.pointlm', 'us.census.tiger.pointlm', '2016'),
-    ('us.census.tiger.prisecroads', 'us.census.tiger.prisecroads', '2016'),
+    ('whosonfirst.wof_country_name', 'whosonfirst.wof_country_geom', '2016'),
+    ('us.census.acs.B01003001', 'us.census.tiger.zcta5_clipped', '2010 - 2014'),
+    ('us.census.acs.B01003001', 'us.census.tiger.block_group_clipped', '2010 - 2014'),
+    ('us.census.acs.B01003001', 'us.census.tiger.census_tract_clipped', '2010 - 2014'),
+    ('us.census.tiger.fullname', 'us.census.tiger.pointlm_geom', '2016'),
+    ('us.census.tiger.fullname', 'us.census.tiger.prisecroads_geom', '2016'),
+    ('us.census.tiger.name', 'us.census.tiger.county', '2015'),
 ]
 
 OUTFILE_PATH = os.path.join(os.path.dirname(__file__), '..',
@@ -238,15 +263,19 @@ def main():
         tablename_query = get_tablename_query(column_id, boundary_id, timespan)
         resp = query(tablename_query).fetchone()
         if resp:
-            tablename, colname, table_id = resp
+            numer_tablename, numer_colname, numer_table_id = resp[0:3]
+            geom_tablename, geom_colname, geom_table_id = resp[3:6]
         else:
-            print("Could not find table for {}, {}, {}".format(
+            raise Exception("Could not find table for {}, {}, {}".format(
                 column_id, boundary_id, timespan))
-            continue
-        table_colname = (tablename, colname, boundary_id, table_id, )
-        if table_colname not in unique_tables:
-            print(table_colname)
-            unique_tables.add(table_colname)
+        numer = (numer_tablename, numer_colname, numer_table_id, )
+        geom = (geom_tablename, geom_colname, geom_table_id, )
+        if numer not in unique_tables:
+            print(numer)
+            unique_tables.add(numer)
+        if geom not in unique_tables:
+            print(geom)
+            unique_tables.add(geom)
 
     print unique_tables
 
@@ -297,12 +326,12 @@ def main():
             ])
         elif tablename in ('obs_column_table', 'obs_column_table_tile',
                            'obs_column_table_tile_simple'):
-            where = 'WHERE column_id IN ({numer_ids}) ' \
-                    'OR column_id IN ({geom_ids}) ' \
-                    'OR table_id IN ({table_ids}) '.format(
+            where = '''WHERE table_id IN ({table_ids}) AND
+              (column_id IN ({numer_ids}) OR column_id IN ({geom_ids}))
+                    '''.format(
                         numer_ids=','.join(["'{}'".format(x) for x, _, _ in FIXTURES]),
                         geom_ids=','.join(["'{}'".format(x) for _, x, _ in FIXTURES]),
-                        table_ids=','.join(["'{}'".format(x) for _, _, _, x in unique_tables])
+                        table_ids=','.join(["'{}'".format(x) for _, _, x in unique_tables])
                     )
         elif tablename == 'obs_column_to_column':
             where = "WHERE " + " OR ".join([
@@ -314,21 +343,20 @@ def main():
             where = 'WHERE timespan IN ({timespans}) ' \
                     'OR id IN ({table_ids}) '.format(
                         timespans=','.join(["'{}'".format(x) for _, _, x in FIXTURES]),
-                        table_ids=','.join(["'{}'".format(x) for _, _, _, x in unique_tables])
+                        table_ids=','.join(["'{}'".format(x) for _, _, x in unique_tables])
                     )
         else:
             where = ''
         dump('*', tablename, where)
 
-    for tablename, colname, boundary_id, table_id in unique_tables:
-        if 'zcta5' in boundary_id:
+    for tablename, colname, table_id in unique_tables:
+        if 'zcta5' in table_id or 'zillow_zip' in table_id:
             where = '\'11%\''
             compare = 'LIKE'
-        elif boundary_id in ('us.census.tiger.prisecroads',
-                             'us.census.tiger.pointlm'):
+        elif 'pri_sec_roads' in table_id or 'point_landmark' in table_id:
             dump('*', tablename, 'WHERE geom && ST_MakeEnvelope(-74,40.69,-73.9,40.72, 4326)')
             continue
-        elif 'whosonfirst' in boundary_id:
+        elif 'whosonfirst' in table_id:
             where = '(\'85632785\',\'85633051\',\'85633111\',\'85633147\',\'85633253\',\'85633267\')'
             compare = 'IN'
         else:

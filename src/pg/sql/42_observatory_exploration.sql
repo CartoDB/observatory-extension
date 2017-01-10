@@ -485,7 +485,7 @@ BEGIN
         , null::numeric meanmediansize
       FROM clipped_geom_reagg
     ) SELECT
-      ((100.0 / (1+abs(log(1 + $3) - log(1 + numgeoms::Numeric)))) * percentfill)::Numeric
+      ((100.0 / (1+abs(log(0.0001 + $3) - log(0.0001 + numgeoms::Numeric)))) * percentfill)::Numeric
       AS score, *
       FROM final
   $string$ USING bounds, filter_geom_ids, desired_num_geoms;

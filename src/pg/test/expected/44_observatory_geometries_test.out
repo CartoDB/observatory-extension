@@ -93,9 +93,3 @@ t
 obs_getpointsbypointandradius_around_null_island
 t
 (1 row)
-geoid_name_matches|table_name_matches|geom_name_matches
-t|t|t
-(1 row)
-geoid_name_matches|table_name_matches|geom_name_matches
-t|t|t
-(1 row)

@@ -42,7 +42,7 @@ SELECT cdb_observatory.OBS_GetBoundary(
 SELECT cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
   'us.census.tiger.census_tract',
-  '2014'
+  '2015'
 ) = :'cartodb_census_tract_geometry' As OBS_GetBoundary_year_census_tract;
 
 -- should return null
@@ -65,7 +65,7 @@ SELECT cdb_observatory.OBS_GetBoundaryId(
 SELECT cdb_observatory.OBS_GetBoundaryId(
   cdb_observatory._TestPoint(),
   'us.census.tiger.census_tract',
-  '2014'
+  '2015'
 ) = '36047048500'::text As OBS_GetBoundaryId_cartodb_census_tract_with_year;
 
 -- should give back '36047', the geoid of cartodb's county (King's/
@@ -104,7 +104,7 @@ SELECT cdb_observatory.OBS_GetBoundaryById(
 SELECT cdb_observatory.OBS_GetBoundaryById(
   '36047',
   'us.census.tiger.county',
-  '2014'
+  '2015'
 ) = :'cartodb_county_geometry' OBS_GetBoundaryById_boundary_id_mismatch_geom_id;
 
 -- should give null since boundary_id does not match geometry reference id
@@ -115,8 +115,7 @@ SELECT cdb_observatory.OBS_GetBoundaryById(
 
 -- _OBS_GetBoundariesByGeometry
 
-SELECT
-  array_agg(geom_refs) = Array[ '1104486618765', '1104486642837',
+SELECT array_agg(geom_refs) = Array[ '1104486618765', '1104486642837',
                                 '1104991798384', '1105044325367',
                                 '1105089330200', '1105089331758']
 As _OBS_GetBoundariesByGeometry_roads_around_cartodb
@@ -126,7 +125,7 @@ FROM (
     -- near CartoDB's office
     ST_MakeEnvelope(-74,40.69,-73.99,40.7,
                     4326),
-    'us.census.tiger.prisecroads')
+    'us.census.tiger.prisecroads_geom')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -140,7 +139,7 @@ FROM (
     -- near CartoDB's office
     ST_MakeEnvelope(-73.9452409744,40.6988851644,-73.9280319214,40.7101254524,
                     4326),
-    'us.census.tiger.pointlm')
+    'us.census.tiger.pointlm_geom')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -299,7 +298,7 @@ FROM (
                     -73.9280319214,40.7101254524,
                     4326),
     'us.census.tiger.census_tract',
-    '2014')
+    '2015')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -342,7 +341,7 @@ FROM (
     cdb_observatory._testpoint(),
     500,
     'us.census.tiger.census_tract',
-    '2014')
+    '2015')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
 
@@ -358,22 +357,5 @@ FROM (
     'us.census.tiger.census_tract')
   ORDER BY geom_refs ASC
 ) As m(the_geom, geom_refs);
-
--- _OBS_GetGeometryMetadata
--- get metadata for census tracts
-
-SELECT
-  geoid_colname = 'geoid' As geoid_name_matches,
-  target_table = 'obs_87a814e485deabe3b12545a537f693d16ca702c2' As table_name_matches,
-  geom_colname = 'the_geom' As geom_name_matches
-FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract')
-     As m(geoid_colname, target_table, geom_colname);
-
--- get metadata for boundaries with clipped geometries
- SELECT
-   geoid_colname = 'geoid' As geoid_name_matches,
-   target_table = 'obs_fcd4e4f5610f6764973ef8c0c215b2e80bec8963' As table_name_matches,
-   geom_colname = 'the_geom' As geom_name_matches
- FROM cdb_observatory._OBS_GetGeometryMetadata('us.census.tiger.census_tract_clipped') As m(geoid_colname, target_table, geom_colname);
 
 \i test/fixtures/drop_fixtures.sql

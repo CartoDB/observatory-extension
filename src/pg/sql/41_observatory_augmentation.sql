@@ -386,12 +386,20 @@ BEGIN
           (unnest($1))->>'geom_type' geom_type,
           (unnest($1))->>'geom_timespan' geom_timespan,
           (unnest($1))->>'numer_timespan' numer_timespan,
-          (unnest($1))->>'normalization' normalization
+          (unnest($1))->>'normalization' normalization,
+          (unnest($1))->>'api_method' api_method,
+          (unnest($1))->'api_args' api_args
         )
         SELECT String_Agg(
         -- numeric
-        '(''{' || CASE WHEN LOWER(numer_type) LIKE 'numeric' THEN
-          '"value": '' || ' || CASE
+        'JSON_Build_Object(' || CASE
+        WHEN api_method IS NOT NULL THEN
+          '''value'', ' ||
+            'cdb_observatory.FIRST( ' ||
+              api_method || '.' || numer_colname || ')::' || numer_type
+        -- numeric internal values
+        WHEN LOWER(numer_type) LIKE 'numeric' THEN
+          '''value'', ' || CASE
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
             THEN 'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
@@ -406,30 +414,34 @@ BEGIN
 
         -- categorical/text
         WHEN LOWER(numer_type) LIKE 'text' THEN
-          '"value": "'' || ' || 'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') || ''"'''
+          '''value'', ' || 'cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') '
 
         -- geometry
         WHEN numer_id IS NULL THEN
-          '"geomref": "'' || ' || 'cdb_observatory.FIRST(' || geom_tablename ||
-            '.' || geom_geomref_colname || ') || ''", ' ||
-          '"value": "'' || ' || 'cdb_observatory.FIRST(' || geom_tablename ||
-              '.' || geom_colname || ')::TEXT || ''"'''
+          '''geomref'', ' || 'cdb_observatory.FIRST(' || geom_tablename ||
+            '.' || geom_geomref_colname || '), ' ||
+          '''value'', ' || 'cdb_observatory.FIRST(' || geom_tablename ||
+              '.' || geom_colname || ')'
         ELSE ''
-        END || ' || ''}'')::JSON', ', ')
+        END || ')', ', ')
         AS colspecs,
 
           (SELECT String_Agg(DISTINCT CASE
               -- External API
               WHEN tablename LIKE 'cdb_observatory.%' THEN
-                'LATERAL (SELECT * FROM ' || tablename ||
-                '(_geoms.geom)) ' || REPLACE(tablename, 'cdb_observatory.', '')
+                'LATERAL (SELECT * FROM ' || tablename || ') ' ||
+                  REPLACE(split_part(tablename, '(', 1), 'cdb_observatory.', '')
               -- Internal obs_ table
               ELSE 'observatory.' || tablename
             END, ', ') FROM (
             SELECT DISTINCT UNNEST(tablenames_ary) tablename FROM (
             SELECT ARRAY_AGG(numer_tablename) ||
                 ARRAY_AGG(denom_tablename) ||
-                ARRAY_AGG(geom_tablename)
+                ARRAY_AGG(geom_tablename) ||
+                ARRAY_AGG('cdb_observatory.' || api_method || '(_geomrefs.id' || COALESCE(', ' ||
+                      (SELECT STRING_AGG(REPLACE(val::text, '"', ''''), ', ')
+                       FROM (SELECT json_array_elements(api_args) as val) as vals),
+                    '') || ')')
               tablenames_ary
             ) tablenames_inner
           ) tablenames_outer) tablenames,
@@ -451,12 +463,13 @@ BEGIN
 
     RETURN QUERY EXECUTE format($query$
       WITH _geomrefs AS (SELECT UNNEST($1) as id)
-      SELECT _geomrefs.id, Array_to_JSON(ARRAY[%s])
-      FROM %s, _geomrefs
-      WHERE %s %s
+      SELECT _geomrefs.id, Array_to_JSON(ARRAY[%s]::JSON[])
+      FROM _geomrefs, %s
+           %s
       GROUP BY _geomrefs.id
       ORDER BY _geomrefs.id
-    $query$, colspecs, tables, NULLIF(obs_wheres, '') || ' AND ', user_wheres)
+    $query$, colspecs, tables,
+             'WHERE ' || NULLIF(ARRAY_TO_STRING(ARRAY[obs_wheres, user_wheres], ' AND '), ''))
     USING geomrefs;
     RETURN;
 END;
@@ -510,18 +523,20 @@ BEGIN
           (unnest($1))->>'geom_type' geom_type,
           (unnest($1))->>'numer_timespan' numer_timespan,
           (unnest($1))->>'geom_timespan' geom_timespan,
-          (unnest($1))->>'normalization' normalization
+          (unnest($1))->>'normalization' normalization,
+          (unnest($1))->>'api_method' api_method,
+          (unnest($1))->'api_args' api_args
         )
         SELECT String_Agg(
-        '(''{' || CASE
+        'JSON_Build_Object(' || CASE
           -- api-delivered values
-          WHEN numer_tablename LIKE 'cdb_observatory.%' THEN
-          '"value": "'' || ' ||
-            '(cdb_observatory.FIRST( ' ||
-              REPLACE(numer_tablename, 'cdb_observatory.', '') || '.' || numer_colname || '))::TEXT || ''"'''
+          WHEN api_method IS NOT NULL THEN
+          '''value'', ' ||
+            'cdb_observatory.FIRST( ' ||
+              api_method || '.' || numer_colname || ')::' || numer_type
           -- numeric internal values
           WHEN LOWER(numer_type) LIKE 'numeric' THEN
-          '"value": '' || ' || CASE
+          '''value'', ' || CASE
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
             THEN ' CASE ' ||
@@ -592,36 +607,45 @@ BEGIN
 
           -- categorical/text
         WHEN LOWER(numer_type) LIKE 'text' THEN
-          '"value": "'' || ' || 'MODE() WITHIN GROUP (ORDER BY ' || numer_tablename || '.' || numer_colname || ') || ''"'''
+          '''value'', ' || 'MODE() WITHIN GROUP (ORDER BY ' || numer_tablename || '.' || numer_colname || ') '
 
           -- geometry
         WHEN numer_id IS NULL THEN
-          '"geomref": "'' || ' || geom_tablename || '.' || geom_geomref_colname || ' || ''", ' ||
-          '"value": "'' || ' || 'cdb_observatory.FIRST(' || geom_tablename ||
-              '.' || geom_colname || ')::TEXT || ''"'''
+          '''geomref'', ' || geom_tablename || '.' || geom_geomref_colname || ', ' ||
+          '''value'', ' || 'cdb_observatory.FIRST(' || geom_tablename ||
+              '.' || geom_colname || ')::TEXT'
           -- code below will return the intersection of the user's geom and the
           -- OBS geom
           --'"value": "'' || ' || 'cdb_observatory.FIRST(ST_Intersection(_geoms.geom, ' || geom_tablename ||
           --    '.' || geom_colname || '))::TEXT || ''"'''
         ELSE ''
-        END || ' || ''}'')::JSON', ', ')
+        END || ')', ', ')
         AS colspecs,
 
-        STRING_AGG(REPLACE(geom_tablename, 'cdb_observatory.', '') ||
+        -- geomrefs, used to separate out rows in case we don't want to merge
+        -- results by user input IDs
+        --
+        -- api_method and geom_tablename are interchangeable since when an
+        -- api_method is passed, geom_tablename is ignored
+        STRING_AGG(COALESCE(geom_tablename, api_method) ||
           '.' || geom_geomref_colname, ', ') AS geomrefs,
 
           (SELECT String_Agg(DISTINCT CASE
               -- External API
               WHEN tablename LIKE 'cdb_observatory.%' THEN
-                'LATERAL (SELECT * FROM ' || tablename ||
-                '(_geoms.geom)) ' || REPLACE(tablename, 'cdb_observatory.', '')
+                'LATERAL (SELECT * FROM ' || tablename || ') ' ||
+                  REPLACE(split_part(tablename, '(', 1), 'cdb_observatory.', '')
               -- Internal obs_ table
               ELSE 'observatory.' || tablename
             END, ', ') FROM (
             SELECT DISTINCT UNNEST(tablenames_ary) tablename FROM (
             SELECT ARRAY_AGG(numer_tablename) ||
                 ARRAY_AGG(denom_tablename) ||
-                ARRAY_AGG(geom_tablename)
+                ARRAY_AGG(geom_tablename) ||
+                ARRAY_AGG('cdb_observatory.' || api_method || '(_geoms.geom' || COALESCE(', ' ||
+                      (SELECT STRING_AGG(REPLACE(val::text, '"', ''''), ', ')
+                       FROM (SELECT json_array_elements(api_args) as val) as vals),
+                    '') || ')')
               tablenames_ary
             ) tablenames_inner
           ) tablenames_outer) tablenames,

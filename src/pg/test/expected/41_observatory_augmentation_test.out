@@ -105,6 +105,18 @@ t
 obs_getmeasurebyid_null_id
 t
 (1 row)
-obs_getdata_api
+obs_getdata_api_geomvals_no_args
+t
+(1 row)
+obs_getdata_api_geomvals_args_numer_return
+t
+(1 row)
+obs_getdata_api_geomvals_args_string_return
+t
+(1 row)
+obs_getdata_api_geomrefs_args_numer_return
+t
+(1 row)
+obs_getdata_api_geomrefs_args_string_return
 t
 (1 row)

@@ -214,6 +214,7 @@ FIXTURES = [
     ('us.census.tiger.fullname', 'us.census.tiger.pointlm_geom', '2016'),
     ('us.census.tiger.fullname', 'us.census.tiger.prisecroads_geom', '2016'),
     ('us.census.tiger.name', 'us.census.tiger.county', '2015'),
+    ('us.census.tiger.name', 'us.census.tiger.block_group', '2015'),
 ]
 
 OUTFILE_PATH = os.path.join(os.path.dirname(__file__), '..',

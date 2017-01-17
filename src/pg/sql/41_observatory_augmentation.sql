@@ -563,7 +563,8 @@ BEGIN
             '         THEN 1 ' ||
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
-            '   END), 0) '
+            '   END), 0) ' ||
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
             ' END '
           -- areaNormalized
           WHEN LOWER(normalization) LIKE 'area%' OR (normalization IS NULL AND numer_aggregate ILIKE 'sum')
@@ -584,7 +585,9 @@ BEGIN
             '          / ST_Area(_geoms.geom)' ||
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(_geoms.geom))' ||
-            '   END / (ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography) / 1000000)) END  '
+            '   END / (ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography) / 1000000)) ' ||
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
+            ' END  '
           -- prenormalized
           ELSE ' CASE ' ||
             -- predenominated point-in-poly or user polygon is the same as OBS- polygon
@@ -602,7 +605,9 @@ BEGIN
             '         THEN 1 ' ||
             '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
-            '   END) END '
+            '   END) ' ||
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
+            'END '
           END || ':: ' || numer_type
 
           -- categorical/text

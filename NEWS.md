@@ -1,3 +1,10 @@
+1.2.1 (2017-01-17)
+
+__Improvements__
+
+* Support Point/LineString in responses from `OBS_GetBoundary`.
+  ([#243](https://github.com/CartoDB/observatory-extension/pull/233))
+
 1.2.0 (2016-12-28)
 
 __API Changes__

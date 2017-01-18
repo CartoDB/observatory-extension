@@ -1,3 +1,31 @@
+1.3.0 (2017-01-17)
+
+__API Changes__
+
+* `OBS_GetMeasureDataMulti()` is now called `OBS_GetData()`
+* `OBS_GetMeasureMetaMulti()` is now called `OBS_GetMeta()`
+* Additional signature for `OBS_GetData` which can take an array of `TEXT`,
+  mimicking functionality of `OBS_GetMeasureByID`
+
+__Improvements__
+
+* Add support for PL/Python
+* Generate fixtures from `obs_meta`
+* Remove unused table-level code
+* Refactor all augmentation and geometry functions to obtain data from
+  `OBS_GetMeta()` and `OBS_GetData()`.
+* Improvements to `OBS_GetMeta()` so it can still fill in metadata in cases
+  where only a geometry is being requested.
+* `OBS_GetData()` returns two-column table instead of anonymous record.
+* `OBS_GetData()` can return categorical (text) and geometries
+
+__Bugfixes__
+
+* Remove unnecessary dependency on `postgres_fdw`
+* `OBS_GetData()` now aggregates measures with mixed geoms correctly
+
+__API Changes__
+
 1.2.1 (2017-01-17)
 
 __Improvements__

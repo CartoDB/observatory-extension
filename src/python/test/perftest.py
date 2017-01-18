@@ -71,9 +71,15 @@ for q in (
            LIMIT 50;''',
         #'''SET statement_timeout = 5000;'''
 ):
-    query(q.format(
+    q_formatted = q.format(
         schema='cdb_observatory.' if USE_SCHEMA else '',
-    ))
+    )
+    resp = query(q_formatted)
+    if q.lower().startswith('insert'):
+        if resp.rowcount == 0:
+            raise Exception('''Performance fixture creation "{}" inserted 0 rows,
+                            this will break tests.  Check the query to determine
+                            what is going wrong.'''.format(q_formatted))
     commit()
 
 

@@ -141,7 +141,7 @@ BEGIN
       RAISE EXCEPTION 'Must pass either numer_id or geom_id to every key in GetMeta';
     END IF;
 
-    IF geom_filters IS NOT NULL THEN
+    IF geom_filters IS NOT NULL AND numer_filters IS NOT NULL THEN
       scores_clause := 'SELECT 1 score, null, geom_tid table_id, geom_id column_id,
                                null, null, null, null, null, null
                         FROM meta ';

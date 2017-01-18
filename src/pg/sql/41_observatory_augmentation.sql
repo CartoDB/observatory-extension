@@ -109,6 +109,10 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeta(
 RETURNS JSON
 AS $$
 DECLARE
+  numer_filters TEXT[];
+  geom_filters TEXT[];
+  meta_filter_clause TEXT;
+  scores_clause TEXT;
   result JSON;
 BEGIN
   IF max_timespan_rank IS NULL THEN
@@ -117,7 +121,34 @@ BEGIN
   IF max_score_rank IS NULL THEN
     max_score_rank := 1;
   END IF;
-  EXECUTE $string$
+
+  numer_filters := (SELECT Array_Agg(val) FILTER (WHERE val IS NOT NULL) FROM (SELECT (JSON_Array_Elements(params))->>'numer_id' val) foo);
+  geom_filters := (SELECT Array_Agg(val) FILTER (WHERE val IS NOT NULL) FROM (SELECT (JSON_Array_Elements(params))->>'geom_id' val) bar);
+  meta_filter_clause := '(m.numer_id = ANY ($6) OR m.geom_id = ANY ($7))';
+
+  scores_clause := 'SELECT *
+                    FROM cdb_observatory._OBS_GetGeometryScores($1,
+                    (SELECT Array_Agg(geom_id) FROM meta), $2) scores ';
+
+  IF JSON_Array_Length(params) = 1 THEN
+    IF numer_filters IS NULL AND geom_filters IS NOT NULL THEN
+      meta_filter_clause := 'm.geom_id = ($7)[1]';
+    ELSIF geom_filters IS NULL AND numer_filters IS NOT NULL THEN
+      meta_filter_clause := 'm.numer_id = ($6)[1]';
+    ELSIF numer_filters IS NOT NULL AND geom_filters IS NOT NULL THEN
+      meta_filter_clause := 'm.numer_id = ($6)[1] AND m.geom_id = ($7)[1]';
+    ELSE
+      RAISE EXCEPTION 'Must pass either numer_id or geom_id to every key in GetMeta';
+    END IF;
+
+    IF geom_filters IS NOT NULL THEN
+      scores_clause := 'SELECT 1 score, null, geom_tid table_id, geom_id column_id,
+                               null, null, null, null, null, null
+                        FROM meta ';
+    END IF;
+  END IF;
+
+  EXECUTE format($string$
     WITH _filters AS (SELECT
         generate_series(1, array_length($3, 1)) id,
         (unnest($3))->>'numer_id' numer_id,
@@ -156,17 +187,18 @@ BEGIN
       ON CASE WHEN f.numer_id IS NULL THEN m.geom_id ELSE m.numer_id END =
          CASE WHEN f.numer_id IS NULL THEN f.geom_id ELSE f.numer_id END
       WHERE
-        (m.numer_id = ANY ($6) OR m.geom_id = ANY ($7)) AND
-        (m.denom_id = f.denom_id OR COALESCE(f.denom_id, '') = '')
+        %s
+        AND (m.numer_id = f.numer_id OR COALESCE(f.numer_id, '') = '')
+        AND (m.denom_id = f.denom_id OR COALESCE(f.denom_id, '') = '')
         AND (m.geom_id = f.geom_id OR COALESCE(f.geom_id, '') = '')
         AND (m.geom_timespan = f.geom_timespan OR COALESCE(f.geom_timespan, '') = '')
         AND (m.numer_timespan = f.numer_timespan OR COALESCE(f.numer_timespan, '') = '')
     ), scores AS (
-      SELECT *
-      FROM cdb_observatory._OBS_GetGeometryScores($1,
-        (SELECT Array_Agg(geom_id) FROM meta), $2) scores
+        %s
     ), groups AS (SELECT
-        id, scores.score, numer_timespan,
+        id,
+        scores.score,
+        numer_timespan,
         dense_rank() OVER (PARTITION BY id ORDER BY numer_timespan DESC) timespan_rank,
         dense_rank() OVER (PARTITION BY id ORDER BY score DESC) score_rank,
         json_build_object(
@@ -206,7 +238,7 @@ BEGIN
       FROM groups
       WHERE timespan_rank <= $4
         AND score_rank <= $5
-  $string$
+  $string$, meta_filter_clause, scores_clause)
   INTO result
   USING
     CASE WHEN ST_GeometryType(geom) = 'ST_Point' THEN
@@ -216,9 +248,7 @@ BEGIN
     target_geoms,
     (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]),
     max_timespan_rank,
-    max_score_rank,
-    (SELECT Array_Agg(val) from (select (JSON_Array_Elements(params))->>'numer_id' val) foo),
-    (SELECT Array_Agg(val) from (select (JSON_Array_Elements(params))->>'geom_id' val) bar)
+    max_score_rank, numer_filters, geom_filters
     ;
   RETURN result;
 END;

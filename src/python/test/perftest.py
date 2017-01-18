@@ -295,11 +295,11 @@ def test_getmeasure_split_performance(geom_complexity, normalization, geom, boun
     for rows in rownums:
         stmt = '''
 with data as (
-  SELECT * FROM {schema}{api_method}datamulti(
+  SELECT id, data FROM {schema}OBS_GetData(
     (SELECT array_agg(({geom}, cartodb_id)::geomval)
      FROM obs_perftest_{complexity}
      WHERE cartodb_id <= {n}),
-    (SELECT {schema}{api_method}metamulti(
+    (SELECT {schema}OBS_GetMeta(
       (SELECT st_setsrid(st_extent({geom}), 4326)
        FROM obs_perftest_{complexity}
        WHERE cartodb_id <= {n}),
@@ -309,18 +309,16 @@ with data as (
           "geom_id": {boundary}
         }}]'::JSON
     ))
-  )
-AS x(cartodb_id INTEGER, measure Numeric))
+  ))
 UPDATE obs_perftest_{complexity}
-SET measure = data.measure
+SET measure = (data->0->>'value')::Numeric
 FROM data
-WHERE obs_perftest_{complexity}.cartodb_id = data.cartodb_id
+WHERE obs_perftest_{complexity}.cartodb_id = data.id
 ;
         '''.format(
             point_or_poly='point' if geom == 'point' else 'polygon',
             complexity=geom_complexity,
             schema='cdb_observatory.' if USE_SCHEMA else '',
-            api_method='obs_getmeasure',
             normalization=normalization,
             geom=geom,
             boundary=boundary.replace("'", '"'),

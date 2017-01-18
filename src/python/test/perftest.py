@@ -343,7 +343,7 @@ WHERE obs_perftest_{complexity}.cartodb_id = data.id
     if 'OBS_RECORD_TEST' in os.environ:
         record({
             'geom_complexity': geom_complexity,
-            'api_method': 'OBS_GetMeasureMeta/OBS_GetMeasureData',
+            'api_method': 'OBS_GetData',
             'normalization': normalization,
             'boundary': boundary,
             'geom': geom

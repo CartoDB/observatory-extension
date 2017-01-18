@@ -671,9 +671,14 @@ BEGIN
     USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]);
 
     RETURN QUERY EXECUTE format($query$
-      WITH _geoms AS (SELECT
+      WITH _raw_geoms AS (SELECT
                      (UNNEST($1)).val as id,
-                     (UNNEST($1)).geom AS geom)
+                     (UNNEST($1)).geom AS geom),
+      _geoms AS (SELECT id,
+        CASE WHEN (ST_NPoints(geom) > 500)
+               THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
+             ELSE geom END geom
+        FROM _raw_geoms)
       SELECT _geoms.id::INT, Array_to_JSON(ARRAY[%s]::JSON[])
       FROM _geoms, %s
            %s

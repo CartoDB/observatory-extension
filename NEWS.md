@@ -9,7 +9,6 @@ __API Changes__
 
 __Improvements__
 
-* Add support for PL/Python
 * Generate fixtures from `obs_meta`
 * Remove unused table-level code
 * Refactor all augmentation and geometry functions to obtain data from

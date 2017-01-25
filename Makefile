@@ -1,7 +1,6 @@
 include ./Makefile.global
 
 EXT_DIR = src/pg
-PYP_DIR = src/python
 
 .PHONY: install
 .PHONY: run_tests
@@ -13,17 +12,14 @@ PYP_DIR = src/python
 # It requires sudo.
 install: ## Generate and install development version of the extension; requires sudo.
 	$(MAKE) -C $(EXT_DIR) install
-	$(MAKE) -C $(PYP_DIR) install
 
 # Run the tests for the installed development extension.
 test:   ## Run the tests for the development version of the extension
 	$(MAKE) -C $(EXT_DIR) test
-	$(MAKE) -C $(PYP_DIR) test
 
 # Generate a new release into release
 release: ## Generate a new release of the extension. Only for release manager
 	$(MAKE) -C $(EXT_DIR) release
-	$(MAKE) -C $(PYP_DIR) release
 
 # Install the current release.
 # It requires sudo.
@@ -31,7 +27,6 @@ release: ## Generate a new release of the extension. Only for release manager
 #     sudo make deploy RELEASE_VERSION=1.0.0
 deploy: ## Deploy a released extension. Only for release manager. Requires sudo.
 	$(MAKE) -C $(EXT_DIR) deploy
-	$(MAKE) -C $(PYP_DIR) deploy
 
 # Cleanup development extension script files
 clean-dev: ## clean up development extension script files

@@ -219,4 +219,3 @@ CREATE AGGREGATE cdb_observatory.FIRST (
         basetype = anyelement,
         stype    = anyelement
 );
-

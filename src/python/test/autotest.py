@@ -65,7 +65,14 @@ SKIP_COLUMNS = set([
     u'mx.inegi_columns.VIV41',
     u'mx.inegi_columns.VIV40',
     u'mx.inegi_columns.VIV17',
-    u'mx.inegi_columns.EDU10'
+    u'mx.inegi_columns.VIV25',
+    u'mx.inegi_columns.EDU10',
+    u'whosonfirst.wof_disputed_name',
+    u'us.census.tiger.fullname',
+    u'whosonfirst.wof_marinearea_name',
+    u'us.census.tiger.mtfcc',
+    u'whosonfirst.wof_county_name',
+    u'whosonfirst.wof_region_name',
 ])
 
 #def default_geometry_id(column_id):

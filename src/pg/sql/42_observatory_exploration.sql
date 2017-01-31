@@ -413,6 +413,173 @@ END
 $$ LANGUAGE plpgsql;
 
 
+-- select st_geometrytype(
+--   st_collect(array_agg(st_envelope(the_geom)))::text)
+--   from observatory.obs_9812b21f90f3e6a885dc546a3c6ad32e0190d723 tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_9812b21f90f3e6a885dc546a3c6ad32e0190d723))
+--   ;
+-- 
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_78fb6c1d6ff6505225175922c2c389ce48d7632c
+--     where geoid like '360470001%'), null, 1
+-- )
+-- order by score desc;
+-- 
+-- -- block group -> finds block group, 2s
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_78fb6c1d6ff6505225175922c2c389ce48d7632c tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_78fb6c1d6ff6505225175922c2c389ce48d7632c)))
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- simple, alternative approach -> finds block group, 2s
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_78fb6c1d6ff6505225175922c2c389ce48d7632c),
+--   null, (select count(*) from observatory.obs_78fb6c1d6ff6505225175922c2c389ce48d7632c)::int
+-- )
+-- order by score desc;
+-- 
+-- -- census tract -> finds census tract, 1.6s
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_87a814e485deabe3b12545a537f693d16ca702c2 tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_87a814e485deabe3b12545a537f693d16ca702c2)))
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- simple, alternative approach -> finds census tract, 1.3s
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_87a814e485deabe3b12545a537f693d16ca702c2),
+--   null, (select count(*) from observatory.obs_87a814e485deabe3b12545a537f693d16ca702c2)::int
+-- )
+-- order by score desc;
+-- 
+-- -- zcta5 -> finds zcta5
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_c4411eba732408d47d73281772dbf03d60645dec tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_c4411eba732408d47d73281772dbf03d60645dec)))
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- simple, alternative approach -> finds zcta5, 1.6s
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_c4411eba732408d47d73281772dbf03d60645dec),
+--   null, (select count(*) from observatory.obs_c4411eba732408d47d73281772dbf03d60645dec)::int
+-- )
+-- order by score desc;
+-- 
+-- -- county -> finds unified school district or county
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d)))
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- fails for subset (prefers puma)
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d where geoid like '36%')) where geoid like '36%')
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- simple, alternative approach -> finds county, 1s
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d),
+--   null, (select count(*) from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d)::int
+-- )
+-- order by score desc;
+-- -- fails for subset (prefers congressional district)
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d where geoid like '36%'),
+--   null, (select count(*) from observatory.obs_0310c639744a2014bb1af82709228f05b59e7d3d where geoid like '36%')::int
+-- )
+-- order by score desc;
+-- 
+-- -- state -> finds congressional district (we're not adding up properly)
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_9812b21f90f3e6a885dc546a3c6ad32e0190d723 tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_9812b21f90f3e6a885dc546a3c6ad32e0190d723)))
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- simple, alternative approach -> finds congressional district (we're not adding up properly)
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_9812b21f90f3e6a885dc546a3c6ad32e0190d723),
+--   null, (select count(*) from observatory.obs_9812b21f90f3e6a885dc546a3c6ad32e0190d723)::int
+-- )
+-- order by score desc;
+-- 
+-- -- au SA4 (only 106 of them) -> finds au.geo.SUA
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_b5b7ab6bbfc1acdd58e7bf770655274468c10988 tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 200.0) / count(*)))
+--       from observatory.obs_b5b7ab6bbfc1acdd58e7bf770655274468c10988)))
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- simple, alternative approach -> finds SA3 (are we not adding up properly?)
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_b5b7ab6bbfc1acdd58e7bf770655274468c10988),
+--   null, (select count(*) from observatory.obs_b5b7ab6bbfc1acdd58e7bf770655274468c10988)::int
+-- )
+-- order by score desc;
+-- 
+-- -- au SA4 (54K of them) -> finds au.geo.SA1, sometimes SOSR
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_collect(st_setsrid(st_envelope(the_geom), 4326))
+--     from observatory.obs_c846ae4ea19a71b5026754ec730334e1828c09f2 tablesample system(
+--     (select least(100, 100.0 - 100 * ((count(*) - 50.0) / count(*)))
+--       from observatory.obs_c846ae4ea19a71b5026754ec730334e1828c09f2)))
+--   , null, 3
+-- )
+-- order by score desc;
+-- -- simple, alternative approach -> finds SA1, fraction of a sec
+-- select *
+-- from cdb_observatory._obs_getgeometryscores(
+--   (select st_setsrid(st_extent(the_geom), 4326)
+--     from observatory.obs_c846ae4ea19a71b5026754ec730334e1828c09f2),
+--   null, (select count(*) from observatory.obs_c846ae4ea19a71b5026754ec730334e1828c09f2)::int
+-- )
+-- order by score desc;
+
+
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   bounds Geometry(Geometry, 4326) DEFAULT NULL,
   filter_geom_ids TEXT[] DEFAULT NULL,
@@ -435,27 +602,34 @@ BEGIN
   filter_geom_ids := COALESCE(filter_geom_ids, (ARRAY[])::TEXT[]);
   -- Very complex geometries simply fail.  For a boundary check, we can
   -- comfortably get away with the simplicity of an envelope
-  IF ST_Npoints(bounds) > 10000 THEN
-    bounds := ST_Envelope(bounds);
-  END IF;
+  --IF ST_Npoints(bounds) > 10000 THEN
+  --  bounds := ST_Envelope(bounds);
+  --END IF;
   RETURN QUERY
   EXECUTE $string$
-    WITH clipped_geom AS (
-      SELECT column_id, table_id
-        , CASE WHEN $1 IS NOT NULL THEN ST_Clip(tile, $1, True) -- -20
+    WITH expanded_geom AS (
+      SELECT CASE WHEN $1 IS NOT NULL THEN generate_series(1, ST_NumGeometries($1))
+                  ELSE 1 END AS exgeom_id,
+             CASE WHEN $1 IS NOT NULL THEN (ST_Dump($1)).geom
+                  ELSE NULL END AS exgeom
+    ),
+    clipped_geom AS (
+      SELECT column_id, table_id, exgeom_id, exgeom
+        , CASE WHEN exgeom IS NOT NULL THEN ST_Clip(tile, exgeom, True) -- -20
                ELSE tile END clipped_tile
         , tile
-      FROM observatory.obs_column_table_tile_simple
-      WHERE ($1 IS NULL OR ST_Intersects($1, tile))
+      FROM observatory.obs_column_table_tile_simple, expanded_geom
+      WHERE (exgeom IS NULL OR ST_Intersects(exgeom, tile))
         AND (column_id = ANY($2) OR cardinality($2) = 0)
     ), clipped_geom_countagg AS (
-      SELECT column_id, table_id
+      SELECT column_id, table_id, exgeom_id
         , BOOL_AND(ST_BandIsNoData(clipped_tile, 1)) nodata
         , ST_CountAgg(clipped_tile, 1, False)::Numeric pixels -- -10
       FROM clipped_geom
-      GROUP BY column_id, table_id
+      GROUP BY column_id, table_id, exgeom_id
     ), clipped_geom_reagg AS (
-      SELECT COUNT(*)::BIGINT cnt, a.column_id, a.table_id,
+      SELECT COUNT(*)::BIGINT cnt, a.column_id, a.table_id, a.exgeom_id,
+             cdb_observatory.FIRST(exgeom) exgeom,
              cdb_observatory.FIRST(nodata) first_nodata,
              cdb_observatory.FIRST(pixels) first_pixel,
              cdb_observatory.FIRST(tile) first_tile,
@@ -464,26 +638,28 @@ BEGIN
       FROM clipped_geom_countagg a, clipped_geom b
       WHERE a.table_id = b.table_id
         AND a.column_id = b.column_id
-      GROUP BY a.column_id, a.table_id
+        AND a.exgeom_id = b.exgeom_id
+      GROUP BY a.column_id, a.table_id, a.exgeom_id
     ), final AS (
       SELECT
-        cnt, table_id, column_id
+        MAX(cnt) cnt, table_id, column_id
         , NULL::Numeric AS notnull_percent
-        , (CASE WHEN first_nodata IS FALSE
+        , (percentile_cont(0.5) within group (order by (CASE WHEN first_nodata IS FALSE
                 THEN sum_geoms
-                ELSE COALESCE(ST_Value(first_tile, 1, ST_PointOnSurface($1)), 0)
-                  * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0))
+                ELSE COALESCE(ST_Value(first_tile, 1, ST_PointOnSurface(exgeom)), 0)
+                  * (ST_Area(exgeom) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0))
                     * first_pixel) -- -20
-          END)::Numeric
+          END)::Numeric))::numeric
         AS numgeoms
-        , (CASE WHEN first_nodata IS FALSE
+        , (percentile_cont(0.5) within group (order by (CASE WHEN first_nodata IS FALSE
                 THEN mean_fill
-                ELSE COALESCE(ST_Value(first_tile, 2, ST_PointOnSurface($1))::Numeric / 255, 0) -- -2
-          END)::Numeric
+                ELSE COALESCE(ST_Value(first_tile, 2, ST_PointOnSurface(exgeom))::Numeric / 255, 0) -- -2
+          END)::Numeric))::numeric
         AS percentfill
         , null::numeric estnumgeoms
         , null::numeric meanmediansize
       FROM clipped_geom_reagg
+      GROUP BY table_id, column_id
     ) SELECT
       ((100.0 / (1+abs(log(0.0001 + $3) - log(0.0001 + numgeoms::Numeric)))) * percentfill)::Numeric
       AS score, *

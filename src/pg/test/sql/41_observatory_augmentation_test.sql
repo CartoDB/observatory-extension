@@ -5,128 +5,21 @@ SET client_min_messages TO WARNING;
 --
 WITH result as(
   Select count(coalesce(OBS_GetDemographicSnapshot->>'value', 'foo')) expected_columns
-  FROM cdb_observatory.OBS_GetDemographicSnapshot(cdb_observatory._TestPoint())
+  FROM cdb_observatory.OBS_GetDemographicSnapshot(cdb_observatory._TestPoint(), '2010 - 2014')
 ) select expected_columns = 52 as OBS_GetDemographicSnapshot_test_no_returns
 FROM result;
-
-WITH result as (
-  SELECT _OBS_Get::text as expected FROM
-  cdb_observatory._OBS_Get(
-    cdb_observatory._TestPoint(),
-    Array['us.census.acs.B19013001']::text[],
-    '2010 - 2014',
-    'us.census.tiger.block_group'
-  )
-) SELECT expected = '{"value":79292,"name":"Median Household Income in the past 12 Months","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"median","type":"Numeric","description":"Within a geographic area, the median income received by every household on a regular basis before payments for personal income taxes, social security, union dues, medicare deductions, etc.  It includes income received from wages, salary, commissions, bonuses, and tips; self-employment income from own nonfarm or farm businesses, including proprietorships and partnerships; interest, dividends, net rental income, royalty income, or income from estates and trusts; Social Security or Railroad Retirement income; Supplemental Security Income (SSI); any cash public assistance or welfare payments from the state or local welfare office; retirement, survivor, or disability benefits; and any other sources of income received regularly such as Veterans'' (VA) payments, unemployment and/or worker''s compensation, child support, and alimony."}'
-  As OBS_Get_median_income_at_test_point
-  FROM result;
-
--- median income at null island
-WITH result as (
-  SELECT count(_OBS_Get) as expected FROM
-  cdb_observatory._OBS_Get(
-    ST_SetSRID(ST_Point(0, 0), 4326),
-    Array['us.census.acs.B19013001']::text[],
-    '2010 - 2014',
-    'us.census.tiger.block_group'
-  )
-) select expected = 0 as OBS_Get_median_income_at_null_island
-  from result;
-
--- OBS_GetPoints
--- obs_getpoints
--- --------------------
--- {4809.33511352425}
-
--- SELECT
---   (cdb_observatory._OBS_GetPoints(
---     cdb_observatory._TestPoint(),
---     'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- block groups (see _obs_geomtable)
---     (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
---   ))[1]::text = '{"value":10923.093200390833950,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
---   as OBS_GetPoints_for_test_point;
-WITH cte As (
-SELECT
-  (cdb_observatory._OBS_GetPoints(
-    cdb_observatory._TestPoint(),
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- block groups (see _obs_geomtable)
-    (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  ))[1]
-  as OBS_GetPoints_for_test_point)
-SELECT
-  (abs((OBS_GetPoints_for_test_point ->> 'value')::numeric - 10923.093200390833950) / 10923.093200390833950) < 0.001 As OBS_GetPoints_for_test_point_value,
-  (OBS_GetPoints_for_test_point ->> 'name') = 'Total Population' As OBS_GetPoints_for_test_point_name,
-  (OBS_GetPoints_for_test_point ->> 'tablename') = 'obs_1a098da56badf5f32e336002b0a81708c40d29cd' As OBS_GetPoints_for_test_point_tablename,
-  (OBS_GetPoints_for_test_point ->> 'aggregate') = 'sum' As OBS_GetPoints_for_test_point_aggregate,
-  (OBS_GetPoints_for_test_point ->> 'type') = 'Numeric' As OBS_GetPoints_for_test_point_type,
-  (OBS_GetPoints_for_test_point ->> 'description') = 'The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.' As OBS_GetPoints_for_test_point_description
-FROM cte;
-
--- what happens at null island
-
-SELECT
-  (cdb_observatory._OBS_GetPoints(
-    ST_SetSRID(ST_Point(0, 0), 4326),
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
-    (Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  ))[1]::text  is null
-  as OBS_GetPoints_for_null_island;
-
--- OBS_GetPolygons
---   obs_getpolygons
--- --------------------
---  {12996.8172420752}
-
-SELECT
-  (cdb_observatory._OBS_GetPolygons(
-    cdb_observatory._TestArea(),
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
-    Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json]
-))[1]::text = '{"value":12327.3133495107,"name":"Total Population","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'
-  as OBS_GetPolygons_for_test_point;
-
--- see what happens around null island
-SELECT
-  ((cdb_observatory._OBS_GetPolygons(
-    ST_Buffer(ST_SetSRID(ST_Point(0, 0), 4326)::geography, 500)::geometry,
-    'obs_c6fb99c47d61289fbb8e561ff7773799d3fcc308'::text, -- see example in obs_geomtable
-    Array['{"colname":"total_pop","tablename":"obs_1a098da56badf5f32e336002b0a81708c40d29cd","aggregate":"sum","name":"Total Population","type":"Numeric","description":"The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates."}'::json])
-  )[1]->>'value') is null
-  as OBS_GetPolygons_for_null_island;
 
 SELECT cdb_observatory.OBS_GetSegmentSnapshot(
     cdb_observatory._TestPoint(),
     'us.census.tiger.census_tract'
-)::text =
- '{"x10_segment":"Wealthy, urban without Kids","x55_segment":"Wealthy transplants displacing long-term local residents","us.census.acs.B01003001_quantile":"0.3235","us.census.acs.B01001002_quantile":"0.494716216216216","us.census.acs.B01001026_quantile":"0.183756756756757","us.census.acs.B01002001_quantile":"0.0752837837837838","us.census.acs.B03002003_quantile":"0.293162162162162","us.census.acs.B03002004_quantile":"0.455527027027027","us.census.acs.B03002006_quantile":"0.656405405405405","us.census.acs.B03002012_quantile":"0.840081081081081","us.census.acs.B05001006_quantile":"0.727135135135135","us.census.acs.B08006001_quantile":"0.688635135135135","us.census.acs.B08006002_quantile":"0.0204459459459459","us.census.acs.B08006008_quantile":"0.679324324324324","us.census.acs.B08006009_quantile":"0.996716216216216","us.census.acs.B08006011_quantile":"0.967418918918919","us.census.acs.B08006015_quantile":"0.512945945945946","us.census.acs.B08006017_quantile":"0.0504864864864865","us.census.acs.B09001001_quantile":"0.192405405405405","us.census.acs.B11001001_quantile":"0.331702702702703","us.census.acs.B14001001_quantile":"0.296283783783784","us.census.acs.B14001002_quantile":"0.045472972972973","us.census.acs.B14001005_quantile":"0.0442702702702703","us.census.acs.B14001006_quantile":"0.0829054054054054","us.census.acs.B14001007_quantile":"0.701135135135135","us.census.acs.B14001008_quantile":"0.404527027027027","us.census.acs.B15003001_quantile":"0.191824324324324","us.census.acs.B15003017_quantile":"0.864162162162162","us.census.acs.B15003022_quantile":"0.754297297297297","us.census.acs.B15003023_quantile":"0.350054054054054","us.census.acs.B16001001_quantile":"0.217635135135135","us.census.acs.B16001002_quantile":"0.85972972972973","us.census.acs.B16001003_quantile":"0.342851351351351","us.census.acs.B17001001_quantile":"0.51204054054054","us.census.acs.B17001002_quantile":"0.813540540540541","us.census.acs.B19013001_quantile":"0.0948648648648649","us.census.acs.B19083001_quantile":"0.678351351351351","us.census.acs.B19301001_quantile":"0.146108108108108","us.census.acs.B25001001_quantile":"0.149067567567568","us.census.acs.B25002003_quantile":"0","us.census.acs.B25004002_quantile":"0","us.census.acs.B25004004_quantile":"0.944554054054054","us.census.acs.B25058001_quantile":"0.398040540540541","us.census.acs.B25071001_quantile":"0.0596081081081081","us.census.acs.B25075001_quantile":"0","us.census.acs.B25075025_quantile":null}' as test_point_segmentation;
+)::JSONB =
+ '{"x10_segment": "Wealthy, urban without Kids", "x55_segment": "Wealthy transplants displacing long-term local residents", "us.census.acs.B01001002_quantile": "0.494716216216216", "us.census.acs.B01001026_quantile": "0.183756756756757", "us.census.acs.B01002001_quantile": "0.0752837837837838", "us.census.acs.B01003001_quantile": "0.3235", "us.census.acs.B03002003_quantile": "0.293162162162162", "us.census.acs.B03002004_quantile": "0.455527027027027", "us.census.acs.B03002006_quantile": "0.656405405405405", "us.census.acs.B03002012_quantile": "0.840081081081081", "us.census.acs.B05001006_quantile": "0.727135135135135", "us.census.acs.B08006001_quantile": "0.688635135135135", "us.census.acs.B08006002_quantile": "0.0204459459459459", "us.census.acs.B08006009_quantile": "0.679324324324324", "us.census.acs.B08006011_quantile": "0.996716216216216", "us.census.acs.B08006015_quantile": "0.967418918918919", "us.census.acs.B08006017_quantile": "0.512945945945946", "us.census.acs.B08301010_quantile": "0.994743243243243", "us.census.acs.B09001001_quantile": "0.0504864864864865", "us.census.acs.B11001001_quantile": "0.192405405405405", "us.census.acs.B14001001_quantile": "0.331702702702703", "us.census.acs.B14001002_quantile": "0.296283783783784", "us.census.acs.B14001005_quantile": "0.045472972972973", "us.census.acs.B14001006_quantile": "0.0442702702702703", "us.census.acs.B14001007_quantile": "0.0829054054054054", "us.census.acs.B14001008_quantile": "0.701135135135135", "us.census.acs.B15003001_quantile": "0.404527027027027", "us.census.acs.B15003017_quantile": "0.191824324324324", "us.census.acs.B15003022_quantile": "0.864162162162162", "us.census.acs.B15003023_quantile": "0.754297297297297", "us.census.acs.B16001001_quantile": "0.350054054054054", "us.census.acs.B16001002_quantile": "0.217635135135135", "us.census.acs.B16001003_quantile": "0.85972972972973", "us.census.acs.B17001001_quantile": "0.342851351351351", "us.census.acs.B17001002_quantile": "0.51204054054054", "us.census.acs.B19013001_quantile": "0.813540540540541", "us.census.acs.B19083001_quantile": "0.0948648648648649", "us.census.acs.B19301001_quantile": "0.678351351351351", "us.census.acs.B25001001_quantile": "0.146108108108108", "us.census.acs.B25002003_quantile": "0.149067567567568", "us.census.acs.B25004002_quantile": "0", "us.census.acs.B25004004_quantile": "0", "us.census.acs.B25058001_quantile": "0.944554054054054", "us.census.acs.B25071001_quantile": "0.398040540540541", "us.census.acs.B25075001_quantile": "0.0596081081081081", "us.census.acs.B25075025_quantile": "0"}'::JSONB as test_point_segmentation;
 
 -- segmentation around null island
 SELECT cdb_observatory.OBS_GetSegmentSnapshot(
     ST_SetSRID(ST_Point(0, 0), 4326),
     'us.census.tiger.census_tract'
-)::text = '{"x10_segment":null,"x55_segment":null,"us.census.acs.B01003001_quantile":null,"us.census.acs.B01001002_quantile":null,"us.census.acs.B01001026_quantile":null,"us.census.acs.B01002001_quantile":null,"us.census.acs.B03002003_quantile":null,"us.census.acs.B03002004_quantile":null,"us.census.acs.B03002006_quantile":null,"us.census.acs.B03002012_quantile":null,"us.census.acs.B05001006_quantile":null,"us.census.acs.B08006001_quantile":null,"us.census.acs.B08006002_quantile":null,"us.census.acs.B08006008_quantile":null,"us.census.acs.B08006009_quantile":null,"us.census.acs.B08006011_quantile":null,"us.census.acs.B08006015_quantile":null,"us.census.acs.B08006017_quantile":null,"us.census.acs.B09001001_quantile":null,"us.census.acs.B11001001_quantile":null,"us.census.acs.B14001001_quantile":null,"us.census.acs.B14001002_quantile":null,"us.census.acs.B14001005_quantile":null,"us.census.acs.B14001006_quantile":null,"us.census.acs.B14001007_quantile":null,"us.census.acs.B14001008_quantile":null,"us.census.acs.B15003001_quantile":null,"us.census.acs.B15003017_quantile":null,"us.census.acs.B15003022_quantile":null,"us.census.acs.B15003023_quantile":null,"us.census.acs.B16001001_quantile":null,"us.census.acs.B16001002_quantile":null,"us.census.acs.B16001003_quantile":null,"us.census.acs.B17001001_quantile":null,"us.census.acs.B17001002_quantile":null,"us.census.acs.B19013001_quantile":null,"us.census.acs.B19083001_quantile":null,"us.census.acs.B19301001_quantile":null,"us.census.acs.B25001001_quantile":null,"us.census.acs.B25002003_quantile":null,"us.census.acs.B25004002_quantile":null,"us.census.acs.B25004004_quantile":null,"us.census.acs.B25058001_quantile":null,"us.census.acs.B25071001_quantile":null,"us.census.acs.B25075001_quantile":null,"us.census.acs.B25075025_quantile":null}' as null_island_segmentation;
-
-WITH result as (
-  SELECT array_agg(_OBS_GetCategories) as expected FROM
-    cdb_observatory._OBS_GetCategories(
-      cdb_observatory._TestPoint(),
-      Array['us.census.spielman_singleton_segments.X10'],
-      'us.census.tiger.census_tract'
-  )
-)
-  select (expected)[1]::text = '{"category":"Wealthy, urban without Kids","name":"Spielman-Singleton Segments: 10 Clusters","tablename":"obs_65f29658e096ca1485bf683f65fdbc9f05ec3c5d","aggregate":null,"type":"Text","description":"Sociodemographic classes from Spielman and Singleton 2015, 10 clusters"}' as GetCategories_at_test_point_1
-  from result;
-
-WITH result as (
-  SELECT array_agg(_OBS_GetCategories) as expected FROM
-    cdb_observatory._OBS_GetCategories(
-      ST_SetSRID(ST_Point(0,0), 4326),
-      Array['us.census.spielman_singleton_segments.X10'],
-      'us.census.tiger.census_tract'
-  )
-)
-  select expected[0] is NULL as GetCategories_at_null_island
-  from result;
+)::text is null as null_island_segmentation;
 
 -- Point-based OBS_GetMeasure with zillow
 SELECT abs(OBS_GetMeasure_zhvi_point - 597900) / 597900 < 5.0 AS OBS_GetMeasure_zhvi_point_test FROM cdb_observatory.OBS_GetMeasure(
@@ -196,7 +89,7 @@ SELECT (abs(cdb_observatory.OBS_GetMeasure(
 -- Poly-based OBS_GetMeasure with denominator normalization
 SELECT abs(cdb_observatory.OBS_GetMeasure(
   cdb_observatory._TestArea(),
-  'us.census.acs.B01001002', 'denominator') - 0.49026340444793965457) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
+  'us.census.acs.B01001002', 'denominator', null, '2010 - 2014') - 0.49026340444793965457) / 0.49026340444793965457 < 0.001 As OBS_GetMeasure_total_male_poly_denominator;
 
 -- Poly-based OBS_GetMeasure with one very bad geom
 SELECT abs(cdb_observatory.OBS_GetMeasure(
@@ -219,7 +112,7 @@ SELECT cdb_observatory.OBS_GetCategory(
 
 -- Poly-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
-  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As obs_getcategory_polygon;
+  cdb_observatory._TestArea(), 'us.census.spielman_singleton_segments.X10') = 'Hispanic and Young' As obs_getcategory_polygon;
 
 -- NULL Input OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
@@ -276,7 +169,7 @@ SELECT cdb_observatory.OBS_GetUSCensusCategory(
 
 -- Area-based OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
-  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Wealthy, urban without Kids' As OBS_GetUSCensusCategory_polygon;
+  cdb_observatory._testarea(), 'Spielman-Singleton Segments: 10 Clusters') = 'Hispanic and Young' As OBS_GetUSCensusCategory_polygon;
 
 -- Null-input OBS_GetUSCensusCategory
 SELECT cdb_observatory.OBS_GetUSCensusCategory(
@@ -323,3 +216,535 @@ SELECT cdb_observatory.OBS_GetMeasureById(
   'us.census.tiger.block_group',
   '2010 - 2014'
 ) IS NULL As OBS_GetMeasureById_null_id;
+
+-- OBS_GetMeta null/null
+SELECT cdb_observatory.OBS_GetMeta(NULL, NULL) IS NULL
+AS OBS_GetMeta_null_null_is_null;
+
+-- OBS_GetMeta null/empty array
+SELECT cdb_observatory.OBS_GetMeta(NULL, '[]') IS NULL
+AS OBS_GetMeta_null_empty_is_null;
+
+-- OBS_GetMeta nullisland/null
+SELECT cdb_observatory.OBS_GetMeta(ST_Point(0, 0), NULL) IS NULL
+AS OBS_GetMeta_nullisland_null_is_null;
+
+-- OBS_GetMeta nullisland/empty array
+SELECT cdb_observatory.OBS_GetMeta(ST_Point(0, 0), '[]') IS NULL
+AS OBS_GetMeta_nullisland_empty_is_null;
+
+-- OBS_GetMeta nullisland/us_measure data
+SELECT cdb_observatory.OBS_GetMeta(ST_Point(0, 0),
+  '[{"numer_id": "us.census.acs.B01003001"}]') IS NULL
+AS OBS_GetMeta_nullisland_us_measure_is_null;
+
+-- OBS_GetMeta for point completes one partial measure with "best" metadata
+-- with no denominator
+WITH meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001"}]') meta)
+SELECT
+(meta->0->>'id')::integer = 1 id,
+(meta->0->>'numer_id') = 'us.census.acs.B01003001' numer_id,
+(meta->0->>'timespan_rank')::integer = 1 timespan_rank,
+(meta->0->>'score_rank')::integer = 1 score_rank,
+(meta->0->>'numer_aggregate') = 'sum' numer_aggregate,
+(meta->0->>'numer_colname') = 'total_pop' numer_colname,
+(meta->0->>'numer_type') = 'Numeric' numer_type,
+(meta->0->>'numer_name') = 'Total Population' numer_name,
+(meta->0->>'denom_id') IS NULL denom_id,
+(meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
+(meta->0->>'normalization') IS NULL normalization
+FROM meta;
+
+-- OBS_GetMeta for point completes one partial measure with "best" metadata
+-- with a denominator
+WITH meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01001002"}]') meta)
+SELECT
+(meta->0->>'id')::integer = 1 id,
+(meta->0->>'numer_id') = 'us.census.acs.B01001002' numer_id,
+(meta->0->>'timespan_rank')::integer = 1 timespan_rank,
+(meta->0->>'score_rank')::integer = 1 score_rank,
+(meta->0->>'numer_aggregate') = 'sum' numer_aggregate,
+(meta->0->>'numer_colname') = 'male_pop' numer_colname,
+(meta->0->>'numer_type') = 'Numeric' numer_type,
+(meta->0->>'numer_name') = 'Male Population' numer_name,
+(meta->0->>'denom_id') = 'us.census.acs.B01003001' denom_id,
+(meta->0->>'denom_aggregate') = 'sum' denom_aggregate,
+(meta->0->>'denom_colname') = 'total_pop' denom_colname,
+(meta->0->>'denom_type') = 'Numeric' denom_type,
+(meta->0->>'denom_name') = 'Total Population' denom_name,
+(meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
+(meta->0->>'normalization') IS NULL normalization
+FROM meta;
+
+-- OBS_GetMeta for polygon completes one partial measure with "best" metadata
+-- with no denominator
+WITH meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001"}]') meta)
+SELECT
+(meta->0->>'id')::integer = 1 id,
+(meta->0->>'numer_id') = 'us.census.acs.B01003001' numer_id,
+(meta->0->>'timespan_rank')::integer = 1 timespan_rank,
+(meta->0->>'score_rank')::integer = 1 score_rank,
+(meta->0->>'numer_aggregate') = 'sum' numer_aggregate,
+(meta->0->>'numer_colname') = 'total_pop' numer_colname,
+(meta->0->>'numer_type') = 'Numeric' numer_type,
+(meta->0->>'numer_name') = 'Total Population' numer_name,
+(meta->0->>'denom_id') IS NULL denom_id,
+(meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
+(meta->0->>'normalization') IS NULL normalization
+FROM meta;
+
+-- OBS_GetMeta for polygon completes one partial measure with "best" metadata
+-- with a denominator
+WITH meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01001002"}]') meta)
+SELECT
+(meta->0->>'id')::integer = 1 id,
+(meta->0->>'numer_id') = 'us.census.acs.B01001002' numer_id,
+(meta->0->>'timespan_rank')::integer = 1 timespan_rank,
+(meta->0->>'score_rank')::integer = 1 score_rank,
+(meta->0->>'numer_aggregate') = 'sum' numer_aggregate,
+(meta->0->>'numer_colname') = 'male_pop' numer_colname,
+(meta->0->>'numer_type') = 'Numeric' numer_type,
+(meta->0->>'numer_name') = 'Male Population' numer_name,
+(meta->0->>'denom_id') = 'us.census.acs.B01003001' denom_id,
+(meta->0->>'denom_aggregate') = 'sum' denom_aggregate,
+(meta->0->>'denom_colname') = 'total_pop' denom_colname,
+(meta->0->>'denom_type') = 'Numeric' denom_type,
+(meta->0->>'denom_name') = 'Total Population' denom_name,
+(meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
+(meta->0->>'normalization') IS NULL normalization
+FROM meta;
+
+-- OBS_GetMeta for point completes several partial measures with "best"
+-- metadata, includes geom alternatives if asked
+WITH meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01001002"}]', null, 2) meta)
+SELECT
+(meta->0->>'id')::integer = 1 id,
+(meta->0->>'numer_id') = 'us.census.acs.B01001002' numer_id,
+(meta->0->>'timespan_rank')::integer = 1 timespan_rank,
+(meta->0->>'score_rank')::integer = 1 score_rank,
+(meta->0->>'numer_aggregate') = 'sum' numer_aggregate,
+(meta->0->>'numer_colname') = 'male_pop' numer_colname,
+(meta->0->>'numer_type') = 'Numeric' numer_type,
+(meta->0->>'numer_name') = 'Male Population' numer_name,
+(meta->0->>'denom_id') = 'us.census.acs.B01003001' denom_id,
+(meta->0->>'denom_aggregate') = 'sum' denom_aggregate,
+(meta->0->>'denom_colname') = 'total_pop' denom_colname,
+(meta->0->>'denom_type') = 'Numeric' denom_type,
+(meta->0->>'denom_name') = 'Total Population' denom_name,
+(meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
+(meta->0->>'normalization') IS NULL normalization,
+(meta->1->>'id')::integer = 1 id,
+(meta->1->>'numer_id') = 'us.census.acs.B01001002' numer_id,
+(meta->1->>'timespan_rank')::integer = 1 timespan_rank,
+(meta->1->>'score_rank')::integer = 2 score_rank,
+(meta->1->>'numer_aggregate') = 'sum' numer_aggregate,
+(meta->1->>'numer_colname') = 'male_pop' numer_colname,
+(meta->1->>'numer_type') = 'Numeric' numer_type,
+(meta->1->>'numer_name') = 'Male Population' numer_name,
+(meta->1->>'denom_id') = 'us.census.acs.B01003001' denom_id,
+(meta->1->>'denom_aggregate') = 'sum' denom_aggregate,
+(meta->1->>'denom_colname') = 'total_pop' denom_colname,
+(meta->1->>'denom_type') = 'Numeric' denom_type,
+(meta->1->>'denom_name') = 'Total Population' denom_name,
+(meta->1->>'geom_id') = 'us.census.tiger.census_tract' geom_id,
+(meta->1->>'normalization') IS NULL normalization
+FROM meta;
+
+-- OBS_GetMeta for point completes several partial measures with "best" metadata
+-- with pre-computed geom
+WITH meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01001002", "geom_id": "us.census.tiger.census_tract"}]') meta)
+SELECT
+(meta->0->>'id')::integer = 1 id,
+(meta->0->>'numer_id') = 'us.census.acs.B01001002' numer_id,
+(meta->0->>'timespan_rank')::integer = 1 timespan_rank,
+(meta->0->>'score_rank')::integer = 1 score_rank,
+(meta->0->>'numer_aggregate') = 'sum' numer_aggregate,
+(meta->0->>'numer_colname') = 'male_pop' numer_colname,
+(meta->0->>'numer_type') = 'Numeric' numer_type,
+(meta->0->>'numer_name') = 'Male Population' numer_name,
+(meta->0->>'denom_id') = 'us.census.acs.B01003001' denom_id,
+(meta->0->>'denom_aggregate') = 'sum' denom_aggregate,
+(meta->0->>'denom_colname') = 'total_pop' denom_colname,
+(meta->0->>'denom_type') = 'Numeric' denom_type,
+(meta->0->>'denom_name') = 'Total Population' denom_name,
+(meta->0->>'geom_id') = 'us.census.tiger.census_tract' geom_id,
+(meta->0->>'normalization') IS NULL normalization
+FROM meta;
+
+-- OBS_GetMeta for point completes several partial measures with conflicting
+-- metadata
+SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01001002", "denom_id": "us.census.acs.B01001002", "geom_id": "us.census.tiger.census_tract"}]') IS NULL
+AS obs_getmeta_conflicting_metadata;
+
+-- OBS_GetData/OBS_GetMeta by id with empty list/null
+WITH data AS (SELECT * FROM cdb_observatory.OBS_GetData(ARRAY[]::TEXT[], null))
+SELECT ARRAY_AGG(data) IS NULL AS obs_getdata_geomval_empty_null FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with empty list/null
+WITH data AS (SELECT * FROM cdb_observatory.OBS_GetData(ARRAY[]::GEOMVAL[], null))
+SELECT ARRAY_AGG(data) IS NULL AS obs_getdata_text_empty_null FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with empty list
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(ARRAY[]::GEOMVAL[],
+  (SELECT meta FROM meta)))
+SELECT ARRAY_AGG(data) IS NULL AS obs_getdata_geomval_empty_one_measure FROM data;
+
+-- OBS_GetData/OBS_GetMeta by point geom with one standard measure NULL
+-- normalization
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestPoint(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 10923) / 10923 < 0.001 data_point_measure_null,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by polygon geom with one standard measure NULL
+-- normalization
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 15787) / 15787 < 0.001 data_polygon_measure_null,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by point geom with one standard measure area
+-- normalization
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "area"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestPoint(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 10923) / 10923 < 0.001 data_point_measure_area,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by polygon geom with one standard measure area
+-- normalization
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "area"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 15787) / 15787 < 0.001 data_polygon_measure_area,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by point geom with one standard measure predenom
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "predenominated"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestPoint(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 1900) / 1900 < 0.001 data_point_measure_predenominated,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by polygon geom with one standard measure predenom
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "predenominated"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 12327) / 12327 < 0.001 data_polygon_measure_predenominated,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by point geom with impossible denom
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "denominated"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestPoint(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       data->0->>'value' IS NULL data_point_measure_impossible_denominated,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by polygon geom with one impossible denom
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "denominated"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       data->0->>'value' IS NULL data_polygon_measure_impossible_denominated,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by point geom with denom
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01001002", "normalization": "denominated"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestPoint(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 0.6215) / 0.6215 < 0.001 data_point_measure_denominated,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by polygon geom with one denom measure
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01001002", "normalization": "denominated"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 0.4902) / 0.4902 < 0.001 data_polygon_measure_denominated,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with two standard measures NULL normalization
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001"}, {"numer_id": "us.census.acs.B01001002"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 15787) / 15787 < 0.001 data_polygon_measure_one_null,
+       abs((data->1->>'value')::Numeric - 0.4902) / 0.4902 < 0.001 data_polygon_measure_two_null
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with two standard measures predenom normalization
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "predenom"}, {"numer_id": "us.census.acs.B01001002", "normalization": "predenom"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 12327) / 12327 < 0.001 data_polygon_measure_one_predenom,
+       abs((data->1->>'value')::Numeric - 6043) / 6043 < 0.001 data_polygon_measure_two_predenom
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with two standard measures area normalization
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "area"}, {"numer_id": "us.census.acs.B01001002", "normalization": "area"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 15787) / 15787 < 0.001 data_polygon_measure_one_area,
+       abs((data->1->>'value')::Numeric - 7739) / 7739 < 0.001 data_polygon_measure_two_area
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with two standard measures different geoms
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.census_tract"}, {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.block_group"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 16960) / 16960 < 0.001 data_polygon_measure_tract,
+       abs((data->1->>'value')::Numeric - 15787) / 15787 < 0.001 data_polygon_measure_bg
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by point geom with one categorical
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.spielman_singleton_segments.X55"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestPoint(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       data->0->>'value' = 'Wealthy transplants displacing long-term local residents' data_point_categorical,
+       data->1->>'value' IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by polygon geom with one categorical
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.spielman_singleton_segments.X55"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       data->0->>'value' = 'Hispanic Black mix multilingual, high poverty, renters, uses public transport' data_poly_categorical,
+       data->1->>'value' IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with one categorical and one measure
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.spielman_singleton_segments.X55"}, {"numer_id": "us.census.acs.B01003001"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       data->0->>'value' = 'Hispanic Black mix multilingual, high poverty, renters, uses public transport' data_poly_categorical,
+       abs((data->1->>'value')::Numeric - 15787) / 15787 < 0.0001 valcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with polygons inside a polygon
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.block_group"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta), false))
+SELECT every(id = 1) is TRUE id,
+       count(distinct (data->0->>'value')::geometry) = 16 correct_num_geoms
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with polygons inside a polygon + one measure
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.block_group"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta), false))
+SELECT every(id = 1) is TRUE id,
+       count(distinct (data->0->>'value')::geometry) = 16 correct_num_geoms,
+       abs(sum((data->1->>'value')::numeric) - 15787) / 15787 < 0.001 correct_pop
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with polygons inside a polygon + one measure + one text
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.tiger.name", "geom_id": "us.census.tiger.block_group"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta), false))
+SELECT every(id = 1) is TRUE id,
+       count(distinct (data->0->>'value')::geometry) = 16 correct_num_geoms,
+       abs(sum((data->1->>'value')::numeric) - 15787) / 15787 < 0.001 correct_pop,
+       array_agg(distinct data->2->>'value') = '{"Block Group 1","Block Group 2","Block Group 3","Block Group 4","Block Group 5"}' correct_bg_names
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with points inside a polygon
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.pointlm_geom"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta), false))
+SELECT every(id = 1) AS id,
+       count(distinct (data->0->>'value')::geometry(point, 4326)) = 3 correct_num_points
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by geom with points inside a polygon + one text
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.pointlm_geom"}, {"geom_id": "us.census.tiger.pointlm_geom", "numer_id": "us.census.tiger.fullname"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta), false))
+SELECT every(id = 1) AS id,
+       count(distinct (data->0->>'value')::geometry(point, 4326)) = 3 correct_num_points,
+       array_agg(data->1->>'value') = '{"Bushwick Yards","Edward Block Square","Bushwick Houses"}' pointgeom_names
+FROM data;
+
+
+-- OBS_GetData by id with one standard measure
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.census_tract", "numer_id": "us.census.acs.B01003001"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY['36047048500'],
+    (SELECT meta FROM meta)))
+SELECT id = '36047048500' AS id,
+       (abs((data->0->>'value')::numeric) - 5578) / 5578 < 0.001 obs_getdata_by_id_one_measure_null
+FROM data;
+
+-- OBS_GetData by id with one standard measure, predenominated
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"normalization": "predenominated", "geom_id": "us.census.tiger.census_tract", "numer_id": "us.census.acs.B01003001"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY['36047048500'],
+    (SELECT meta FROM meta)))
+SELECT id = '36047048500' AS id,
+       (abs((data->0->>'value')::numeric) - 3241) / 3241 < 0.001 obs_getdata_by_id_one_measure_predenom
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by id with two standard measures
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.census_tract", "numer_id": "us.census.acs.B01003001"}, {"geom_id": "us.census.tiger.census_tract", "numer_id": "us.census.acs.B01001002"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY['36047048500'],
+    (SELECT meta FROM meta)))
+SELECT id = '36047048500' AS id,
+       (abs((data->0->>'value')::numeric) - 5578) / 5578 < 0.001 obs_getdata_by_id_one_measure_null,
+       (abs((data->1->>'value')::numeric) - 0.6053) / 0.6053 < 0.001 obs_getdata_by_id_two_measure_null
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by id with one categorical
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.census_tract", "numer_id": "us.census.spielman_singleton_segments.X55"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY['36047048500'],
+    (SELECT meta FROM meta)))
+SELECT id = '36047048500' AS id,
+       data->0->>'value' = 'Wealthy transplants displacing long-term local residents' obs_getdata_by_id_categorical
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by id with one geometry
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"geom_id": "us.census.tiger.census_tract"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY['36047048500'],
+    (SELECT meta FROM meta)))
+SELECT id = '36047048500' AS id,
+       ST_GeometryType((data->0->>'value')::geometry) = 'ST_MultiPolygon' obs_getdata_by_id_geometry
+FROM data;
+
+-- OBS_GetData with an API + geomvals, no args
+SELECT ARRAY['us.census.tiger.census_tract'] <@ array_agg(data->0->>'value') AS OBS_GetData_API_geomvals_no_args
+FROM cdb_observatory.obs_getdata(array[(cdb_observatory._testarea(), 1)::geomval],
+  '[{"numer_type": "text", "numer_colname": "boundary_id", "api_method": "obs_getavailableboundaries", "geom_geomref_colname": "boundary_id"}]',
+  false);
+
+-- OBS_GetData with an API + geomvals, args, numeric
+SELECT json_typeof(data->0->'value') = 'number' AS OBS_GetData_API_geomvals_args_numer_return
+FROM cdb_observatory.obs_getdata(array[(cdb_observatory._testarea(), 1)::geomval],
+    '[{"numer_type": "numeric", "numer_colname": "obs_getmeasure", "api_method": "obs_getmeasure", "api_args": ["us.census.acs.B01003001"]}]', false);
+
+-- OBS_GetData with an API + geomvals, args, text
+SELECT json_typeof(data->0->'value') = 'string' AS OBS_GetData_API_geomvals_args_string_return
+FROM cdb_observatory.obs_getdata(array[(cdb_observatory._testarea(), 1)::geomval],
+    '[{"numer_type": "text", "numer_colname": "obs_getcategory", "api_method": "obs_getcategory", "api_args": ["us.census.spielman_singleton_segments.X55"]}]', false);
+
+-- OBS_GetData with an API + geomrefs, args, numeric
+SELECT json_typeof(data->0->'value') = 'number' AS OBS_GetData_API_geomrefs_args_numer_return
+FROM cdb_observatory.obs_getdata(array['36047076200'],
+      '[{"numer_type": "numeric", "numer_colname": "obs_getmeasurebyid", "api_method": "obs_getmeasurebyid", "api_args": ["us.census.acs.B01003001", "us.census.tiger.census_tract"]}]');
+
+-- OBS_GetData with an API + geomrefs, args, text
+SELECT json_typeof(data->0->'value') = 'string' AS OBS_GetData_API_geomrefs_args_string_return
+FROM cdb_observatory.obs_getdata(array['36047'],
+      '[{"numer_type": "text", "numer_colname": "obs_getboundarybyid", "api_method": "obs_getboundarybyid", "api_args": ["us.census.tiger.county"]}]');

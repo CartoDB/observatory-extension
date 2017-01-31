@@ -11,8 +11,8 @@ SELECT
   cdb_observatory._OBS_GeomTable(
     ST_SetSRID(ST_Point(-74.0059, 40.7128), 4326),
     'us.census.tiger.census_tract',
-    '2014'
-  ) = 'obs_fc050f0b8673cfe3c6aa1040f749eb40975691b7' As _obs_geomtable_with_returned_table;
+    '2015'
+  ) = 'obs_87a814e485deabe3b12545a537f693d16ca702c2' As _obs_geomtable_with_returned_table;
 
 -- get null for unknown geometry_id
 -- should give back null

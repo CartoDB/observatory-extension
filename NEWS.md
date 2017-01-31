@@ -1,3 +1,69 @@
+1.3.0 (2017-01-17)
+
+__API Changes__
+
+* `OBS_GetMeasureDataMulti()` is now called `OBS_GetData()`
+* `OBS_GetMeasureMetaMulti()` is now called `OBS_GetMeta()`
+* Additional signature for `OBS_GetData` which can take an array of `TEXT`,
+  mimicking functionality of `OBS_GetMeasureByID`
+
+__Improvements__
+
+* Generate fixtures from `obs_meta`
+* Remove unused table-level code
+* Refactor all augmentation and geometry functions to obtain data from
+  `OBS_GetMeta()` and `OBS_GetData()`.
+* Improvements to `OBS_GetMeta()` so it can still fill in metadata in cases
+  where only a geometry is being requested.
+* `OBS_GetData()` returns two-column table instead of anonymous record.
+* `OBS_GetData()` can return categorical (text) and geometries
+
+__Bugfixes__
+
+* Remove unnecessary dependency on `postgres_fdw`
+* `OBS_GetData()` now aggregates measures with mixed geoms correctly
+
+__API Changes__
+
+1.2.1 (2017-01-17)
+
+__Improvements__
+
+* Support Point/LineString in responses from `OBS_GetBoundary`.
+  ([#243](https://github.com/CartoDB/observatory-extension/pull/233))
+
+1.2.0 (2016-12-28)
+
+__API Changes__
+
+* Added `OBS_GetMeasureDataMulti`, which takes an array of geomvals and
+  parameters as JSON, and returns a set of RECORDs keyed by the vals of the
+  geomvals.
+* Added `OBS_GetMeasureMetaMulti`, which takes sparse metadata as JSON (for
+  example, the measure ID) and returns a filled-out version of the metadata
+  sufficient for use with `OBS_GetMeasureDataMulti`.
+
+__Improvements__
+
+* Move tests to 2015
+* Fixes to `_OBS_GetGeometryScores` to avoid spamming NOTICEs about all pixels
+  for a band being NULL
+* Tests for `_OBS_GetGeometryScores` with complex geometries
+* Performance tests for `OBS_GetMeasureDataMulti`
+* Return both `table_id` and `column_id` from `_OBS_GetGeometryScores`
+
+1.1.7 (2016-12-15)
+
+__Improvements__
+
+* Use simpler raster table and simplified `_OBSGetGeometryScores` functions to
+  improve performance
+* In cases where geometry passed into geometry scoring function has greater
+  than 10K points, simply use its buffer instead
+* Add `IMMUTABLE` to `_OBSGetGeometryScores`
+* Add tests explicitly for `_OBSGetGeometryScores` in perftest.py
+* Yields a ~50% improvement in performance for `_OBSGetGeomeryScores`.
+
 1.1.6 (2016-12-08)
 
 __Bugfixes__

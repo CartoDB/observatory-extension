@@ -8,15 +8,15 @@ You can [access](https://carto.com/docs/carto-engine/data/accessing) measures th
 
 ## OBS_GetUSCensusMeasure(point geometry, measure_name text)
 
-The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables at a point location. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory, to access the full list, use measure IDs with the ```OBS_GetMeasure``` function below.
+The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables at a point location. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory. To access the full list, use measure IDs with the ```OBS_GetMeasure``` function below.
 
 #### Arguments
 
 Name |Description
 --- | ---
 point | a WGS84 point geometry (the_geom)
-measure_name | a human readable name of a US Census variable. The list of measure_names is [available in the Glossary](https://carto.com/docs/carto-engine/data/glossary/#obsgetuscensusmeasure-names-table).
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/index.html) (optional)
+measure_name | a human-readable name of a US Census variable. The list of measure_names is [available in the Glossary](https://carto.com/docs/carto-engine/data/glossary/#obsgetuscensusmeasure-names-table).
+normalize | for measures that are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/index.html) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -39,7 +39,7 @@ SET total_population = OBS_GetUSCensusMeasure(the_geom, 'Total Population')
 
 ## OBS_GetUSCensusMeasure(polygon geometry, measure_name text)
 
-The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory, to access the full list, use the ```OBS_GetUSCensusMeasure``` function below.
+The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory. To access the full list, use the ```OBS_GetUSCensusMeasure``` function below.
 
 #### Arguments
 
@@ -78,7 +78,7 @@ Name |Description
 --- | ---
 point | a WGS84 point geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf)). It is important to note that these are different than 'measure_name' used in the Census based functions above.
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. The other option is 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/index.html). (optional)
+normalize | for measures that are **sums** (e.g. population) the default normalization is 'area' and response comes back as a rate per square kilometer. The other option is 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/index.html). (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -109,7 +109,7 @@ Name |Description
 --- | ---
 polygon_geometry | a WGS84 polygon geometry (the_geom)
 measure_id | a measure identifier from the Data Observatory ([see available measures](https://cartodb.github.io/bigmetadata/observatory.pdf))  
-normalize | for measures that are are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/index.html) (optional)
+normalize | for measures that are **sums** (e.g. population) the default normalization is 'none' and response comes back as a raw value. Other options are 'denominator', which will use the denominator specified in the [Data Catalog](https://cartodb.github.io/bigmetadata/index.html) (optional)
 boundary_id | source of geometries to pull measure from (e.g., 'us.census.tiger.census_tract')
 time_span | time span of interest (e.g., 2010 - 2014)
 
@@ -236,23 +236,23 @@ fail.
 
 Metadata Output Key | Description
 --- | -----------
-numer_id | Identifier for desired measurement.
-numer_timespan | Timespan that will be used of the desired measurement.
+numer_id | Identifier for desired measurement
+numer_timespan | Timespan that will be used of the desired measurement
 numer_name | Human-readable name of desired measure
 numer_type | PostgreSQL/PostGIS type of desired measure
 numer_colname | Internal identifier for column name
 numer_tablename | Internal identifier for table
 numer_geomref_colname | Internal identifier for geomref column name
-denom_id | Identifier for desired normalization.
-denom_timespan | Timespan that will be used of the desired normalization.
+denom_id | Identifier for desired normalization
+denom_timespan | Timespan that will be used of the desired normalization
 denom_name | Human-readable name of desired measure's normalization
 denom_type | PostgreSQL/PostGIS type of desired measure's normalization
 denom_colname | Internal identifier for normalization column name
 denom_tablename | Internal identifier for normalization table
 denom_geomref_colname | Internal identifier for normalization geomref column name
-geom_id | Identifier for desired boundary geometry.
-geom_timespan | Timespan that will be used of the desired boundary geometry.
-geom_name | Human-readable name of desired boundary geometry's
+geom_id | Identifier for desired boundary geometry
+geom_timespan | Timespan that will be used of the desired boundary geometry
+geom_name | Human-readable name of desired boundary geometry
 geom_type | PostgreSQL/PostGIS type of desired boundary geometry
 geom_colname | Internal identifier for boundary geometry column name
 geom_tablename | Internal identifier for boundary geometry table
@@ -331,7 +331,7 @@ FROM OBS_GetData((SELECT ARRAY_AGG((the_geom, cartodb_id)::geomval) FROM tablena
                  (SELECT meta FROM meta))
 ```
 
-Update a table with population densities
+Update a table with population densities:
 
 ```SQL
 WITH meta AS (
@@ -353,7 +353,7 @@ The ```OBS_GetData(ids, metadata)``` function returns a measure and/or
 geometry corresponding to the `metadata` JSON array for each every id of
 the `ids` array. The metadata argument must be obtained from
 ```OBS_GetMeta(extent, metadata)```.  When obtaining metadata, one must include
-the `geom_id` corresponding to the boundary the `ids` refer to.
+the `geom_id` corresponding to the boundary that the `ids` refer to.
 
 #### Arguments
 
@@ -363,7 +363,7 @@ ids | An array of `TEXT` elements.  This should be obtained by using `ARRAY_AGG(
 metadata | A JSON array composed of metadata output objects from `OBS_GetMeta(extent, metadata)`.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
 
 For this function to work, the `metadata` argument must include a `geom_id`
-that corresponds to the IDS found in `col_of_geom_refs`.
+that corresponds to the ids found in `col_of_geom_refs`.
 
 #### Returns
 

@@ -209,7 +209,7 @@ metadata)``` first.
 Name | Description
 ---- | -----------
 extent | A geometry of the extent of the input geometries
-metadata | A JSON array composed of metadata input objects.  Each indicates one desired measured for an output column, and optionally additional parameters about that column
+metadata | A JSON array composed of metadata input objects.  Each indicates one desired measure for an output column, and optionally additional parameters about that column
 
 The schema of the metadata input objects are as follows:
 

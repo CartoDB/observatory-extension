@@ -39,7 +39,7 @@ SET total_population = OBS_GetUSCensusMeasure(the_geom, 'Total Population')
 
 ## OBS_GetUSCensusMeasure(polygon geometry, measure_name text)
 
-The ```OBS_GetUSCensusMeasure(polygon, measure_name)``` function returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory. To access the full list, use the ```OBS_GetUSCensusMeasure``` function below.
+The ```OBS_GetUSCensusMeasure(polygon, measure_name)``` function returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory. To access the full list, use the ```OBS_GetMeasure``` function below.
 
 #### Arguments
 

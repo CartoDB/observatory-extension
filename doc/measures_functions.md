@@ -132,7 +132,7 @@ SET household_count = OBS_GetMeasure(the_geom, 'us.census.acs.B11001001')
 
 #### Errors
 
-* If an unrecognized normalization type is input, raise an error: `'Only valid inputs for "normalize" are "area" (default) and "denominator".`
+* If an unrecognized normalization type is input, raises error: `'Only valid inputs for "normalize" are "area" (default) and "denominator".`
 
 ## OBS_GetMeasureById(geom_ref text, measure_id text, boundary_id text)
 

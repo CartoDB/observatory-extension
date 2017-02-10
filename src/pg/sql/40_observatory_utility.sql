@@ -205,6 +205,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- Function we can call to raise an exception in the midst of a SQL statement
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_RaiseNotice(
+    message TEXT
+) RETURNS TEXT
+AS $$
+BEGIN
+  RAISE NOTICE '%', message;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+
 -- Create a function that always returns the first non-NULL item
 CREATE OR REPLACE FUNCTION cdb_observatory.first_agg ( anyelement, anyelement )
 RETURNS anyelement LANGUAGE SQL IMMUTABLE STRICT AS $$

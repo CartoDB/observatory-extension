@@ -106,6 +106,21 @@ SELECT cdb_observatory.OBS_GetMeasure(
   ST_SetSRID(st_point(0, 0), 4326),
   'us.census.acs.B01003001') IS NULL As OBS_GetMeasure_out_of_bounds_geometry;
 
+-- OBS_GetMeasure over arbitrary area for a measure we cannot estimate
+SELECT cdb_observatory.OBS_GetMeasure(
+  ST_Buffer(cdb_observatory._testpoint(), 0.1),
+  'us.census.acs.B19083001') IS NULL As OBS_GetMeasure_estimate_for_blank_aggregate;
+
+-- OBS_GetMeasure over arbitrary area for an average measure we can estimate
+SELECT abs(cdb_observatory.OBS_GetMeasure(
+  ST_Buffer(cdb_observatory._testpoint(), 0.01),
+  'us.census.acs.B19301001') - 20025) / 20025 < 0.001 As OBS_GetMeasure_per_capita_income_average;
+
+-- OBS_GetMeasure over arbitrary area for a median measure we can estimate
+SELECT abs(cdb_observatory.OBS_GetMeasure(
+  ST_Buffer(cdb_observatory._testpoint(), 0.01),
+  'us.census.acs.B19013001') - 39266) / 39266 < 0.001 As OBS_GetMeasure_median_capita_income_average;
+
 -- Point-based OBS_GetCategory
 SELECT cdb_observatory.OBS_GetCategory(
   cdb_observatory._TestPoint(), 'us.census.spielman_singleton_segments.X10') = 'Wealthy, urban without Kids' As OBS_GetCategory_point;

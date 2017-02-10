@@ -48,6 +48,15 @@ t
 obs_getmeasure_out_of_bounds_geometry
 t
 (1 row)
+obs_getmeasure_estimate_for_blank_aggregate
+t
+(1 row)
+obs_getmeasure_per_capita_income_average
+t
+(1 row)
+obs_getmeasure_median_capita_income_average
+t
+(1 row)
 obs_getcategory_point
 t
 (1 row)

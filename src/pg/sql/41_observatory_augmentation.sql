@@ -174,6 +174,7 @@ BEGIN
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_tablename END denom_tablename,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_name END denom_name,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_type END denom_type,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_reltype END denom_reltype,
         m.geom_id,
         m.geom_timespan,
         geom_colname,
@@ -212,16 +213,23 @@ BEGIN
           'numer_geomref_colname', cdb_observatory.FIRST(meta.numer_geomref_colname),
           'numer_tablename', cdb_observatory.FIRST(meta.numer_tablename),
           'numer_type', cdb_observatory.FIRST(meta.numer_type),
+          --'numer_description', cdb_observatory.FIRST(meta.numer_description),
+          --'numer_t_description', cdb_observatory.FIRST(meta.numer_t_description),
           'denom_aggregate', cdb_observatory.FIRST(meta.denom_aggregate),
           'denom_colname', cdb_observatory.FIRST(denom_colname),
           'denom_geomref_colname', cdb_observatory.FIRST(denom_geomref_colname),
           'denom_tablename', cdb_observatory.FIRST(denom_tablename),
           'denom_type', cdb_observatory.FIRST(meta.denom_type),
+          'denom_reltype', cdb_observatory.FIRST(meta.denom_reltype),
+          --'denom_description', cdb_observatory.FIRST(meta.denom_description),
+          --'denom_t_description', cdb_observatory.FIRST(meta.denom_t_description),
           'geom_colname', cdb_observatory.FIRST(geom_colname),
           'geom_geomref_colname', cdb_observatory.FIRST(geom_geomref_colname),
           'geom_tablename', cdb_observatory.FIRST(geom_tablename),
           'geom_type', cdb_observatory.FIRST(meta.geom_type),
           'geom_timespan', cdb_observatory.FIRST(meta.geom_timespan),
+          --'geom_description', cdb_observatory.FIRST(meta.geom_description),
+          --'geom_t_description', cdb_observatory.FIRST(meta.geom_t_description),
           'numer_timespan', cdb_observatory.FIRST(numer_timespan),
           'numer_name', cdb_observatory.FIRST(numer_name),
           'denom_name', cdb_observatory.FIRST(denom_name),
@@ -409,6 +417,7 @@ BEGIN
           (unnest($1))->>'denom_geomref_colname' denom_geomref_colname,
           (unnest($1))->>'denom_tablename' denom_tablename,
           (unnest($1))->>'denom_type' denom_type,
+          (unnest($1))->>'denom_reltype' denom_reltype,
           (unnest($1))->>'geom_id' geom_id,
           (unnest($1))->>'geom_colname' geom_colname,
           (unnest($1))->>'geom_geomref_colname' geom_geomref_colname,
@@ -546,6 +555,7 @@ BEGIN
           (unnest($1))->>'denom_geomref_colname' denom_geomref_colname,
           (unnest($1))->>'denom_tablename' denom_tablename,
           (unnest($1))->>'denom_type' denom_type,
+          (unnest($1))->>'denom_reltype' denom_reltype,
           (unnest($1))->>'geom_id' geom_id,
           (unnest($1))->>'geom_colname' geom_colname,
           (unnest($1))->>'geom_geomref_colname' geom_geomref_colname,
@@ -568,7 +578,8 @@ BEGIN
           WHEN LOWER(numer_type) LIKE 'numeric' THEN
           '''value'', ' || CASE
           -- denominated
-          WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
+          WHEN LOWER(normalization) LIKE 'denom%' OR
+               (normalization IS NULL AND LOWER(denom_reltype) LIKE 'denominator')
             THEN ' CASE ' ||
             -- denominated point-in-poly or user polygon is same as OBS polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
@@ -597,7 +608,8 @@ BEGIN
             ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
             ' END '
           -- areaNormalized
-          WHEN LOWER(normalization) LIKE 'area%' OR (normalization IS NULL AND numer_aggregate ILIKE 'sum')
+          WHEN LOWER(normalization) LIKE 'area%' OR
+              (normalization IS NULL AND numer_aggregate ILIKE 'sum')
             THEN ' CASE ' ||
             -- areaNormalized point-in-poly or user polygon is the same as OBS polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
@@ -618,15 +630,49 @@ BEGIN
             '   END / (ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography) / 1000000)) ' ||
             ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
             ' END  '
-          -- prenormalized
-          ELSE ' CASE ' ||
+          -- median/average measures with universe
+          WHEN LOWER(numer_aggregate) IN ('median', 'average') AND
+              denom_reltype ILIKE 'universe' AND
+              (normalization IS NULL OR LOWER(normalization) LIKE 'predenominated')
+            THEN ' CASE ' ||
+            -- predenominated point-in-poly or user polygon is the same as OBS- polygon
+            ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
+            '      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
+            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
+            ' ELSE ' ||
+            -- predenominated polygon interpolation weighted by universe
+            -- SUM (numer * denom * (% user geom in OBS geom)) / SUM (denom * (% user geom in OBS geom))
+            --     (10 * 1000 * 1) / (1000 * 1) = 10
+            --     (10 * 1000 * 1 + 50 * 10 * 1) / (1000 + 10) = 10500 / 10000 = 10.5
+            ' SUM(' || numer_tablename || '.' || numer_colname ||
+            ' * ' || denom_tablename || '.' || denom_colname ||
+            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
+            '         THEN ST_Area(_geoms.geom) / ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
+            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
+            '         THEN 1 ' ||
+            '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
+            '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
+            '   END) ' ||
+            ' / SUM(' || denom_tablename || '.' || denom_colname ||
+            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
+            '         THEN ST_Area(_geoms.geom) / ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
+            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
+            '         THEN 1 ' ||
+            '        ELSE (ST_Area(ST_Intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
+            '         / ST_Area(' || geom_tablename || '.' || geom_colname || '))' ||
+            '   END) ' ||
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
+            'END '
+          -- prenormalized for summable measures. point or summable only!
+          WHEN numer_aggregate ILIKE 'sum' AND
+              (normalization IS NULL OR LOWER(normalization) LIKE 'predenom%')
+            THEN ' CASE ' ||
             -- predenominated point-in-poly or user polygon is the same as OBS- polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
             '      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
             ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
             ' ELSE ' ||
             -- predenominated polygon interpolation
-            -- TODO should weight by universe instead of area
             -- SUM (numer * (% user geom in OBS geom))
             ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
             ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
@@ -638,6 +684,14 @@ BEGIN
             '   END) ' ||
             ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
             'END '
+          -- Everything else. Point only!
+          ELSE ' CASE ' ||
+            ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
+            '      OR cdb_observatory.FIRST(_geoms.geom = ' || geom_tablename || '.' || geom_colname || ')' ||
+            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
+            ' ELSE cdb_observatory._OBS_RaiseNotice(''Cannot perform calculation over polygon for ' ||
+                numer_id || '/' || coalesce(denom_id, '') || '/' || geom_id || '/' || numer_timespan || ''')::Numeric ' ||
+            ' END '
           END || ':: ' || numer_type
 
           -- categorical/text

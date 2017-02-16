@@ -7,7 +7,7 @@ from util import query
 USE_SCHEMA = True
 
 MEASURE_COLUMNS = query('''
-SELECT distinct numer_id, numer_aggregate NOT ILIKE 'sum' as point_only
+SELECT distinct numer_id, Coalesce(numer_aggregate, '') NOT ILIKE 'sum' as point_only
 FROM observatory.obs_meta
 WHERE numer_type ILIKE 'numeric'
 AND numer_weight > 0

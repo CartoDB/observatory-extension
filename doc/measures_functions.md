@@ -196,7 +196,7 @@ UPDATE tablename
 SET segmentation = OBS_GetCategory(the_geom, 'us.census.spielman_singleton_segments.X55')
 ```
 
-## OBS_GetMeta(extent geometry, metadata json)
+## OBS_GetMeta(extent geometry, metadata json, max_timespan_rank, max_boundary_score_rank, num_target_geoms)
 
 The ```OBS_GetMeta(extent, metadata)``` function returns a completed Data
 Observatory metadata JSON Object for use in ```OBS_GetData(geomvals,
@@ -204,12 +204,18 @@ metadata)``` or ```OBS_GetData(ids, metadata)```.  It is not possible to pass
 metadata to those functions if it is not processed by ```OBS_GetMeta(extent,
 metadata)``` first.
 
+`OBS_GetMeta` makes it possible to automatically select appropriate timespans
+and boundaries for the measurement you want.
+
 #### Arguments
 
 Name | Description
 ---- | -----------
 extent | A geometry of the extent of the input geometries
 metadata | A JSON array composed of metadata input objects.  Each indicates one desired measure for an output column, and optionally additional parameters about that column
+max_timespan_rank | How many historical time periods to include.  Defaults to 1
+max_boundary_score_rank | How many alternative boundary levels to include.  Defaults to 1
+num_target_geoms | Target number of geometries.  Boundaries with close to this many objects within `extent` will be ranked highest. 
 
 The schema of the metadata input objects are as follows:
 
@@ -220,7 +226,7 @@ geom_id | Identifier for a desired geographic boundary level to use when calcula
 normalization | The desired normalization.  One of 'area', 'prenormalized', or 'denominated'.  'Area' will normalize the measure per square kilometer, 'prenormalized' will return the original value, and 'denominated' will normalize by a denominator.  Ignored if this metadata object specifies a geometry.
 denom_id | Identifier for a desired normalization column in case `normalization` is 'denominated'.  Will be automatically assigned if necessary.  Ignored if this metadata object specifies a geometry.
 numer_timespan | The desired timespan for the measurement.  Defaults to most recent timespan available if left unspecified.
-geom_timespan | The desired timespan for the geometry.  Defaults to most recent timespan available if left unspecified.
+geom_timespan | The desired timespan for the geometry.  Defaults to timespan matching numer_timespan if left unspecified.
 
 #### Returns
 
@@ -257,31 +263,51 @@ geom_type | PostgreSQL/PostGIS type of desired boundary geometry
 geom_colname | Internal identifier for boundary geometry column name
 geom_tablename | Internal identifier for boundary geometry table
 geom_geomref_colname | Internal identifier for boundary geometry ref column name
+timespan_rank | Ranking of this measurement by time, most recent is 1, second most recent 2, etc.
+score | The score of this measurement's boundary compared to the `extent` and `num_target_geoms` passed in.  Between 0 and 100.
+score_rank | The ranking of this measurement's boundary, highest ranked is 1, second is 2, etc.
+numer_aggregate | The aggregate type of the numerator, either `sum`, `average`, `median`, or blank
+denom_aggregate | The aggregate type of the denominator, either `sum`, `average`, `median`, or blank
+normalization | The sort of normalization that will be used for this measure, either `area`, `predenominated`, or `denominated`
 
 #### Examples
 
 Obtain metadata that can augment with one additional column of US population
 data, using a boundary relevant for the geometry provided and latest timespan.
+Limit to only the most recent column most relevant to the extent & density of
+input geometries in `tablename`.
 
 ```SQL
-SELECT OBS_GetMeta(ST_Extent(the_geom),
-       '[{"numer_id": "us.census.acs.B01003001"}]')
+SELECT OBS_GetMeta(
+  ST_SetSRID(ST_Extent(the_geom), 4326),
+  '[{"numer_id": "us.census.acs.B01003001"}]',
+  1, 1,
+  COUNT(*)
+) FROM tablename
 ```
 
 Obtain metadata that can augment with one additional column of US population
 data, using census tract boundaries.
 
 ```SQL
-SELECT OBS_GetMeta(ST_Extent(the_geom),
-       '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.census_tract"}]')
+SELECT OBS_GetMeta(
+  ST_SetSRID(ST_Extent(the_geom), 4326),
+  '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.census_tract"}]',
+  1, 1,
+  COUNT(*)
+) FROM tablename
 ```
 
 Obtain metadata that can augment with two additional columns, one for total
 population and one for male population.
 
 ```SQL
-SELECT OBS_GetMeta(ST_Extent(the_geom),
-       '[{"numer_id": "us.census.acs.B01003001"}, {"numer_id": "us.census.acs.B01001002"}]')
+SELECT OBS_GetMeta(
+  ST_SetSRID(ST_Extent(the_geom), 4326),
+  '[{"numer_id": "us.census.acs.B01003001"}, {"numer_id": "us.census.acs.B01001002"}]',
+  1, 1,
+  COUNT(*)
+) FROM tablename
 ```
 
 ## OBS_GetData(geomvals array[geomval], metadata json)
@@ -324,25 +350,56 @@ Obtain population densities for every geometry in a table, keyed by cartodb_id:
 
 ```SQL
 WITH meta AS (
-  SELECT OBS_GetMeta(ST_Extent(the_geom),
-                     '[{"numer_id": "us.census.acs.B01003001"}]') meta)
-SELECT id AS cartodb_id, (data->1->>'value') AS pop_density
+  SELECT OBS_GetMeta(
+    ST_SetSRID(ST_Extent(the_geom), 4326),
+    '[{"numer_id": "us.census.acs.B01003001"}]',
+    1, 1, COUNT(*)
+) meta FROM tablename)
+SELECT id AS cartodb_id, (data->0->>'value')::Numeric AS pop_density
 FROM OBS_GetData((SELECT ARRAY_AGG((the_geom, cartodb_id)::geomval) FROM tablename),
                  (SELECT meta FROM meta))
 ```
 
-Update a table with population densities:
+Update a table with a blank numeric column called `pop_density` with population
+densities:
 
 ```SQL
 WITH meta AS (
-  SELECT OBS_GetMeta(ST_Extent(the_geom),
-                     '[{"numer_id": "us.census.acs.B01003001"}]') meta),
+  SELECT OBS_GetMeta(
+    ST_SetSRID(ST_Extent(the_geom), 4326),
+    '[{"numer_id": "us.census.acs.B01003001"}]',
+    1, 1, COUNT(*)
+) meta FROM tablename),
 data AS (
-  SELECT id AS cartodb_id, (data->1->>'value') AS pop_density
+  SELECT id AS cartodb_id, (data->0->>'value')::Numeric AS pop_density
   FROM OBS_GetData((SELECT ARRAY_AGG((the_geom, cartodb_id)::geomval) FROM tablename),
                    (SELECT meta FROM meta)))
 UPDATE tablename
 SET pop_density = data.pop_density
+FROM data
+WHERE cartodb_id = data.id
+```
+
+Update a table with two measurements at once, population density and household
+density.  The table should already have a Numeric column `pop_density` and
+`household_density`.
+
+```
+WITH meta AS (
+  SELECT OBS_GetMeta(
+    ST_SetSRID(ST_Extent(the_geom),4326),
+    '[{"numer_id": "us.census.acs.B01003001"},{"numer_id": "us.census.acs.B11001001"}]',
+    1, 1, COUNT(*)
+) meta from tablename),
+data AS (
+  SELECT id,
+     data->0->>'value' AS pop_density,
+     data->1->>'value' AS household_density
+  FROM OBS_GetData((SELECT ARRAY_AGG((the_geom, cartodb_id)::geomval) FROM tablename),
+                   (SELECT meta FROM meta)))
+UPDATE tablename
+SET pop_density = data.pop_density,
+    household_density = data.household_density
 FROM data
 WHERE cartodb_id = data.id
 ```
@@ -392,21 +449,27 @@ Obtain population densities for every row of a table with FIPS code county IDs
 
 ```SQL
 WITH meta AS (
-  SELECT OBS_GetMeta(ST_Extent(the_geom),
-                     '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.county"}]') meta)
-SELECT id AS fips, (data->1->>'value') AS pop_density
+  SELECT OBS_GetMeta(
+    ST_SetSRID(ST_Extent(the_geom), 4326),
+    '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.county"}]'
+) meta FROM tablename)
+SELECT id AS fips, (data->0->>'value')::Numeric AS pop_density
 FROM OBS_GetData((SELECT ARRAY_AGG((fips) FROM tablename),
                  (SELECT meta FROM meta))
 ```
 
 Update a table with population densities for every FIPS code county ID (USA).
+This table has a blank column called `pop_density` and fips codes stored in a
+column `fips`.
 
 ```SQL
 WITH meta AS (
-  SELECT OBS_GetMeta(ST_Extent(the_geom),
-                     '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.county"}]') meta),
+  SELECT OBS_GetMeta(
+    ST_SetSRID(ST_Extent(the_geom), 4326),
+    '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.county"}]'
+) meta FROM tablename),
 data as (
-  SELECT id AS fips, (data->1->>'value') AS pop_density
+  SELECT id AS fips, (data->0->>'value') AS pop_density
   FROM OBS_GetData((SELECT ARRAY_AGG((fips) FROM tablename),
                    (SELECT meta FROM meta)))
 UPDATE tablename
@@ -414,4 +477,3 @@ SET pop_density = data.pop_density
 FROM data
 WHERE fips = data.id
 ```
-

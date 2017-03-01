@@ -499,15 +499,25 @@ SELECT 'us.census.acs.B19013001' IN (SELECT
   FROM cdb_observatory.OBS_LegacyBuilderMetadata()
 ) AS _median_income_in_legacy_builder_metadata;
 
+SELECT 'us.census.acs.B19083001' IN (SELECT
+  (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
+  FROM cdb_observatory.OBS_LegacyBuilderMetadata()
+) AS _gini_in_legacy_builder_metadata;
+
 SELECT 'us.census.acs.B01003001' IN (SELECT
   (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
   FROM cdb_observatory.OBS_LegacyBuilderMetadata('sum')
 ) AS _total_pop_in_legacy_builder_metadata_sums;
 
-SELECT 'us.census.acs.B19013001' NOT IN (SELECT
+SELECT 'us.census.acs.B19013001' IN (SELECT
   (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
   FROM cdb_observatory.OBS_LegacyBuilderMetadata('sum')
-) AS _median_income_not_in_legacy_builder_metadata_sums;
+) AS _median_income_in_legacy_builder_metadata_sums;
+
+SELECT 'us.census.acs.B19083001' NOT IN (SELECT
+  (jsonb_array_elements(((jsonb_array_elements(subsection))->'f1')->'columns')->'f1')->>'id' AS id
+  FROM cdb_observatory.OBS_LegacyBuilderMetadata('sum')
+) AS _gini_not_in_legacy_builder_metadata_sums;
 
 SELECT COUNT(*) = 0 _no_dupe_subsections_in_legacy_builder_metadata FROM (
   SELECT name, subsection, count(*) FROM

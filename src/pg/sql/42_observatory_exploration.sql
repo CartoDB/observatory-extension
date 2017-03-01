@@ -369,8 +369,10 @@ RETURNS TABLE (
 DECLARE
   aggregate_condition TEXT DEFAULT '';
 BEGIN
-  IF aggregate_type IS NOT NULL THEN
-    aggregate_condition := format(' AND numer_aggregate = %L ', aggregate_type);
+  IF LOWER(aggregate_type) ILIKE 'sum' THEN
+    aggregate_condition := ' AND numer_aggregate IN (''sum'', ''median'', ''average'') ';
+  ELSIF aggregate_type IS NOT NULL THEN
+    aggregate_condition := format(' AND numer_aggregate ILIKE %L ', aggregate_type);
   END IF;
   RETURN QUERY
   EXECUTE format($string$

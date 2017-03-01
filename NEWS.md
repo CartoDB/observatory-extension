@@ -5,6 +5,8 @@ __Improvements__
 * It is now possible to obtain measures that are averages or medians over
   arbitrary polygons ([#254](https://github.com/CartoDB/observatory-extension/pull/254).
 * Added test point for Australian data
+* `OBS_GetLegacyMetadata` now returns median and averages in cases where it is
+  called for measures for polygons
 
 1.3.0 (2017-01-17)
 

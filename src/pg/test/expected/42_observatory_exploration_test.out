@@ -192,10 +192,16 @@ t
 _median_income_in_legacy_builder_metadata
 t
 (1 row)
+_gini_in_legacy_builder_metadata
+t
+(1 row)
 _total_pop_in_legacy_builder_metadata_sums
 t
 (1 row)
-_median_income_not_in_legacy_builder_metadata_sums
+_median_income_in_legacy_builder_metadata_sums
+t
+(1 row)
+_gini_not_in_legacy_builder_metadata_sums
 t
 (1 row)
 _no_dupe_subsections_in_legacy_builder_metadata

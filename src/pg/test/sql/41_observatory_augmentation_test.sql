@@ -467,6 +467,19 @@ SELECT id = 1 id,
 FROM data;
 
 -- OBS_GetData/OBS_GetMeta by point geom with one standard measure predenom
+-- called "prednormalized"
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "prenormalized"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestPoint(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 1900) / 1900 < 0.001 data_point_measure_prenormalized,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by point geom with one standard measure predenom
 WITH
 meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
   '[{"numer_id": "us.census.acs.B01003001", "normalization": "predenominated"}]') meta),
@@ -475,6 +488,19 @@ data AS (SELECT * FROM cdb_observatory.OBS_GetData(
   (SELECT meta FROM meta)))
 SELECT id = 1 id,
        abs((data->0->>'value')::Numeric - 1900) / 1900 < 0.001 data_point_measure_predenominated,
+       data->1 IS NULL nullcol
+FROM data;
+
+-- OBS_GetData/OBS_GetMeta by polygon geom with one standard measure predenom
+-- called "prenormalized"
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "prenormalized"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       abs((data->0->>'value')::Numeric - 12327) / 12327 < 0.001 data_polygon_measure_prenormalized,
        data->1 IS NULL nullcol
 FROM data;
 

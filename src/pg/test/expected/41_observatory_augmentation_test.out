@@ -171,7 +171,13 @@ t|t|t
 id|data_polygon_measure_area|nullcol
 t|t|t
 (1 row)
+id|data_point_measure_prenormalized|nullcol
+t|t|t
+(1 row)
 id|data_point_measure_predenominated|nullcol
+t|t|t
+(1 row)
+id|data_polygon_measure_prenormalized|nullcol
 t|t|t
 (1 row)
 id|data_polygon_measure_predenominated|nullcol

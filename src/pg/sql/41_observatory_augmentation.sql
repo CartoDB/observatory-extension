@@ -309,7 +309,7 @@ BEGIN
     map_type := 'areaNormalized';
   ELSIF normalize ILIKE 'denom%' THEN
     map_type := 'denominated';
-  ELSIF normalize ILIKE 'predenom%' THEN
+  ELSIF normalize ILIKE 'pre%' THEN
     map_type := 'predenominated';
   ELSE
     -- defaults: area normalization for point if it's possible and none for
@@ -633,7 +633,7 @@ BEGIN
           -- median/average measures with universe
           WHEN LOWER(numer_aggregate) IN ('median', 'average') AND
               denom_reltype ILIKE 'universe' AND
-              (normalization IS NULL OR LOWER(normalization) LIKE 'predenominated')
+              (normalization IS NULL OR LOWER(normalization) LIKE 'pre%')
             THEN ' CASE ' ||
             -- predenominated point-in-poly or user polygon is the same as OBS- polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||
@@ -665,7 +665,7 @@ BEGIN
             'END '
           -- prenormalized for summable measures. point or summable only!
           WHEN numer_aggregate ILIKE 'sum' AND
-              (normalization IS NULL OR LOWER(normalization) LIKE 'predenom%')
+              (normalization IS NULL OR LOWER(normalization) LIKE 'pre%')
             THEN ' CASE ' ||
             -- predenominated point-in-poly or user polygon is the same as OBS- polygon
             ' WHEN ST_GeometryType(cdb_observatory.FIRST(_geoms.geom)) = ''ST_Point'' ' ||

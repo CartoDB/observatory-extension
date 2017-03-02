@@ -1,3 +1,10 @@
+1.3.2 (2017-03-02)
+
+__Bugfixes__
+
+* Accept "prenormalized" as well as "predenominated" to bypass normalization.
+  This fixes issues with Camshaft.
+
 1.3.1 (2017-02-16)
 
 __Improvements__

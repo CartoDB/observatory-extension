@@ -74,7 +74,7 @@ timespan | Text | the ID of a timespan to check whether the numerator is valid a
 
 #### Returns
 
-A TABLE containing the following properties
+A TABLE containing the following properties. Ignored properties are either artifacts from column metadata for internal use or have no meaning and are null.
 
 Key | Type | Description
 --- | ---- | -----------
@@ -168,7 +168,7 @@ timespan | Text | the ID of a timespan to check whether the denominator is valid
 
 #### Returns
 
-A TABLE containing the following properties
+A TABLE containing the following properties. Ignored properties are either artifacts from column metadata for internal use or have no meaning and are null.
 
 Key | Type | Description
 --- | ---- | -----------
@@ -245,7 +245,7 @@ timespan | Text | the ID of a timespan to check whether the geometry is valid ag
 
 #### Returns
 
-A TABLE containing the following properties
+A TABLE containing the following properties. Ignored properties are either artifacts from column metadata for internal use or have no meaning and are null.
 
 Key | Type | Description
 --- | ---- | -----------
@@ -304,22 +304,21 @@ WHERE valid_timespan IS True;
 
 ## OBS_GetAvailableTimespans(bounds, filter_tags, numer_id, denom_id, geom_id)
 
-Return available timespans within a boundary and with the specified
-`filter_tags`.
+Return available timespans within a boundary and with the specified measure or geometry.
 
 #### Arguments
 
 Name | Type | Description
 --- | --- | ---
 bounds | Geometry(Geometry, 4326) | a geometry which some of the timespan's data must intersect with
-filter_tags | Text[] | a list of filters.  Ignore
+filter_tags | Text[] | Ignored with `NULL` because timespans are not tagged.
 numer_id | Text | the ID of a numerator to check whether the timespans is valid against.  Will not reduce length of returned table, but will change values for `valid_numer` (optional)
 denom_id | Text | the ID of a denominator to check whether the timespans is valid against.  Will not reduce length of returned table, but will change values for `valid_denom` (optional)
 geom_id | Text | the ID of a geometry to check whether the timespans is valid against.  Will not reduce length of returned table, but will change values for `valid_geom` (optional)
 
 #### Returns
 
-A TABLE containing the following properties
+A TABLE containing the following properties. Ignored properties are either artifacts from column metadata for internal use or have no meaning and are null.
 
 Key | Type | Description
 --- | ---- | -----------

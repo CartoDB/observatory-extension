@@ -255,12 +255,11 @@ def test_get_measure_points(numer_ids, numer_aggregate, denom_reltype, section_t
 
 @parameterized(grouped_measure_columns())
 def test_get_measure_areas(numer_ids, numer_aggregate, denom_reltype, section_tags):
-    if numer_aggregate.lower() not in ('sum', 'median', 'average'):
+    if numer_aggregate is None or numer_aggregate.lower() not in ('sum', 'median', 'average'):
         return
-    if numer_aggregate is None or \
-       (numer_aggregate.lower() in ('median', 'average') \
-                             and (denom_reltype is None \
-                                  or denom_reltype.lower() != 'universe')):
+    if numer_aggregate.lower() in ('median', 'average') \
+       and (denom_reltype is None \
+            or denom_reltype.lower() != 'universe'):
         return
     _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, default_area(numer_ids[0]))
 

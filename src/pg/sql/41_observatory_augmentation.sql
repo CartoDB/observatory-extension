@@ -594,7 +594,7 @@ BEGIN
             '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
             '         THEN 1 ' ||
-            '        ELSE (ST_Area(ST_MakeValid(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || '))) ' ||
+            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
             '   END) / '
             ' NULLIF(SUM(' || denom_tablename || '.' || denom_colname || ' ' ||
@@ -602,7 +602,7 @@ BEGIN
             '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
             '         THEN 1 ' ||
-            '        ELSE (ST_Area(ST_MakeValid(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || '))) ' ||
+            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
             '   END), 0) ' ||
             ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
@@ -625,7 +625,7 @@ BEGIN
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) THEN ' ||
             '          ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
             '          / Nullif(ST_Area(_geoms.geom), 0) ' ||
-            '        ELSE (ST_Area(ST_MakeValid(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || '))) ' ||
+            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(_geoms.geom), 0))' ||
             '   END / (Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0) / 1000000)) ' ||
             ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
@@ -650,7 +650,7 @@ BEGIN
             '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
             '         THEN 1 ' ||
-            '        ELSE (ST_Area(ST_MakeValid(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || '))) ' ||
+            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)) ' ||
             '   END) ' ||
             ' / Nullif(SUM(' || denom_tablename || '.' || denom_colname ||
@@ -658,7 +658,7 @@ BEGIN
             '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
             '         THEN 1 ' ||
-            '        ELSE (ST_Area(ST_MakeValid(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || '))) ' ||
+            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
             '   END), 0) ' ||
             ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
@@ -679,8 +679,8 @@ BEGIN
             '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
             '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
             '         THEN 1 ' ||
-            '        ELSE (ST_Area(ST_MakeValid(cdb_observatory.safe_intersection(_geoms.geom, ' ||
-                            geom_tablename || '.' || geom_colname || '))) ' ||
+            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' ||
+                            geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
             '   END) ' ||
             ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
@@ -706,8 +706,8 @@ BEGIN
               '.' || geom_colname || ')::TEXT'
           -- code below will return the intersection of the user's geom and the
           -- OBS geom
-          --'''value'', ' || 'ST_Union(ST_MakeValid(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename ||
-          --    '.' || geom_colname || ')))::TEXT'
+          --'''value'', ' || 'ST_Union(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename ||
+          --    '.' || geom_colname || '))::TEXT'
         ELSE ''
         END || ')', ', ')
         AS colspecs,

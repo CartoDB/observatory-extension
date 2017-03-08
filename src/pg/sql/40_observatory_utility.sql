@@ -234,18 +234,21 @@ CREATE AGGREGATE cdb_observatory.FIRST (
 
 -- Attempt to perform intersection, if there's an exception then buffer
 -- https://gis.stackexchange.com/questions/50399/how-best-to-fix-a-non-noded-intersection-problem-in-postgis
-CREATE OR REPLACE FUNCTION cdb_observatory.safe_intersection(geom_a geometry, geom_b geometry)
-RETURNS geometry AS
+CREATE OR REPLACE FUNCTION cdb_observatory.safe_intersection(
+  geom_a Geometry(Geometry, 4326),
+  geom_b Geometry(Geometry, 4326)
+)
+RETURNS Geometry(Geometry, 4326) AS
 $$
 BEGIN
-    RETURN ST_Intersection(geom_a, geom_b);
+    RETURN ST_MakeValid(ST_Intersection(geom_a, geom_b));
     EXCEPTION
         WHEN OTHERS THEN
             BEGIN
-                RETURN ST_Intersection(ST_Buffer(geom_a, 0.0000001), ST_Buffer(geom_b, 0.0000001));
+                RETURN ST_MakeValid(ST_Intersection(ST_Buffer(geom_a, 0.0000001), ST_Buffer(geom_b, 0.0000001)));
                 EXCEPTION
                     WHEN OTHERS THEN
-                        RETURN ST_GeomFromText('POLYGON EMPTY');
+                        RETURN NULL;
     END;
 END
 $$

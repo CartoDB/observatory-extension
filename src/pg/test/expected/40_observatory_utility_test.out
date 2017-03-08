@@ -21,3 +21,7 @@ t
 obs_dumpversion_notnull
 t
 (1 row)
+ERROR:  Error performing intersection: TopologyException: found non-noded intersection between LINESTRING (-97.1968 25.9574, -97.1971 25.9576) and LINESTRING (-97.197 25.9575, -97.1972 25.9576) at -97.19699802694231 25.957551976080605
+complex_safe_intersection_works
+t
+(1 row)

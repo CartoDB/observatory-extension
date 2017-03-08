@@ -437,7 +437,7 @@ BEGIN
             'cdb_observatory.FIRST( ' ||
               api_method || '.' || numer_colname || ')::' || numer_type
         -- numeric internal values
-        WHEN LOWER(numer_type) LIKE 'numeric' THEN
+        WHEN cdb_observatory.isnumeric(numer_type) THEN
           '''value'', ' || CASE
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR (normalization IS NULL AND denom_id IS NOT NULL)
@@ -485,10 +485,16 @@ BEGIN
             ) tablenames_inner
           ) tablenames_outer) tablenames,
 
-          String_Agg(numer_tablename || '.' || numer_geomref_colname || ' = ' ||
-                     geom_tablename || '.' || geom_geomref_colname ||
-           Coalesce(' AND ' || numer_tablename || '.' || numer_geomref_colname || ' = ' ||
-                               denom_tablename || '.' || denom_geomref_colname, ''),
+          String_Agg(DISTINCT array_to_string(ARRAY[
+            CASE WHEN numer_tablename != geom_tablename
+                 THEN numer_tablename || '.' || numer_geomref_colname || ' = ' ||
+                      geom_tablename || '.' || geom_geomref_colname
+                 ELSE NULL END,
+            CASE WHEN numer_tablename != denom_tablename
+                 THEN numer_tablename || '.' || numer_geomref_colname || ' = ' ||
+                      denom_tablename || '.' || denom_geomref_colname
+                 ELSE NULL END
+            ], ' AND '),
            ' AND ') AS obs_wheres,
 
           String_Agg(geom_tablename || '.' || geom_geomref_colname || ' = ' ||
@@ -532,11 +538,14 @@ DECLARE
   tables TEXT;
   obs_wheres TEXT;
   user_wheres TEXT;
+  geomtype TEXT;
 BEGIN
     IF params IS NULL OR JSON_ARRAY_LENGTH(params) = 0 THEN
       RETURN QUERY EXECUTE $query$ SELECT NULL::INT, NULL::JSON LIMIT 0 $query$;
       RETURN;
     END IF;
+
+    geomtype := ST_GeometryType(geomvals[1].geom);
 
     EXECUTE
       $query$
@@ -575,7 +584,7 @@ BEGIN
             'cdb_observatory.FIRST( ' ||
               api_method || '.' || numer_colname || ')::' || numer_type
           -- numeric internal values
-          WHEN LOWER(numer_type) LIKE 'numeric' THEN
+          WHEN cdb_observatory.isnumeric(numer_type) THEN
           '''value'', ' || CASE
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR
@@ -739,13 +748,20 @@ BEGIN
             ) tablenames_inner
           ) tablenames_outer) tablenames,
 
-          String_Agg(DISTINCT numer_tablename || '.' || numer_geomref_colname || ' = ' ||
-                     geom_tablename || '.' || geom_geomref_colname ||
-           Coalesce(' AND ' || numer_tablename || '.' || numer_geomref_colname || ' = ' ||
-                               denom_tablename || '.' || denom_geomref_colname, ''),
-           ' AND ') AS obs_wheres,
+          String_Agg(DISTINCT array_to_string(ARRAY[
+            CASE WHEN numer_tablename != geom_tablename
+                 THEN numer_tablename || '.' || numer_geomref_colname || ' = ' ||
+                      geom_tablename || '.' || geom_geomref_colname
+                 ELSE NULL END,
+            CASE WHEN numer_tablename != denom_tablename
+                 THEN numer_tablename || '.' || numer_geomref_colname || ' = ' ||
+                      denom_tablename || '.' || denom_geomref_colname
+                 ELSE NULL END
+            ], ' AND '),
+           ' AND ') FILTER (WHERE numer_tablename != geom_tablename
+                               OR numer_tablename != denom_tablename) AS obs_wheres,
 
-          String_Agg('ST_Intersects(' || geom_tablename || '.' ||  geom_colname
+          String_Agg(DISTINCT 'ST_Intersects(' || geom_tablename || '.' ||  geom_colname
              || ', _geoms.geom)', ' AND ')
              AS user_wheres
         FROM _meta

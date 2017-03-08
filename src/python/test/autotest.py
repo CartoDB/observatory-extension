@@ -67,38 +67,47 @@ SKIP_COLUMNS = set([
     , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
     , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
     , 'fr.insee.P12_ACTOCC15P_ILT45D'
+    , 'uk.ons.LC3202WA0007'
+    , 'uk.ons.LC3202WA0010'
+    , 'uk.ons.LC3202WA0004'
+    , 'uk.ons.LC3204WA0004'
+    , 'uk.ons.LC3204WA0007'
+    , 'uk.ons.LC3204WA0010'
 ])
 
 MEASURE_COLUMNS = query('''
 SELECT ARRAY_AGG(DISTINCT numer_id) numer_ids,
        numer_aggregate,
+       denom_reltype,
        section_tags
 FROM observatory.obs_meta
 WHERE numer_weight > 0
   AND numer_id NOT IN ('{skip}')
-GROUP BY numer_aggregate, section_tags
+  AND section_tags IS NOT NULL
+  AND subsection_tags IS NOT NULL
+GROUP BY numer_aggregate, section_tags, denom_reltype
 '''.format(skip="', '".join(SKIP_COLUMNS))).fetchall()
 
-CATEGORY_COLUMNS = query('''
-SELECT distinct numer_id
-FROM observatory.obs_meta
-WHERE numer_type ILIKE 'text'
-AND numer_weight > 0
-''').fetchall()
-
-BOUNDARY_COLUMNS = query('''
-SELECT id FROM observatory.obs_column
-WHERE type ILIKE 'geometry'
-AND weight > 0
-''').fetchall()
-
-US_CENSUS_MEASURE_COLUMNS = query('''
-SELECT distinct numer_name
-FROM observatory.obs_meta
-WHERE numer_type ILIKE 'numeric'
-AND 'us.census.acs' = ANY (subsection_tags)
-AND numer_weight > 0
-''').fetchall()
+#CATEGORY_COLUMNS = query('''
+#SELECT distinct numer_id
+#FROM observatory.obs_meta
+#WHERE numer_type ILIKE 'text'
+#AND numer_weight > 0
+#''').fetchall()
+#
+#BOUNDARY_COLUMNS = query('''
+#SELECT id FROM observatory.obs_column
+#WHERE type ILIKE 'geometry'
+#AND weight > 0
+#''').fetchall()
+#
+#US_CENSUS_MEASURE_COLUMNS = query('''
+#SELECT distinct numer_name
+#FROM observatory.obs_meta
+#WHERE numer_type ILIKE 'numeric'
+#AND 'us.census.acs' = ANY (subsection_tags)
+#AND numer_weight > 0
+#''').fetchall()
 
 
 #def default_geometry_id(column_id):
@@ -233,53 +242,67 @@ def default_area(column_id):
 #    assert_is_not_none(rows[0][0])
 
 
-@parameterized(MEASURE_COLUMNS)
-def test_get_measure_points(numer_ids, numer_aggregate, section_tags):
-    all_in_params = []
+def grouped_measure_columns():
+    for numer_ids, numer_aggregate, denom_reltype, section_tags in MEASURE_COLUMNS:
+        for colgroup in grouper(numer_ids, 50):
+            yield [c for c in colgroup if c], numer_aggregate, denom_reltype, section_tags
+
+
+@parameterized(grouped_measure_columns())
+def test_get_measure_points(numer_ids, numer_aggregate, denom_reltype, section_tags):
+    _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, default_point(numer_ids[0]))
+
+
+@parameterized(grouped_measure_columns())
+def test_get_measure_areas(numer_ids, numer_aggregate, denom_reltype, section_tags):
+    if numer_aggregate.lower() not in ('sum', 'median', 'average'):
+        return
+    if numer_aggregate.lower() in ('median', 'average') \
+                             and denom_reltype is not None \
+                             and denom_reltype.lower() != 'universe':
+        return
+    _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, default_area(numer_ids[0]))
+
+
+def _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, geom):
+    in_params = []
     for numer_id in numer_ids:
-        all_in_params.append({
+        in_params.append({
             'numer_id': numer_id,
             'normalization': 'predenominated'
         })
-    for in_params in grouper(all_in_params, 50):
-        print('{} {}'.format(numer_aggregate, section_tags))
-        in_params = [ip for ip in in_params if ip]
 
-        params = query(u'''
-            SELECT {schema}OBS_GetMeta({point}, '{in_params}')
-        '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
-                   point=default_point(numer_ids[0]),
-                   in_params=json.dumps(in_params))).fetchone()[0]
-        try:
-            # We can get duplicate IDs from multi-denominators
-            params = OrderedDict([(p['id'], p) for p in params]).values()
-            assert_equal(len(params), len(in_params))
-        except:
-            import pdb
-            pdb.set_trace()
-        resp = query(u'''
-             SELECT * FROM {schema}OBS_GetData(ARRAY[({point}, 1)::geomval], '{params}')
-        '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
-                   point=default_point(numer_ids[0]),
-                   params=json.dumps(params).replace(u"'", "''"))).fetchone()[1]
-        vals = [v['value'] for v in resp]
-        assert_equal(len(vals), len(in_params))
-        for i, val in enumerate(vals):
-            try:
-                assert_is_not_none(val)
-            except:
-                import pdb
-                pdb.set_trace()
-                print(val)
-                raise
-    #resp = query('''
-    #SELECT * FROM {schema}OBS_GetMeasure({point}, '{column_id}')
-    #             '''.format(column_id=column_id,
-    #                        schema='cdb_observatory.' if USE_SCHEMA else '',
-    #                        point=default_point(column_id)))
-    #rows = resp.fetchall()
-    #assert_equal(1, len(rows))
-    #assert_is_not_none(rows[0][0])
+    params = query(u'''
+        SELECT {schema}OBS_GetMeta({geom}, '{in_params}')
+    '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
+               geom=geom,
+               in_params=json.dumps(in_params))).fetchone()[0]
+
+    # We can get duplicate IDs from multi-denominators, so for now we
+    # compress those measures into a single
+    params = OrderedDict([(p['id'], p) for p in params]).values()
+    assert_equal(len(params), len(in_params),
+                 'Inconsistent out and in params for {}'.format(in_params))
+
+    q = u'''
+    SELECT * FROM {schema}OBS_GetData(ARRAY[({geom}, 1)::geomval], '{params}')
+    '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
+               geom=geom,
+               params=json.dumps(params).replace(u"'", "''"))
+    resp = query(q).fetchone()
+    #try:
+    assert_is_not_none(resp, 'NULL returned for {}'.format(in_params))
+    #except:
+    #    #import pdb
+    #    #pdb.set_trace()
+    #    raise
+    rawvals = resp[1]
+    vals = [v['value'] for v in rawvals]
+
+    assert_equal(len(vals), len(in_params))
+    for i, val in enumerate(vals):
+        assert_is_not_none(val, 'NULL for {}'.format(in_params[i]['numer_id']))
+
 
 #@parameterized(CATEGORY_COLUMNS)
 #def test_get_category_areas(column_id):

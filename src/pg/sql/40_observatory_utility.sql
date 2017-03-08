@@ -231,3 +231,18 @@ CREATE AGGREGATE cdb_observatory.FIRST (
         basetype = anyelement,
         stype    = anyelement
 );
+
+CREATE OR REPLACE FUNCTION cdb_observatory.isnumeric (
+  typename varchar
+)
+RETURNS BOOLEAN LANGUAGE SQL IMMUTABLE STRICT AS $$
+  SELECT LOWER(typename) IN (
+    'smallint',
+    'integer',
+    'bigint',
+    'decimal',
+    'numeric',
+    'real',
+    'double precision'
+  )
+$$;

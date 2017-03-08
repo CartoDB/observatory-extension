@@ -514,7 +514,10 @@ BEGIN
       GROUP BY _geomrefs.id
       ORDER BY _geomrefs.id
     $query$, colspecs, tables,
-             'WHERE ' || NULLIF(ARRAY_TO_STRING(ARRAY[obs_wheres, user_wheres], ' AND '), ''))
+             'WHERE ' || NULLIF(ARRAY_TO_STRING(ARRAY[
+                    Nullif(obs_wheres, ''), Nullif(user_wheres, '')
+                ], ' AND '), '')
+        )
     USING geomrefs;
     RETURN;
 END;
@@ -589,15 +592,14 @@ BEGIN
           -- denominated
           WHEN LOWER(normalization) LIKE 'denom%' OR
                (normalization IS NULL AND LOWER(denom_reltype) LIKE 'denominator')
-            THEN ' CASE ' ||
-            -- denominated point-in-poly or user polygon is same as OBS polygon
-            ' WHEN EVERY(ST_GeometryType(_geoms.geom) = ''ST_Point'') ' ||
-            '      OR EVERY(_geoms.geom::TEXT = ' || geom_tablename || '.' || geom_colname || '::TEXT)' ||
-            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
-            '      / NullIf(' || denom_tablename || '.' || denom_colname || ', 0))' ||
+            THEN CASE
+            -- denominated point-in-poly
+            WHEN $2 = 'ST_Point' THEN
+            ' cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
+            '      / NullIf(' || denom_tablename || '.' || denom_colname || ', 0))'
             -- denominated polygon interpolation
             -- SUM (numer * (% OBS geom in user geom)) / SUM (denom * (% OBS geom in user geom))
-            ' ELSE ' ||
+            ELSE
             ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
             ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
             '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
@@ -614,20 +616,19 @@ BEGIN
             '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
             '   END), 0) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
-            ' END '
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            END
           -- areaNormalized
           WHEN LOWER(normalization) LIKE 'area%' OR
               (normalization IS NULL AND numer_aggregate ILIKE 'sum')
-            THEN ' CASE ' ||
-            -- areaNormalized point-in-poly or user polygon is the same as OBS polygon
-            ' WHEN EVERY(ST_GeometryType(_geoms.geom) = ''ST_Point'') ' ||
-            '      OR EVERY(_geoms.geom::TEXT = ' || geom_tablename || '.' || geom_colname || '::TEXT)' ||
-            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
-            '      / (Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0)/1000000)) ' ||
+            THEN CASE
+            -- areaNormalized point-in-poly
+            WHEN $2 = 'ST_Point' THEN
+            ' cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
+            '      / (Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0)/1000000)) '
             -- areaNormalized polygon interpolation
             -- SUM (numer * (% OBS geom in user geom)) / area of big geom
-            ' ELSE ' ||
+            ELSE
             --' NULL END '
             ' SUM((' || numer_tablename || '.' || numer_colname || ') ' ||
             ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') THEN 1 ' ||
@@ -637,18 +638,17 @@ BEGIN
             '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(_geoms.geom), 0))' ||
             '   END / (Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0) / 1000000)) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
-            ' END '
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            END
           -- median/average measures with universe
           WHEN LOWER(numer_aggregate) IN ('median', 'average') AND
               denom_reltype ILIKE 'universe' AND
               (normalization IS NULL OR LOWER(normalization) LIKE 'pre%')
-            THEN ' CASE ' ||
-            -- predenominated point-in-poly or user polygon is the same as OBS- polygon
-            ' WHEN EVERY(ST_GeometryType(_geoms.geom) = ''ST_Point'') ' ||
-            '      OR EVERY(_geoms.geom::TEXT = ' || geom_tablename || '.' || geom_colname || '::TEXT)' ||
-            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
-            ' ELSE ' ||
+            THEN CASE
+            -- predenominated point-in-poly
+            WHEN $2 = 'ST_Point' THEN
+            ' cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') '
+            ELSE
             -- predenominated polygon interpolation weighted by universe
             -- SUM (numer * denom * (% user geom in OBS geom)) / SUM (denom * (% user geom in OBS geom))
             --     (10 * 1000 * 1) / (1000 * 1) = 10
@@ -670,17 +670,16 @@ BEGIN
             '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
             '   END), 0) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
-            'END '
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            END
           -- prenormalized for summable measures. point or summable only!
           WHEN numer_aggregate ILIKE 'sum' AND
               (normalization IS NULL OR LOWER(normalization) LIKE 'pre%')
-            THEN ' CASE ' ||
-            -- predenominated point-in-poly or user polygon is the same as OBS- polygon
-            ' WHEN EVERY(ST_GeometryType(_geoms.geom) = ''ST_Point'') ' ||
-            '      OR EVERY(_geoms.geom::TEXT = ' || geom_tablename || '.' || geom_colname || '::TEXT)' ||
-            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
-            ' ELSE ' ||
+            THEN CASE
+            -- predenominated point-in-poly
+            WHEN $2 = 'ST_Point' THEN
+            ' cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') '
+            ELSE
             -- predenominated polygon interpolation
             -- SUM (numer * (% user geom in OBS geom))
             ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
@@ -692,17 +691,17 @@ BEGIN
                             geom_tablename || '.' || geom_colname || ')) ' ||
             '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
             '   END) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) ' ||
-            'END '
+            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            END
           -- Everything else. Point only!
-          ELSE ' CASE ' ||
-            ' WHEN EVERY(ST_GeometryType(_geoms.geom) = ''ST_Point'') ' ||
-            '      OR EVERY(_geoms.geom::TEXT = ' || geom_tablename || '.' || geom_colname || '::TEXT)' ||
-            ' THEN cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') ' ||
-            ' ELSE cdb_observatory._OBS_RaiseNotice(''Cannot perform calculation over polygon for ' ||
-                numer_id || '/' || coalesce(denom_id, '') || '/' || geom_id || '/' || numer_timespan || ''')::Numeric ' ||
-            ' END '
-          END || ':: ' || numer_type
+          ELSE CASE
+            WHEN $2 = 'ST_Point' THEN
+            ' cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname || ') '
+            ELSE
+            ' cdb_observatory._OBS_RaiseNotice(''Cannot perform calculation over polygon for ' ||
+                numer_id || '/' || coalesce(denom_id, '') || '/' || geom_id || '/' || numer_timespan || ''')::Numeric '
+            END
+          END || '::' || numer_type
 
           -- categorical/text
         WHEN LOWER(numer_type) LIKE 'text' THEN
@@ -769,7 +768,7 @@ BEGIN
         ;
       $query$
     INTO colspecs, geomrefs, tables, obs_wheres, user_wheres
-    USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]);
+    USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]), geomtype;
 
     RETURN QUERY EXECUTE format($query$
       WITH _raw_geoms AS (SELECT
@@ -786,7 +785,9 @@ BEGIN
       GROUP BY _geoms.id %s
       ORDER BY _geoms.id
     $query$, colspecs, tables,
-             'WHERE ' || NULLIF(ARRAY_TO_STRING(ARRAY[obs_wheres, user_wheres], ' AND '), ''),
+             'WHERE ' || NULLIF(ARRAY_TO_STRING(ARRAY[
+                    Nullif(obs_wheres, ''), Nullif(user_wheres, '')
+                ], ' AND '), ''),
              CASE WHEN merge IS False THEN ', ' || geomrefs ELSE '' END)
     USING geomvals;
     RETURN;

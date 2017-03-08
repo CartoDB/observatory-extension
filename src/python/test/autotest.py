@@ -257,9 +257,10 @@ def test_get_measure_points(numer_ids, numer_aggregate, denom_reltype, section_t
 def test_get_measure_areas(numer_ids, numer_aggregate, denom_reltype, section_tags):
     if numer_aggregate.lower() not in ('sum', 'median', 'average'):
         return
-    if numer_aggregate.lower() in ('median', 'average') \
-                             and denom_reltype is not None \
-                             and denom_reltype.lower() != 'universe':
+    if numer_aggregate is None or \
+       (numer_aggregate.lower() in ('median', 'average') \
+                             and (denom_reltype is None \
+                                  or denom_reltype.lower() != 'universe')):
         return
     _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, default_area(numer_ids[0]))
 
@@ -290,12 +291,7 @@ def _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, geom
                geom=geom,
                params=json.dumps(params).replace(u"'", "''"))
     resp = query(q).fetchone()
-    #try:
     assert_is_not_none(resp, 'NULL returned for {}'.format(in_params))
-    #except:
-    #    #import pdb
-    #    #pdb.set_trace()
-    #    raise
     rawvals = resp[1]
     vals = [v['value'] for v in rawvals]
 

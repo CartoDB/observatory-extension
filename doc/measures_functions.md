@@ -322,7 +322,7 @@ obtained from ```OBS_GetMeta(extent, metadata)```.
 Name | Description
 ---- | -----------
 geomvals | An array of `geomval` elements, which are obtained by casting together a `Geometry` and a `Numeric`.  This should be obtained by using `ARRAY_AGG((the_geom, cartodb_id)::geomval)` from the CARTO table one wishes to obtain data for.
-metadata | A JSON array composed of metadata output objects from `OBS_GetMeta(extent, metadata)`.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
+metadata | A JSON array composed of metadata output objects from ```OBS_GetMeta(extent, metadata)```.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
 
 #### Returns
 

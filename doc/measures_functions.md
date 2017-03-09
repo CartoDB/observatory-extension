@@ -384,7 +384,7 @@ Update a table with two measurements at once, population density and household
 density.  The table should already have a Numeric column `pop_density` and
 `household_density`.
 
-```
+```SQL
 WITH meta AS (
   SELECT OBS_GetMeta(
     ST_SetSRID(ST_Extent(the_geom),4326),

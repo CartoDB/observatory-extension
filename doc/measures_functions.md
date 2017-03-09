@@ -322,7 +322,7 @@ obtained from ```OBS_GetMeta(extent, metadata)```.
 Name | Description
 ---- | -----------
 geomvals | An array of `geomval` elements, which are obtained by casting together a `Geometry` and a `Numeric`.  This should be obtained by using `ARRAY_AGG((the_geom, cartodb_id)::geomval)` from the CARTO table one wishes to obtain data for.
-metadata | A JSON array composed of metadata output objects from `OBS_GetMeta(extent, metadata)`.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
+metadata | A JSON array composed of metadata output objects from ```OBS_GetMeta(extent, metadata)```.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
 
 #### Returns
 
@@ -384,7 +384,7 @@ Update a table with two measurements at once, population density and household
 density.  The table should already have a Numeric column `pop_density` and
 `household_density`.
 
-```
+```SQL
 WITH meta AS (
   SELECT OBS_GetMeta(
     ST_SetSRID(ST_Extent(the_geom),4326),
@@ -409,7 +409,7 @@ WHERE cartodb_id = data.id
 The ```OBS_GetData(ids, metadata)``` function returns a measure and/or
 geometry corresponding to the `metadata` JSON array for each every id of
 the `ids` array. The metadata argument must be obtained from
-```OBS_GetMeta(extent, metadata)```.  When obtaining metadata, one must include
+`OBS_GetMeta(extent, metadata)`.  When obtaining metadata, one must include
 the `geom_id` corresponding to the boundary that the `ids` refer to.
 
 #### Arguments
@@ -417,7 +417,7 @@ the `geom_id` corresponding to the boundary that the `ids` refer to.
 Name | Description
 ---- | -----------
 ids | An array of `TEXT` elements.  This should be obtained by using `ARRAY_AGG(col_of_geom_refs)` from the CARTO table one wishes to obtain data for.
-metadata | A JSON array composed of metadata output objects from `OBS_GetMeta(extent, metadata)`.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
+metadata | A JSON array composed of metadata output objects from ```OBS_GetMeta(extent, metadata)```.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
 
 For this function to work, the `metadata` argument must include a `geom_id`
 that corresponds to the ids found in `col_of_geom_refs`.

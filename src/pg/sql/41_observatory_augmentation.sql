@@ -536,9 +536,11 @@ RETURNS TABLE (
 )
 AS $$
 DECLARE
-  colspecs TEXT;
+  geom_colspecs TEXT;
+  geom_tables TEXT;
   geomrefs TEXT;
-  tables TEXT;
+  data_colspecs TEXT;
+  data_tables TEXT;
   obs_wheres TEXT;
   user_wheres TEXT;
   geomtype TEXT;
@@ -579,7 +581,20 @@ BEGIN
           (unnest($1))->>'api_method' api_method,
           (unnest($1))->'api_args' api_args
         )
-        SELECT String_Agg(
+        SELECT
+        String_Agg(DISTINCT
+           'CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
+           '     THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)' ||
+           '     WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
+           '     THEN 1 ' ||
+           '     ELSE ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' ||
+                              geom_tablename || '.' || geom_colname || ')) / ' || 
+                          'Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
+           'END pct_' || geom_tablename ||
+           ', ' || geom_tablename || '.' || geom_colname || ' AS geom_' || geom_tablename
+        , ', ') AS geom_colspecs,
+        String_Agg(DISTINCT 'observatory.' || geom_tablename, ', ') AS geom_tables,
+        String_Agg(
         'JSON_Build_Object(' || CASE
           -- api-delivered values
           WHEN api_method IS NOT NULL THEN
@@ -601,22 +616,10 @@ BEGIN
             -- SUM (numer * (% OBS geom in user geom)) / SUM (denom * (% OBS geom in user geom))
             ELSE
             ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
-            '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
-            '         THEN 1 ' ||
-            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
-            '   END) / '
-            ' NULLIF(SUM(' || denom_tablename || '.' || denom_colname || ' ' ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
-            '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
-            '         THEN 1 ' ||
-            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
-            '   END), 0) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            ' * pct_' || geom_tablename ||
+            ' ) / NULLIF(SUM(' || denom_tablename || '.' || denom_colname || ' ' ||
+            '            * pct_' || geom_tablename || '), 0) ' ||
+            ' / (COUNT(*) / COUNT(distinct geomref_' || geom_tablename || ')) '
             END
           -- areaNormalized
           WHEN LOWER(normalization) LIKE 'area%' OR
@@ -625,20 +628,15 @@ BEGIN
             -- areaNormalized point-in-poly
             WHEN $2 = 'ST_Point' THEN
             ' cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
-            '      / (Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0)/1000000)) '
+            '      / (Nullif(ST_Area(geom_' || geom_tablename || '::Geography), 0)/1000000)) '
             -- areaNormalized polygon interpolation
             -- SUM (numer * (% OBS geom in user geom)) / area of big geom
             ELSE
             --' NULL END '
-            ' SUM((' || numer_tablename || '.' || numer_colname || ') ' ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') THEN 1 ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) THEN ' ||
-            '          ST_Area(' || geom_tablename || '.' || geom_colname || ') ' ||
-            '          / Nullif(ST_Area(_geoms.geom), 0) ' ||
-            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / Nullif(ST_Area(_geoms.geom), 0))' ||
-            '   END / (Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0) / 1000000)) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
+            ' * pct_' || geom_tablename ||
+            ' ) / (Nullif(ST_Area(cdb_observatory.FIRST(_procgeoms.geom)::Geography), 0) / 1000000) ' ||
+            ' / (COUNT(*) / COUNT(distinct geomref_' || geom_tablename || ')) '
             END
           -- median/average measures with universe
           WHEN LOWER(numer_aggregate) IN ('median', 'average') AND
@@ -655,22 +653,10 @@ BEGIN
             --     (10 * 1000 * 1 + 50 * 10 * 1) / (1000 + 10) = 10500 / 10000 = 10.5
             ' SUM(' || numer_tablename || '.' || numer_colname ||
             ' * ' || denom_tablename || '.' || denom_colname ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
-            '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
-            '         THEN 1 ' ||
-            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)) ' ||
-            '   END) ' ||
-            ' / Nullif(SUM(' || denom_tablename || '.' || denom_colname ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
-            '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
-            '         THEN 1 ' ||
-            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
-            '   END), 0) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            ' * pct_' || geom_tablename ||
+            ' ) / Nullif(SUM(' || denom_tablename || '.' || denom_colname ||
+            ' * pct_' || geom_tablename || '), 0) ' ||
+            ' / (COUNT(*) / COUNT(distinct geomref_' || geom_tablename || ')) '
             END
           -- prenormalized for summable measures. point or summable only!
           WHEN numer_aggregate ILIKE 'sum' AND
@@ -683,15 +669,8 @@ BEGIN
             -- predenominated polygon interpolation
             -- SUM (numer * (% user geom in OBS geom))
             ' SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
-            ' * CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
-            '         THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
-            '        WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
-            '         THEN 1 ' ||
-            '        ELSE (ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' ||
-                            geom_tablename || '.' || geom_colname || ')) ' ||
-            '         / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0))' ||
-            '   END) ' ||
-            ' / (COUNT(*) / COUNT(distinct ' || geom_tablename || '.' || geom_geomref_colname || ')) '
+            ' * pct_' || geom_tablename ||
+            ' ) / (COUNT(*) / COUNT(distinct geomref_' || geom_tablename || ')) '
             END
           -- Everything else. Point only!
           ELSE CASE
@@ -710,8 +689,8 @@ BEGIN
           -- geometry
         WHEN numer_id IS NULL THEN
           '''geomref'', ' || geom_tablename || '.' || geom_geomref_colname || ', ' ||
-          '''value'', ' || 'cdb_observatory.FIRST(' || geom_tablename ||
-              '.' || geom_colname || ')::TEXT'
+          '''value'', ' || 'cdb_observatory.FIRST(geom_' || geom_tablename ||
+              ')::TEXT'
           -- code below will return the intersection of the user's geom and the
           -- OBS geom
           --'''value'', ' || 'ST_Union(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename ||
@@ -725,8 +704,8 @@ BEGIN
         --
         -- api_method and geom_tablename are interchangeable since when an
         -- api_method is passed, geom_tablename is ignored
-        STRING_AGG(COALESCE(geom_tablename, api_method) ||
-          '.' || geom_geomref_colname, ', ') AS geomrefs,
+        String_Agg(DISTINCT COALESCE(geom_tablename, api_method) || '.' || geom_geomref_colname ||
+          ' AS geomref_' || geom_tablename, ', ') AS geomrefs,
 
           (SELECT String_Agg(DISTINCT CASE
               -- External API
@@ -739,19 +718,18 @@ BEGIN
             SELECT DISTINCT UNNEST(tablenames_ary) tablename FROM (
             SELECT ARRAY_AGG(numer_tablename) ||
                 ARRAY_AGG(denom_tablename) ||
-                ARRAY_AGG(geom_tablename) ||
                 ARRAY_AGG('cdb_observatory.' || api_method || '(_geoms.geom' || COALESCE(', ' ||
                       (SELECT STRING_AGG(REPLACE(val::text, '"', ''''), ', ')
                        FROM (SELECT json_array_elements(api_args) as val) as vals),
                     '') || ')')
               tablenames_ary
             ) tablenames_inner
-          ) tablenames_outer) tablenames,
+          ) tablenames_outer) data_tables,
 
           String_Agg(DISTINCT array_to_string(ARRAY[
             CASE WHEN numer_tablename != geom_tablename
                  THEN numer_tablename || '.' || numer_geomref_colname || ' = ' ||
-                      geom_tablename || '.' || geom_geomref_colname
+                      '_procgeoms.geomref_' || geom_tablename
                  ELSE NULL END,
             CASE WHEN numer_tablename != denom_tablename
                  THEN numer_tablename || '.' || numer_geomref_colname || ' = ' ||
@@ -767,7 +745,7 @@ BEGIN
         FROM _meta
         ;
       $query$
-    INTO colspecs, geomrefs, tables, obs_wheres, user_wheres
+    INTO geom_colspecs, geom_tables, data_colspecs, geomrefs, data_tables, obs_wheres, user_wheres
     USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]), geomtype;
 
     RETURN QUERY EXECUTE format($query$
@@ -778,16 +756,19 @@ BEGIN
         CASE WHEN (ST_NPoints(geom) > 500)
                THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
              ELSE geom END geom
-        FROM _raw_geoms)
-      SELECT _geoms.id::INT, Array_to_JSON(ARRAY[%s]::JSON[])
-      FROM _geoms, %s
+        FROM _raw_geoms),
+      _procgeoms AS (SELECT _geoms.id, _geoms.geom, %s, %s
+        FROM _geoms, %s
+        WHERE %s
+      )
+      SELECT _procgeoms.id::INT, Array_to_JSON(ARRAY[%s]::JSON[])
+      FROM _procgeoms, %s
            %s
-      GROUP BY _geoms.id %s
-      ORDER BY _geoms.id
-    $query$, colspecs, tables,
-             'WHERE ' || NULLIF(ARRAY_TO_STRING(ARRAY[
-                    Nullif(obs_wheres, ''), Nullif(user_wheres, '')
-                ], ' AND '), ''),
+      GROUP BY _procgeoms.id %s
+      ORDER BY _procgeoms.id
+    $query$, geomrefs, geom_colspecs, geom_tables, user_wheres,
+              data_colspecs, data_tables,
+             'WHERE ' || NULLIF(obs_wheres, ''),
              CASE WHEN merge IS False THEN ', ' || geomrefs ELSE '' END)
     USING geomvals;
     RETURN;

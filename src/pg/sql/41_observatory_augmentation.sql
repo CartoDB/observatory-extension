@@ -759,32 +759,6 @@ BEGIN
          geomrefs_noalias, data_tables, obs_wheres, user_wheres
     USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]), geomtype;
 
-    RAISE NOTICE '%', format($query$
-      WITH _raw_geoms AS (SELECT
-                     (UNNEST(%L)).val as id,
-                     (UNNEST(%L)).geom AS geom),
-      _geoms AS (SELECT id,
-        CASE WHEN (ST_NPoints(geom) > 500)
-               THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
-             ELSE geom END geom
-        FROM _raw_geoms),
-      _procgeoms AS (SELECT _geoms.id, _geoms.geom, %s %s
-        FROM _geoms %s
-        %s
-      )
-      SELECT _procgeoms.id::INT, Array_to_JSON(ARRAY[%s]::JSON[])
-      FROM _procgeoms %s
-           %s
-      GROUP BY _procgeoms.id %s
-      ORDER BY _procgeoms.id
-    $query$, geomvals, geomvals, geomrefs_alias,
-             ', ' ||  NullIf(geom_colspecs, ''),
-             ', ' ||  NullIf(geom_tables, ''),
-             'WHERE ' || NullIf( user_wheres, ''),
-              data_colspecs, ', ' || NullIf(data_tables, ''),
-             'WHERE ' || NULLIF(obs_wheres, ''),
-             CASE WHEN merge IS False THEN ', ' || geomrefs_noalias ELSE '' END);
-
     RETURN QUERY EXECUTE format($query$
       WITH _raw_geoms AS (SELECT
                      (UNNEST($1)).val as id,

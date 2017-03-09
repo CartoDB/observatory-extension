@@ -409,7 +409,7 @@ WHERE cartodb_id = data.id
 The ```OBS_GetData(ids, metadata)``` function returns a measure and/or
 geometry corresponding to the `metadata` JSON array for each every id of
 the `ids` array. The metadata argument must be obtained from
-```OBS_GetMeta(extent, metadata)```.  When obtaining metadata, one must include
+`OBS_GetMeta(extent, metadata)`.  When obtaining metadata, one must include
 the `geom_id` corresponding to the boundary that the `ids` refer to.
 
 #### Arguments

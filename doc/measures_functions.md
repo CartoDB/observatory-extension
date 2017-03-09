@@ -417,7 +417,7 @@ the `geom_id` corresponding to the boundary that the `ids` refer to.
 Name | Description
 ---- | -----------
 ids | An array of `TEXT` elements.  This should be obtained by using `ARRAY_AGG(col_of_geom_refs)` from the CARTO table one wishes to obtain data for.
-metadata | A JSON array composed of metadata output objects from `OBS_GetMeta(extent, metadata)`.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
+metadata | A JSON array composed of metadata output objects from ```OBS_GetMeta(extent, metadata)```.  The schema of the elements of the `metadata` JSON array corresponds to that of the output of ```OBS_GetMeta(extent, metadata)```, and this argument must be obtained from that function in order for the call to be valid.
 
 For this function to work, the `metadata` argument must include a `geom_id`
 that corresponds to the ids found in `col_of_geom_refs`.

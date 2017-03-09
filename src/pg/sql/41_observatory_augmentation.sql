@@ -722,7 +722,7 @@ BEGIN
             SELECT DISTINCT UNNEST(tablenames_ary) tablename FROM (
             SELECT ARRAY_AGG(numer_tablename) ||
                 ARRAY_AGG(denom_tablename) ||
-                ARRAY_AGG('cdb_observatory.' || api_method || '(_geoms.geom' || COALESCE(', ' ||
+                ARRAY_AGG('cdb_observatory.' || api_method || '(_procgeoms.geom' || COALESCE(', ' ||
                       (SELECT STRING_AGG(REPLACE(val::text, '"', ''''), ', ')
                        FROM (SELECT json_array_elements(api_args) as val) as vals),
                     '') || ')')
@@ -731,7 +731,7 @@ BEGIN
           ) tablenames_outer) data_tables,
 
           String_Agg(DISTINCT array_to_string(ARRAY[
-            CASE WHEN numer_tablename != geom_tablename
+            CASE WHEN numer_tablename IS NOT NULL AND geom_tablename IS NOT NULL
                  THEN numer_tablename || '.' || numer_geomref_colname || ' = ' ||
                       '_procgeoms.geomref_' || geom_tablename
                  ELSE NULL END,
@@ -740,8 +740,8 @@ BEGIN
                       denom_tablename || '.' || denom_geomref_colname
                  ELSE NULL END
             ], ' AND '),
-           ' AND ') FILTER (WHERE numer_tablename != geom_tablename
-                               OR numer_tablename != denom_tablename) AS obs_wheres,
+           ' AND ') FILTER (WHERE numer_tablename != denom_tablename OR
+                            (numer_tablename IS NOT NULL AND geom_tablename IS NOT NULL)) AS obs_wheres,
 
           String_Agg(DISTINCT 'ST_Intersects(' || geom_tablename || '.' ||  geom_colname
              || ', _geoms.geom)', ' AND ')
@@ -762,7 +762,7 @@ BEGIN
                THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
              ELSE geom END geom
         FROM _raw_geoms),
-      _procgeoms AS (SELECT _geoms.id, _geoms.geom, %s %s
+      _procgeoms AS (SELECT _geoms.id, _geoms.geom %s %s
         FROM _geoms %s
         %s
       )
@@ -771,9 +771,9 @@ BEGIN
            %s
       GROUP BY _procgeoms.id %s
       ORDER BY _procgeoms.id
-    $query$, geomrefs_alias,
-             ', ' ||  NullIf(geom_colspecs, ''),
-             ', ' ||  NullIf(geom_tables, ''),
+    $query$, ', ' || NullIf(geomrefs_alias, ''),
+             ', ' || NullIf(geom_colspecs, ''),
+             ', ' || NullIf(geom_tables, ''),
              'WHERE ' || NullIf( user_wheres, ''),
               data_colspecs, ', ' || NullIf(data_tables, ''),
              'WHERE ' || NULLIF(obs_wheres, ''),

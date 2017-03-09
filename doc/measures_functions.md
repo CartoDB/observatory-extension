@@ -204,7 +204,7 @@ metadata)``` or ```OBS_GetData(ids, metadata)```.  It is not possible to pass
 metadata to those functions if it is not processed by ```OBS_GetMeta(extent,
 metadata)``` first.
 
-`OBS_GetMeta` makes it possible to automatically select appropriate timespans
+```OBS_GetMeta``` makes it possible to automatically select appropriate timespans
 and boundaries for the measurement you want.
 
 #### Arguments

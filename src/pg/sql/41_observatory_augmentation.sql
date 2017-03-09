@@ -584,6 +584,11 @@ BEGIN
         )
         SELECT
         String_Agg(DISTINCT
+           CASE
+           WHEN $2 = 'ST_Point' THEN
+           '1 AS pct_' || geom_tablename ||
+           ', ' || geom_tablename || '.' || geom_colname || ' AS geom_' || geom_tablename
+           ELSE
            'CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
            '     THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)' ||
            '     WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
@@ -593,6 +598,7 @@ BEGIN
                           'Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
            'END pct_' || geom_tablename ||
            ', ' || geom_tablename || '.' || geom_colname || ' AS geom_' || geom_tablename
+           END
         , ', ') AS geom_colspecs,
         String_Agg(DISTINCT 'observatory.' || geom_tablename, ', ') AS geom_tables,
         String_Agg(

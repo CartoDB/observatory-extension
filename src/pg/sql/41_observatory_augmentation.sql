@@ -538,7 +538,8 @@ AS $$
 DECLARE
   geom_colspecs TEXT;
   geom_tables TEXT;
-  geomrefs TEXT;
+  geomrefs_alias TEXT;
+  geomrefs_noalias TEXT;
   data_colspecs TEXT;
   data_tables TEXT;
   obs_wheres TEXT;
@@ -688,7 +689,7 @@ BEGIN
 
           -- geometry
         WHEN numer_id IS NULL THEN
-          '''geomref'', ' || geom_tablename || '.' || geom_geomref_colname || ', ' ||
+          '''geomref'', geomref_' || geom_tablename || ', ' ||
           '''value'', ' || 'cdb_observatory.FIRST(geom_' || geom_tablename ||
               ')::TEXT'
           -- code below will return the intersection of the user's geom and the
@@ -705,7 +706,10 @@ BEGIN
         -- api_method and geom_tablename are interchangeable since when an
         -- api_method is passed, geom_tablename is ignored
         String_Agg(DISTINCT COALESCE(geom_tablename, api_method) || '.' || geom_geomref_colname ||
-          ' AS geomref_' || geom_tablename, ', ') AS geomrefs,
+          ' AS geomref_' || COALESCE(geom_tablename, api_method), ', ') AS geomrefs_alias,
+
+        String_Agg(DISTINCT 'geomref_' || COALESCE(geom_tablename, api_method)
+          , ', ') AS geomrefs_noalias,
 
           (SELECT String_Agg(DISTINCT CASE
               -- External API
@@ -745,7 +749,8 @@ BEGIN
         FROM _meta
         ;
       $query$
-    INTO geom_colspecs, geom_tables, data_colspecs, geomrefs, data_tables, obs_wheres, user_wheres
+    INTO geom_colspecs, geom_tables, data_colspecs, geomrefs_alias,
+         geomrefs_noalias, data_tables, obs_wheres, user_wheres
     USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]), geomtype;
 
     RETURN QUERY EXECUTE format($query$
@@ -757,19 +762,22 @@ BEGIN
                THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
              ELSE geom END geom
         FROM _raw_geoms),
-      _procgeoms AS (SELECT _geoms.id, _geoms.geom, %s, %s
-        FROM _geoms, %s
-        WHERE %s
+      _procgeoms AS (SELECT _geoms.id, _geoms.geom, %s %s
+        FROM _geoms %s
+        %s
       )
       SELECT _procgeoms.id::INT, Array_to_JSON(ARRAY[%s]::JSON[])
-      FROM _procgeoms, %s
+      FROM _procgeoms %s
            %s
       GROUP BY _procgeoms.id %s
       ORDER BY _procgeoms.id
-    $query$, geomrefs, geom_colspecs, geom_tables, user_wheres,
-              data_colspecs, data_tables,
+    $query$, geomrefs_alias,
+             ', ' ||  NullIf(geom_colspecs, ''),
+             ', ' ||  NullIf(geom_tables, ''),
+             'WHERE ' || NullIf( user_wheres, ''),
+              data_colspecs, ', ' || NullIf(data_tables, ''),
              'WHERE ' || NULLIF(obs_wheres, ''),
-             CASE WHEN merge IS False THEN ', ' || geomrefs ELSE '' END)
+             CASE WHEN merge IS False THEN ', ' || geomrefs_noalias ELSE '' END)
     USING geomvals;
     RETURN;
 END;

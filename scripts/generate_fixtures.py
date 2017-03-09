@@ -214,6 +214,7 @@ FIXTURES = [
     ('us.census.tiger.fullname', 'us.census.tiger.pointlm_geom', '2016'),
     ('us.census.tiger.fullname', 'us.census.tiger.prisecroads_geom', '2016'),
     ('us.census.tiger.name', 'us.census.tiger.county', '2015'),
+    ('us.census.tiger.name', 'us.census.tiger.county_clipped', '2015'),
     ('us.census.tiger.name', 'us.census.tiger.block_group', '2015'),
 ]
 
@@ -358,7 +359,10 @@ def main():
             dump('*', tablename, 'WHERE geom && ST_MakeEnvelope(-74,40.69,-73.9,40.72, 4326)')
             continue
         elif 'whosonfirst' in table_id:
-            where = '(\'85632785\',\'85633051\',\'85633111\',\'85633147\',\'85633253\',\'85633267\')'
+            where = "('85632785','85633051','85633111','85633147','85633253','85633267')"
+            compare = 'IN'
+        elif 'county' in table_id and 'tiger' in table_id:
+            where = "('48061', '36047')"
             compare = 'IN'
         else:
             where = '\'36047%\''

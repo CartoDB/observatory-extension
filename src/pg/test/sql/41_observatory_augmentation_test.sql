@@ -765,26 +765,36 @@ SELECT id = '36047048500' AS id,
 FROM data;
 
 -- OBS_GetData with an API + geomvals, no args
-SELECT ARRAY['us.census.tiger.census_tract'] <@ array_agg(data->0->>'value') AS OBS_GetData_API_geomvals_no_args
+SELECT (SELECT array_agg(json_array_elements::text) @> array['"us.census.tiger.census_tract"']
+        FROM json_array_elements(data->0->'value'))
+AS OBS_GetData_API_geomvals_no_args
 FROM cdb_observatory.obs_getdata(array[(cdb_observatory._testarea(), 1)::geomval],
   '[{"numer_type": "text", "numer_colname": "boundary_id", "api_method": "obs_getavailableboundaries"}]');
 
 -- OBS_GetData with an API + geomvals, args, numeric
-SELECT json_typeof(data->0->'value') = 'number' AS OBS_GetData_API_geomvals_args_numer_return
+SELECT json_typeof(data->0->'value') = 'array' ary_type,
+       json_typeof(data->0->'value'->0) = 'number'
+AS OBS_GetData_API_geomvals_args_numer_return
 FROM cdb_observatory.obs_getdata(array[(cdb_observatory._testarea(), 1)::geomval],
     '[{"numer_type": "numeric", "numer_colname": "obs_getmeasure", "api_method": "obs_getmeasure", "api_args": ["us.census.acs.B01003001"]}]');
 
 -- OBS_GetData with an API + geomvals, args, text
-SELECT json_typeof(data->0->'value') = 'string' AS OBS_GetData_API_geomvals_args_string_return
+SELECT json_typeof(data->0->'value') = 'array' ary_type,
+       json_typeof(data->0->'value'->0) = 'string'
+AS OBS_GetData_API_geomvals_args_string_return
 FROM cdb_observatory.obs_getdata(array[(cdb_observatory._testarea(), 1)::geomval],
     '[{"numer_type": "text", "numer_colname": "obs_getcategory", "api_method": "obs_getcategory", "api_args": ["us.census.spielman_singleton_segments.X55"]}]');
 
 -- OBS_GetData with an API + geomrefs, args, numeric
-SELECT json_typeof(data->0->'value') = 'number' AS OBS_GetData_API_geomrefs_args_numer_return
+SELECT json_typeof(data->0->'value') = 'array' ary_type,
+       json_typeof(data->0->'value'->0) = 'number'
+AS OBS_GetData_API_geomrefs_args_numer_return
 FROM cdb_observatory.obs_getdata(array['36047076200'],
       '[{"numer_type": "numeric", "numer_colname": "obs_getmeasurebyid", "api_method": "obs_getmeasurebyid", "api_args": ["us.census.acs.B01003001", "us.census.tiger.census_tract"]}]');
 
 -- OBS_GetData with an API + geomrefs, args, text
-SELECT json_typeof(data->0->'value') = 'string' AS OBS_GetData_API_geomrefs_args_string_return
+SELECT json_typeof(data->0->'value') = 'array' ary_type,
+       json_typeof(data->0->'value'->0) = 'string'
+AS OBS_GetData_API_geomrefs_args_string_return
 FROM cdb_observatory.obs_getdata(array['36047'],
       '[{"numer_type": "text", "numer_colname": "obs_getboundarybyid", "api_method": "obs_getboundarybyid", "api_args": ["us.census.tiger.county"]}]');

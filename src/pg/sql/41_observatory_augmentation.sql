@@ -584,20 +584,29 @@ BEGIN
         )
         SELECT
         String_Agg(DISTINCT
-           CASE
-           WHEN numer_id IS NULL THEN ''
-           WHEN $2 = 'ST_Point' THEN
-           '1 AS pct_' || geom_tablename || ', '
-           ELSE
-           'CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
-           '     THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)' ||
-           '     WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
-           '     THEN 1 ' ||
-           '     ELSE ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' ||
-                              geom_tablename || '.' || geom_colname || ')) / ' || 
-                          'Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
-           'END pct_' || geom_tablename || ', '
-           END || geom_tablename || '.' || geom_colname || ' AS geom_' || geom_tablename
+          CASE
+          -- pass-through geom if user is requesting it only
+          WHEN numer_id IS NULL AND api_method IS NULL THEN
+            geom_tablename || '.' || geom_colname || ' AS geom_' || geom_tablename
+          WHEN cdb_observatory.isnumeric(numer_type) AND api_method IS NULL THEN
+            -- for numeric points with area normalization, include areas of underlying geoms
+            CASE
+            WHEN $2 = 'ST_Point' AND (LOWER(normalization) LIKE 'area%' OR
+               (normalization IS NULL AND numer_aggregate ILIKE 'sum')) THEN
+              ' Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0)/1000000 ' ||
+              ' AS area_' || geom_tablename
+            -- for numeric areas, include more complex calcs
+            ELSE
+            'CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
+            '     THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)' ||
+            '     WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
+            '     THEN 1 ' ||
+            '     ELSE ST_Area(cdb_observatory.safe_intersection(_geoms.geom, ' ||
+                               geom_tablename || '.' || geom_colname || ')) / ' ||
+                           'Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
+            'END pct_' || geom_tablename
+            END
+          ELSE NULL END
         , ', ') AS geom_colspecs,
         String_Agg(DISTINCT 'observatory.' || geom_tablename, ', ') AS geom_tables,
         String_Agg(
@@ -634,7 +643,7 @@ BEGIN
             -- areaNormalized point-in-poly
             WHEN $2 = 'ST_Point' THEN
             ' cdb_observatory.FIRST(' || numer_tablename || '.' || numer_colname ||
-            '      / (Nullif(ST_Area(geom_' || geom_tablename || '::Geography), 0)/1000000)) '
+            '      / area_' || geom_tablename || ')'
             -- areaNormalized polygon interpolation
             -- SUM (numer * (% OBS geom in user geom)) / area of big geom
             ELSE

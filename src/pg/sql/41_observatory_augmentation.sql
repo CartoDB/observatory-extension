@@ -546,7 +546,7 @@ DECLARE
   user_wheres TEXT;
   geomtype TEXT;
 BEGIN
-    IF params IS NULL OR JSON_ARRAY_LENGTH(params) = 0 THEN
+    IF params IS NULL OR JSON_ARRAY_LENGTH(params) = 0 OR ARRAY_LENGTH(geomvals, 1) IS NULL THEN
       RETURN QUERY EXECUTE $query$ SELECT NULL::INT, NULL::JSON LIMIT 0 $query$;
       RETURN;
     END IF;
@@ -556,31 +556,32 @@ BEGIN
     EXECUTE
       $query$
         WITH _meta AS (SELECT
-          generate_series(1, array_length($1, 1)) colid,
-          (unnest($1))->>'id' id,
-          (unnest($1))->>'numer_id' numer_id,
-          (unnest($1))->>'numer_aggregate' numer_aggregate,
-          (unnest($1))->>'numer_colname' numer_colname,
-          (unnest($1))->>'numer_geomref_colname' numer_geomref_colname,
-          (unnest($1))->>'numer_tablename' numer_tablename,
-          (unnest($1))->>'numer_type' numer_type,
-          (unnest($1))->>'denom_id' denom_id,
-          (unnest($1))->>'denom_aggregate' denom_aggregate,
-          (unnest($1))->>'denom_colname' denom_colname,
-          (unnest($1))->>'denom_geomref_colname' denom_geomref_colname,
-          (unnest($1))->>'denom_tablename' denom_tablename,
-          (unnest($1))->>'denom_type' denom_type,
-          (unnest($1))->>'denom_reltype' denom_reltype,
-          (unnest($1))->>'geom_id' geom_id,
-          (unnest($1))->>'geom_colname' geom_colname,
-          (unnest($1))->>'geom_geomref_colname' geom_geomref_colname,
-          (unnest($1))->>'geom_tablename' geom_tablename,
-          (unnest($1))->>'geom_type' geom_type,
-          (unnest($1))->>'numer_timespan' numer_timespan,
-          (unnest($1))->>'geom_timespan' geom_timespan,
-          (unnest($1))->>'normalization' normalization,
-          (unnest($1))->>'api_method' api_method,
-          (unnest($1))->'api_args' api_args
+          row_number() over () colid,
+          meta->>'id' id,
+          meta->>'numer_id' numer_id,
+          meta->>'numer_aggregate' numer_aggregate,
+          meta->>'numer_colname' numer_colname,
+          meta->>'numer_geomref_colname' numer_geomref_colname,
+          meta->>'numer_tablename' numer_tablename,
+          meta->>'numer_type' numer_type,
+          meta->>'denom_id' denom_id,
+          meta->>'denom_aggregate' denom_aggregate,
+          meta->>'denom_colname' denom_colname,
+          meta->>'denom_geomref_colname' denom_geomref_colname,
+          meta->>'denom_tablename' denom_tablename,
+          meta->>'denom_type' denom_type,
+          meta->>'denom_reltype' denom_reltype,
+          meta->>'geom_id' geom_id,
+          meta->>'geom_colname' geom_colname,
+          meta->>'geom_geomref_colname' geom_geomref_colname,
+          meta->>'geom_tablename' geom_tablename,
+          meta->>'geom_type' geom_type,
+          meta->>'numer_timespan' numer_timespan,
+          meta->>'geom_timespan' geom_timespan,
+          meta->>'normalization' normalization,
+          meta->>'api_method' api_method,
+          meta->'api_args' api_args
+          FROM UNNEST($1) AS meta
         )
         SELECT
         String_Agg(DISTINCT
@@ -768,10 +769,11 @@ BEGIN
          geomrefs_noalias, data_tables, obs_wheres, user_wheres
     USING (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]), geomtype;
 
-    RETURN QUERY EXECUTE format($query$
+
+    RAISE NOTICE '%', format($query$
       WITH _raw_geoms AS (SELECT
-                     (UNNEST($1)).val as id,
-                     (UNNEST($1)).geom AS geom),
+                     %L::integer as id,
+                     %L::geometry AS geom),
       _geoms AS (SELECT id,
         CASE WHEN (ST_NPoints(geom) > 500)
                THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
@@ -786,7 +788,38 @@ BEGIN
            %s
       GROUP BY _procgeoms.id %s
       ORDER BY _procgeoms.id
-    $query$, ', ' || NullIf(geomrefs_alias, ''),
+    $query$, geomvals[1].val, geomvals[1].geom, ', ' || NullIf(geomrefs_alias, ''),
+             ', ' || NullIf(geom_colspecs, ''),
+             ', ' || NullIf(geom_tables, ''),
+             'WHERE ' || NullIf( user_wheres, ''),
+              data_colspecs, ', ' || NullIf(data_tables, ''),
+             'WHERE ' || NULLIF(obs_wheres, ''),
+             CASE WHEN merge IS False THEN ', ' || geomrefs_noalias ELSE '' END);
+
+
+
+    RETURN QUERY EXECUTE format($query$
+      WITH _raw_geoms AS (%s),
+      _geoms AS (SELECT id,
+        CASE WHEN (ST_NPoints(geom) > 500)
+               THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
+             ELSE geom END geom
+        FROM _raw_geoms),
+      _procgeoms AS (SELECT _geoms.id, _geoms.geom %s %s
+        FROM _geoms %s
+        %s
+      )
+      SELECT _procgeoms.id::INT, Array_to_JSON(ARRAY[%s]::JSON[])
+      FROM _procgeoms %s
+           %s
+      GROUP BY _procgeoms.id %s
+      ORDER BY _procgeoms.id
+    $query$, CASE WHEN ARRAY_LENGTH(geomvals, 1) = 1 THEN
+               ' SELECT $1[1].val as id, $1[1].geom as geom '
+             ELSE
+               ' SELECT val as id, geom FROM UNNEST($1) '
+             END,
+             ', ' || NullIf(geomrefs_alias, ''),
              ', ' || NullIf(geom_colspecs, ''),
              ', ' || NullIf(geom_tables, ''),
              'WHERE ' || NullIf( user_wheres, ''),

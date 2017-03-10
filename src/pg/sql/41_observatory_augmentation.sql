@@ -96,7 +96,7 @@ BEGIN
   USING geom, meta
   RETURN;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeta(
@@ -260,7 +260,7 @@ BEGIN
     ;
   RETURN result;
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql STABLE;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasure(
@@ -339,7 +339,7 @@ BEGIN
 
   RETURN result;
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql STABLE;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeasureById(
   geom_ref TEXT,
@@ -374,7 +374,7 @@ BEGIN
 
   RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 
 -- GetData that obtains data from array of geomrefs
@@ -521,7 +521,7 @@ BEGIN
     USING geomrefs;
     RETURN;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 
 -- GetData that obtains data from array of (geom, id) geomvals.
@@ -796,7 +796,7 @@ BEGIN
     USING geomvals;
     RETURN;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetCategory(
@@ -854,7 +854,7 @@ BEGIN
 
   RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusMeasure(
@@ -888,7 +888,7 @@ BEGIN
   USING geom, measure_id, normalize, boundary_id, time_span;
   RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetUSCensusCategory(
@@ -924,7 +924,7 @@ BEGIN
 
   RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetPopulation(
   geom geometry(Geometry, 4326),
@@ -950,7 +950,7 @@ BEGIN
 
   RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetSegmentSnapshot(
@@ -1039,4 +1039,4 @@ BEGIN
 
   RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;

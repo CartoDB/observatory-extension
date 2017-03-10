@@ -596,7 +596,7 @@ BEGIN
               ' Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '::Geography), 0)/1000000 ' ||
               ' AS area_' || geom_tablename
             -- for numeric areas, include more complex calcs
-            ELSE
+            WHEN $2 != 'ST_Point' THEN
             'CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ') ' ||
             '     THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)' ||
             '     WHEN ST_Within(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) ' ||
@@ -605,6 +605,7 @@ BEGIN
                                geom_tablename || '.' || geom_colname || ')) / ' ||
                            'Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0) ' ||
             'END pct_' || geom_tablename
+            ELSE NULL
             END
           ELSE NULL END
         , ', ') AS geom_colspecs,

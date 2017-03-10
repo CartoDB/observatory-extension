@@ -1,3 +1,9 @@
+1.3.4 (2017-03-10)
+
+__Bugfixes__
+
+* Remove erroneously committed `RAISE NOTICE` in `OBS_GetData`
+
 1.3.3 (2017-03-10)
 
 __Bugfixes__

@@ -228,20 +228,6 @@ def default_area(column_id):
 #    assert_is_not_none(rows[0][0])
 
 
-#@parameterized(MEASURE_COLUMNS)
-#def test_get_measure_areas(numer_ids, numer_aggregate, section_tags):
-#    if numer_aggregate.lower() not in ('sum', 'median', 'average'):
-#        return
-#    resp = query('''
-#                 SELECT * FROM {schema}OBS_GetMeasure({area}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            area=default_area(column_id)))
-#    rows = resp.fetchall()
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
-
 def grouped_measure_columns():
     for numer_ids, numer_aggregate, denom_reltype, section_tags in MEASURE_COLUMNS:
         for colgroup in grouper(numer_ids, 50):

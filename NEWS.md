@@ -1,3 +1,25 @@
+1.3.3 (2017-03-10)
+
+__Bugfixes__
+
+* Resolve divide-by-zero errors in cases where the intersection of an
+  Observatory geometry and user geometry has 0 area
+  ([#265](https://github.com/CartoDB/observatory-extension/pull/265))
+* Run MakeValid on geometry's when intersecting, if necessary
+  ([#268](https://github.com/CartoDB/observatory-extension/pull/268))
+
+__Improvements__
+
+* Add performance tests for multiple columns in `OBS_GetData`
+* Major performance boost for `autotest.py` through the use of multi-column
+  `OBS_GetData` instead of separate `OBS_GetMeasure` calls for every single
+  measurement.
+  ([#268](https://github.com/CartoDB/observatory-extension/pull/268))
+* Major performance boost for `OBS_GetData` in cases where multiple columns are
+  requested.  Previously, each additional column would result in a linear
+  slowdown, even if geometries could be reused.
+  ([#267](https://github.com/CartoDB/observatory-extension/pull/267))
+
 1.3.2 (2017-03-02)
 
 __Bugfixes__

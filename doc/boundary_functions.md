@@ -4,7 +4,7 @@ Use the following functions to retrieve [Boundary](https://carto.com/docs/carto-
 
 You can [access](https://carto.com/docs/carto-engine/data/accessing) boundaries through CARTO Builder. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](http://docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
-## OBS_GetBoundariesByGeometry(polygon geometry, geometry_id text)
+## OBS_GetBoundariesByGeometry(geom geometry, geometry_id text)
 
 The ```OBS_GetBoundariesByGeometry(geometry, geometry_id)``` method returns a set of boundary geometries that intersect a supplied geometry. This can be used to find all boundaries that are within or overlap a bounding box. You have the ability to choose whether to retrieve all boundaries that intersect your supplied bounding box or only those that fall entirely inside of your bounding box.
 
@@ -12,7 +12,7 @@ The ```OBS_GetBoundariesByGeometry(geometry, geometry_id)``` method returns a se
 
 Name |Description
 --- | ---
-polygon | a bounding box or other WGS84 geometry
+geom | a WGS84 geometry
 geometry_id | a string identifier for a boundary geometry
 timespan (optional) | year(s) to request from ('NULL' (default) gives most recent)
 overlap_type (optional) | one of '[intersects](http://postgis.net/docs/manual-2.2/ST_Intersects.html)' (default), '[contains](http://postgis.net/docs/manual-2.2/ST_Contains.html)', or '[within](http://postgis.net/docs/manual-2.2/ST_Within.html)'.
@@ -26,7 +26,7 @@ Column Name | Description
 the_geom | a boundary geometry (e.g., US Census tract boundaries)
 geom_refs | a string identifier for the geometry (e.g., geoids of US Census tracts)
 
-If geometries are not found for the requested `polygon`, `geometry_id`, `timespan`, or `overlap_type`, then null values are returned.
+If geometries are not found for the requested `geom`, `geometry_id`, `timespan`, or `overlap_type`, then null values are returned.
 
 #### Example
 
@@ -44,7 +44,6 @@ FROM OBS_GetBoundariesByGeometry(
 
 #### Errors
 
-* If a geometry other than a point is passed as the first argument, an error is thrown: `Invalid geometry type (ST_Polygon), expecting 'ST_Point'`
 * If an `overlap_type` other than the valid ones listed above is entered, then an error is thrown
 
 ## OBS_GetPointsByGeometry(polygon geometry, geometry_id text)

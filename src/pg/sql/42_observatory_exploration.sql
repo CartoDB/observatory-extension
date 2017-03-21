@@ -418,7 +418,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   bounds Geometry(Geometry, 4326) DEFAULT NULL,
   filter_geom_ids TEXT[] DEFAULT NULL,
-  desired_num_geoms INTEGER DEFAULT NULL
+  desired_num_geoms INTEGER DEFAULT NULL,
+  desired_area NUMERIC DEFAULT NULL
 ) RETURNS TABLE (
   score NUMERIC,
   numtiles BIGINT,
@@ -430,6 +431,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetGeometryScores(
   estnumgeoms NUMERIC,
   meanmediansize NUMERIC
 ) AS $$
+DECLARE
+  num_geoms_multiplier Numeric;
 BEGIN
   IF desired_num_geoms IS NULL THEN
     desired_num_geoms := 3000;
@@ -440,6 +443,18 @@ BEGIN
   IF ST_Npoints(bounds) > 10000 THEN
     bounds := ST_Envelope(bounds);
   END IF;
+  IF desired_area IS NULL THEN
+    desired_area := ST_Area(bounds);
+  END IF;
+
+  -- In case of points, desired_area will be 0.  We still want an accurate
+  -- estimate of numgeoms in that case.
+  IF desired_area = 0 THEN
+    num_geoms_multiplier := 1;
+  ELSE
+    num_geoms_multiplier := Coalesce(desired_area / Nullif(ST_Area(bounds), 0), 1);
+  END IF;
+
   RETURN QUERY
   EXECUTE $string$
     WITH clipped_geom AS (
@@ -453,13 +468,11 @@ BEGIN
     ), clipped_geom_countagg AS (
       SELECT column_id, table_id
         , BOOL_AND(ST_BandIsNoData(clipped_tile, 1)) nodata
-        , ST_CountAgg(clipped_tile, 1, False)::Numeric pixels -- -10
       FROM clipped_geom
       GROUP BY column_id, table_id
     ), clipped_geom_reagg AS (
       SELECT COUNT(*)::BIGINT cnt, a.column_id, a.table_id,
              cdb_observatory.FIRST(nodata) first_nodata,
-             cdb_observatory.FIRST(pixels) first_pixel,
              cdb_observatory.FIRST(tile) first_tile,
              (ST_SummaryStatsAgg(clipped_tile, 1, False)).sum::Numeric sum_geoms, -- ND
              (ST_SummaryStatsAgg(clipped_tile, 2, False)).mean::Numeric / 255 mean_fill --ND
@@ -474,9 +487,8 @@ BEGIN
         , (CASE WHEN first_nodata IS FALSE
                 THEN sum_geoms
                 ELSE COALESCE(ST_Value(first_tile, 1, ST_PointOnSurface($1)), 0)
-                  * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0))
-                    * first_pixel) -- -20
-          END)::Numeric
+                  * (ST_Area($1) / ST_Area(ST_PixelAsPolygon(first_tile, 0, 0)))
+          END)::Numeric * $4
         AS numgeoms
         , (CASE WHEN first_nodata IS FALSE
                 THEN mean_fill
@@ -490,7 +502,7 @@ BEGIN
       ((100.0 / (1+abs(log(0.0001 + $3) - log(0.0001 + numgeoms::Numeric)))) * percentfill)::Numeric
       AS score, *
       FROM final
-  $string$ USING bounds, filter_geom_ids, desired_num_geoms;
+  $string$ USING bounds, filter_geom_ids, desired_num_geoms, num_geoms_multiplier;
   RETURN;
 END
 $$ LANGUAGE plpgsql IMMUTABLE;

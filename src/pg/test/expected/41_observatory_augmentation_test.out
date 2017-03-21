@@ -261,3 +261,31 @@ t|t
 ary_type|obs_getdata_api_geomrefs_args_string_return
 t|t
 (1 row)
+setseed
+
+(1 row)
+bg_sample|bg_max_error|bg_avg_error|bg_min_error
+1|t|t|t
+2|t|t|t
+3|t|t|t
+5|t|t|t
+10|t|t|t
+25|t|t|t
+50|t|t|t
+100|t|t|t
+2085|t|t|t
+(9 rows)
+tract_sample|tract_max_error|tract_avg_error|tract_min_error
+1|t|t|t
+2|t|t|t
+3|t|t|t
+5|t|t|t
+10|t|t|t
+25|t|t|t
+50|t|t|t
+100|t|t|t
+761|t|t|t
+(9 rows)
+no_bg_point_error
+t
+(1 row)

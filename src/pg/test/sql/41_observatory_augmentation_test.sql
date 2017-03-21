@@ -798,3 +798,146 @@ SELECT json_typeof(data->0->'value') = 'array' ary_type,
 AS OBS_GetData_API_geomrefs_args_string_return
 FROM cdb_observatory.obs_getdata(array['36047'],
       '[{"numer_type": "text", "numer_colname": "obs_getboundarybyid", "api_method": "obs_getboundarybyid", "api_args": ["us.census.tiger.county"]}]');
+
+-- Ensure consistent results below.
+select setseed(0);
+
+-- Check that random assortment of block groups in Brooklyn return accurate data
+WITH _geoms AS (
+  SELECT
+    (data->0->>'value')::geometry the_geom,
+    data->0->>'geomref' geom_ref,
+    (data->1->>'value')::numeric total_pop
+  FROM cdb_observatory.OBS_GetData(
+    array[(st_buffer(cdb_observatory._testpoint(), 0.2), 1)::geomval],
+    (SELECT cdb_observatory.OBS_GetMeta(ST_MakeEnvelope(-179, 89, 179, -89, 4326),
+      '[{"geom_id": "us.census.tiger.block_group"},
+        {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.block_group", "normalization": "predenom"}]')),
+    FALSE
+  )
+  WHERE data->0->>'geomref' LIKE '36047%'
+  ORDER BY RANDOM()
+), geoms AS (
+  SELECT *, row_number() OVER () cartodb_id FROM _geoms
+), samples AS (
+  SELECT COUNT(*) cnt, unnest(ARRAY[1, 2, 3, 5, 10, 25, 50, 100, COUNT(*)]) sample FROM geoms
+), filtered AS (
+  SELECT * FROM geoms, samples WHERE cartodb_id % (cnt / sample) = 0
+), summary AS (
+  SELECT sample, ST_SetSRID(ST_Extent(the_geom), 4326) extent,
+    COUNT(*)::INT cnt,
+    ARRAY_AGG((the_geom, cartodb_id)::geomval) geomvals,
+    SUM(ST_Area(the_geom))::Numeric sumarea
+  FROM filtered
+  GROUP BY sample
+), meta AS (
+  SELECT sample, cdb_observatory.OBS_GetMeta(extent,
+    ('[{"numer_id": "us.census.acs.B01003001", "normalization": "predenom", "target_area": ' || sumarea || '}]')::JSON,
+    1, 1, cnt) meta
+  FROM summary
+  GROUP BY sample, extent, cnt, sumarea
+), results AS (
+  SELECT summary.sample, id, meta->0->>'geom_id' geom_id, (data->0->>'value')::Numeric as val
+  FROM summary, meta, LATERAL cdb_observatory.OBS_GetData(geomvals, meta) data
+  WHERE summary.sample = meta.sample
+) SELECT sample bg_sample
+ , MAX(100 * abs((geoms.total_pop - val) / Coalesce(NullIf(total_pop, 0), NULL)))::Numeric(10, 2) < 10 bg_max_error
+ , AVG(100 * abs((geoms.total_pop - val) / Coalesce(NullIf(total_pop, 0), NULL)))::Numeric(10, 2) < 10 bg_avg_error
+ , MIN(100 * abs((geoms.total_pop - val) / Coalesce(NullIf(total_pop, 0), NULL)))::Numeric(10, 2) < 10 bg_min_error
+FROM geoms, results
+WHERE cartodb_id = id
+GROUP BY sample
+ORDER BY sample
+;
+
+-- Check that random assortment of tracts in Brooklyn return accurate data
+WITH _geoms AS (
+  SELECT
+    (data->0->>'value')::geometry the_geom,
+    data->0->>'geomref' geom_ref,
+    (data->1->>'value')::numeric total_pop
+  FROM cdb_observatory.OBS_GetData(
+    array[(st_buffer(cdb_observatory._testpoint(), 0.2), 1)::geomval],
+    (SELECT cdb_observatory.OBS_GetMeta(ST_MakeEnvelope(-179, 89, 179, -89, 4326),
+      '[{"geom_id": "us.census.tiger.census_tract"},
+        {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.census_tract", "normalization": "predenom"}]')),
+    FALSE
+  )
+  WHERE data->0->>'geomref' LIKE '36047%'
+  ORDER BY RANDOM()
+), geoms AS (
+  SELECT *, row_number() OVER () cartodb_id FROM _geoms
+), samples AS (
+  SELECT COUNT(*) cnt, unnest(ARRAY[1, 2, 3, 5, 10, 25, 50, 100, COUNT(*)]) sample FROM geoms
+), filtered AS (
+  SELECT * FROM geoms, samples WHERE cartodb_id % (cnt / sample) = 0
+), summary AS (
+  SELECT sample, ST_SetSRID(ST_Extent(the_geom), 4326) extent,
+    COUNT(*)::INT cnt,
+    ARRAY_AGG((the_geom, cartodb_id)::geomval) geomvals,
+    SUM(ST_Area(the_geom))::Numeric sumarea
+  FROM filtered
+  GROUP BY sample
+), meta AS (
+  SELECT sample, cdb_observatory.OBS_GetMeta(extent,
+    ('[{"numer_id": "us.census.acs.B01003001", "normalization": "predenom", "target_area": ' || sumarea || '}]')::JSON,
+    1, 1, cnt) meta
+  FROM summary
+  GROUP BY sample, extent, cnt, sumarea
+), results AS (
+  SELECT summary.sample, id, meta->0->>'geom_id' geom_id, (data->0->>'value')::Numeric as val
+  FROM summary, meta, LATERAL cdb_observatory.OBS_GetData(geomvals, meta) data
+  WHERE summary.sample = meta.sample
+) SELECT sample tract_sample
+ , MAX(100 * abs((geoms.total_pop - val) / Coalesce(NullIf(total_pop, 0), NULL)))::Numeric(10, 2) < 10 tract_max_error
+ , AVG(100 * abs((geoms.total_pop - val) / Coalesce(NullIf(total_pop, 0), NULL)))::Numeric(10, 2) < 10 tract_avg_error
+ , MIN(100 * abs((geoms.total_pop - val) / Coalesce(NullIf(total_pop, 0), NULL)))::Numeric(10, 2) < 10 tract_min_error
+FROM geoms, results
+WHERE cartodb_id = id
+GROUP BY sample
+ORDER BY sample
+;
+
+-- Check that random assortment of block group points in Brooklyn return accurate data
+WITH _geoms AS (
+  SELECT
+    ST_PointOnSurface((data->0->>'value')::geometry) the_geom,
+    data->0->>'geomref' geom_ref,
+    (data->1->>'value')::numeric total_pop
+  FROM cdb_observatory.OBS_GetData(
+    array[(st_buffer(cdb_observatory._testpoint(), 0.2), 1)::geomval],
+    (SELECT cdb_observatory.OBS_GetMeta(ST_MakeEnvelope(-179, 89, 179, -89, 4326),
+      '[{"geom_id": "us.census.tiger.block_group"},
+        {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.block_group", "normalization": "predenom"}]')),
+    FALSE
+  )
+  WHERE data->0->>'geomref' LIKE '36047%'
+), geoms AS (
+  SELECT *, row_number() OVER () cartodb_id FROM _geoms
+), samples AS (
+  SELECT COUNT(*) cnt, unnest(ARRAY[1, 2, 3, 5, 10, 25, 50, 100, COUNT(*)]) sample FROM geoms
+), filtered AS (
+  SELECT * FROM geoms, samples WHERE cartodb_id % (cnt / sample) = 0
+), summary AS (
+  SELECT sample, ST_SetSRID(ST_Extent(the_geom), 4326) extent,
+    COUNT(*)::INT cnt,
+    ARRAY_AGG((the_geom, cartodb_id)::geomval) geomvals,
+    SUM(ST_Area(the_geom))::Numeric sumarea
+  FROM filtered
+  GROUP BY sample
+), meta AS (
+  SELECT sample, cdb_observatory.OBS_GetMeta(extent,
+    ('[{"numer_id": "us.census.acs.B01003001", "normalization": "predenom", "target_area": ' || sumarea || '}]')::JSON,
+    1, 1, cnt) meta
+  FROM summary
+  GROUP BY sample, extent, cnt, sumarea
+), results AS (
+  SELECT summary.sample, id, meta->0->>'geom_id' geom_id, (data->0->>'value')::Numeric as val
+  FROM summary, meta, LATERAL cdb_observatory.OBS_GetData(geomvals, meta) data
+  WHERE summary.sample = meta.sample
+) SELECT
+ BOOL_AND(abs((geoms.total_pop - val) /
+      Coalesce(NullIf(total_pop, 0), 1)) = 0) is True no_bg_point_error
+FROM geoms, results
+WHERE cartodb_id = id
+;

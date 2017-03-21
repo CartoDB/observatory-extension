@@ -126,9 +126,23 @@ BEGIN
   geom_filters := (SELECT Array_Agg(val) FILTER (WHERE val IS NOT NULL) FROM (SELECT (JSON_Array_Elements(params))->>'geom_id' val) bar);
   meta_filter_clause := '(m.numer_id = ANY ($6) OR m.geom_id = ANY ($7))';
 
-  scores_clause := 'SELECT *
-                    FROM cdb_observatory._OBS_GetGeometryScores($1,
-                    (SELECT Array_Agg(geom_id) FROM meta), $2) scores ';
+  scores_clause := ' agg_geoms AS (
+    SELECT target_geoms, target_area, ARRAY_AGG(geom_id) geom_ids
+    FROM meta
+    GROUP BY target_geoms, target_area
+  ), scores AS (
+    SELECT target_geoms, target_area,
+      CASE target_area
+      -- point-specific, just order by numgeoms instead of score
+      WHEN 0 THEN scores.numgeoms
+      -- has some area, use proper scoring
+      ELSE scores.score
+      END AS score,
+           scores.numgeoms, scores.table_id, scores.column_id
+    FROM agg_geoms,
+         LATERAL cdb_observatory._OBS_GetGeometryScores($1,
+            geom_ids, COALESCE(target_geoms, $2), target_area) scores
+  ) ';
 
   IF JSON_Array_Length(params) = 1 THEN
     IF numer_filters IS NULL AND geom_filters IS NOT NULL THEN
@@ -142,9 +156,11 @@ BEGIN
     END IF;
 
     IF geom_filters IS NOT NULL AND numer_filters IS NOT NULL THEN
-      scores_clause := 'SELECT 1 score, null, geom_tid table_id, geom_id column_id,
-                               null, null, null, null, null, null
-                        FROM meta ';
+      scores_clause := 'scores AS (
+        SELECT NULL::INTEGER target_geoms, NULL::Numeric target_area,
+        1 score, null, geom_tid table_id, geom_id column_id,
+        NULL::Integer numgeoms
+        FROM meta) ';
     END IF;
   END IF;
 
@@ -156,7 +172,11 @@ BEGIN
         (unnest($3))->>'geom_id' geom_id,
         (unnest($3))->>'numer_timespan' numer_timespan,
         (unnest($3))->>'geom_timespan' geom_timespan,
-        (unnest($3))->>'normalization' normalization
+        (unnest($3))->>'normalization' normalization,
+        (unnest($3))->>'max_timespan_rank' max_timespan_rank,
+        (unnest($3))->>'max_score_rank' max_score_rank,
+        ((unnest($3))->>'target_geoms')::INTEGER target_geoms,
+        ((unnest($3))->>'target_area')::Numeric target_area
     ), meta AS (SELECT
         id,
         f.numer_id,
@@ -166,6 +186,8 @@ BEGIN
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_tablename END numer_tablename,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_type END numer_type,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_name END numer_name,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_description END numer_description,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_t_description END numer_t_description,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE m.numer_timespan END numer_timespan,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE m.denom_id END denom_id,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_aggregate END denom_aggregate,
@@ -173,6 +195,8 @@ BEGIN
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_geomref_colname END denom_geomref_colname,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_tablename END denom_tablename,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_name END denom_name,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_description END denom_description,
+        CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_t_description END denom_t_description,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_type END denom_type,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE denom_reltype END denom_reltype,
         m.geom_id,
@@ -182,8 +206,14 @@ BEGIN
         geom_geomref_colname,
         geom_tablename,
         geom_name,
+        geom_description,
+        geom_t_description,
         geom_type,
-        normalization
+        normalization,
+        max_timespan_rank,
+        max_score_rank,
+        target_geoms,
+        target_area
       FROM observatory.obs_meta m JOIN _filters f
       ON CASE WHEN f.numer_id IS NULL THEN m.geom_id ELSE m.numer_id END =
          CASE WHEN f.numer_id IS NULL THEN f.geom_id ELSE f.numer_id END
@@ -194,9 +224,8 @@ BEGIN
         AND (m.geom_id = f.geom_id OR COALESCE(f.geom_id, '') = '')
         AND (m.geom_timespan = f.geom_timespan OR COALESCE(f.geom_timespan, '') = '')
         AND (m.numer_timespan = f.numer_timespan OR COALESCE(f.numer_timespan, '') = '')
-    ), scores AS (
-        %s
-    ), groups AS (SELECT
+    ), %s
+    , groups AS (SELECT
         id,
         scores.score,
         numer_timespan,
@@ -213,39 +242,46 @@ BEGIN
           'numer_geomref_colname', cdb_observatory.FIRST(meta.numer_geomref_colname),
           'numer_tablename', cdb_observatory.FIRST(meta.numer_tablename),
           'numer_type', cdb_observatory.FIRST(meta.numer_type),
-          --'numer_description', cdb_observatory.FIRST(meta.numer_description),
-          --'numer_t_description', cdb_observatory.FIRST(meta.numer_t_description),
+          'numer_description', cdb_observatory.FIRST(meta.numer_description),
+          'numer_t_description', cdb_observatory.FIRST(meta.numer_t_description),
           'denom_aggregate', cdb_observatory.FIRST(meta.denom_aggregate),
           'denom_colname', cdb_observatory.FIRST(denom_colname),
           'denom_geomref_colname', cdb_observatory.FIRST(denom_geomref_colname),
           'denom_tablename', cdb_observatory.FIRST(denom_tablename),
           'denom_type', cdb_observatory.FIRST(meta.denom_type),
           'denom_reltype', cdb_observatory.FIRST(meta.denom_reltype),
-          --'denom_description', cdb_observatory.FIRST(meta.denom_description),
-          --'denom_t_description', cdb_observatory.FIRST(meta.denom_t_description),
+          'denom_description', cdb_observatory.FIRST(meta.denom_description),
+          'denom_t_description', cdb_observatory.FIRST(meta.denom_t_description),
           'geom_colname', cdb_observatory.FIRST(geom_colname),
           'geom_geomref_colname', cdb_observatory.FIRST(geom_geomref_colname),
           'geom_tablename', cdb_observatory.FIRST(geom_tablename),
           'geom_type', cdb_observatory.FIRST(meta.geom_type),
           'geom_timespan', cdb_observatory.FIRST(meta.geom_timespan),
-          --'geom_description', cdb_observatory.FIRST(meta.geom_description),
-          --'geom_t_description', cdb_observatory.FIRST(meta.geom_t_description),
+          'geom_description', cdb_observatory.FIRST(meta.geom_description),
+          'geom_t_description', cdb_observatory.FIRST(meta.geom_t_description),
           'numer_timespan', cdb_observatory.FIRST(numer_timespan),
           'numer_name', cdb_observatory.FIRST(numer_name),
           'denom_name', cdb_observatory.FIRST(denom_name),
           'geom_name', cdb_observatory.FIRST(geom_name),
           'normalization', cdb_observatory.FIRST(normalization),
+          'max_timespan_rank', cdb_observatory.FIRST(max_timespan_rank),
+          'max_score_rank', cdb_observatory.FIRST(max_score_rank),
+          'target_geoms', cdb_observatory.FIRST(scores.target_geoms),
+          'target_area', cdb_observatory.FIRST(scores.target_area),
+          'num_geoms', cdb_observatory.FIRST(scores.numgeoms),
           'denom_id', denom_id,
           'geom_id', meta.geom_id
         ) metadata
       FROM meta, scores
       WHERE meta.geom_id = scores.column_id
         AND meta.geom_tid = scores.table_id
+        AND COALESCE(meta.target_geoms, 0) = COALESCE(scores.target_geoms, 0)
+        AND COALESCE(meta.target_area, 0) = COALESCE(scores.target_area, 0)
       GROUP BY id, score, numer_id, denom_id, geom_id, numer_timespan
     ) SELECT JSON_AGG(metadata ORDER BY id)
       FROM groups
-      WHERE timespan_rank <= $4
-        AND score_rank <= $5
+      WHERE timespan_rank <= Coalesce((metadata->>'max_timespan_rank')::INTEGER, $4)
+        AND score_rank <= Coalesce((metadata->>'max_score_rank')::INTEGER, $5)
   $string$, meta_filter_clause, scores_clause)
   INTO result
   USING
@@ -772,8 +808,8 @@ BEGIN
     RETURN QUERY EXECUTE format($query$
       WITH _raw_geoms AS (%s),
       _geoms AS (SELECT id,
-        CASE WHEN (ST_NPoints(geom) > 500)
-               THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.0001)), 3)
+        CASE WHEN (ST_NPoints(geom) > 1000)
+               THEN ST_CollectionExtract(ST_MakeValid(ST_SimplifyVW(geom, 0.00001)), 3)
              ELSE geom END geom
         FROM _raw_geoms),
       _procgeoms AS (SELECT _geoms.id, _geoms.geom %s %s

@@ -227,6 +227,8 @@ normalization | The desired normalization.  One of 'area', 'prenormalized', or '
 denom_id | Identifier for a desired normalization column in case `normalization` is 'denominated'.  Will be automatically assigned if necessary.  Ignored if this metadata object specifies a geometry.
 numer_timespan | The desired timespan for the measurement.  Defaults to most recent timespan available if left unspecified.
 geom_timespan | The desired timespan for the geometry.  Defaults to timespan matching numer_timespan if left unspecified.
+target_area | Instead of aiming to have `num_target_geoms` in the area of the geometry passed as `extent`, fill this area.  Unit is square degrees WGS84.  Set this to `0` if you want to use the smallest source geometry for this element of metadata, for example if you're passing in points.
+target_geoms | Override global `num_target_geoms` for this element of metadata. 
 
 #### Returns
 

@@ -159,21 +159,36 @@ t
 _obs_geometryscores_2500km_buffer
 t
 (1 row)
-_obs_geometryscores_numgeoms_500m_buffer
-t
-(1 row)
-_obs_geometryscores_numgeoms_5km_buffer
-t
-(1 row)
-_obs_geometryscores_numgeoms_50km_buffer
-t
-(1 row)
-_obs_geometryscores_numgeoms_500km_buffer
-t
-(1 row)
-_obs_geometryscores_numgeoms_2500km_buffer
-t
-(1 row)
+column_id|_obs_geometryscores_numgeoms_500m_buffer
+us.census.tiger.block_group|2
+us.census.tiger.census_tract|1
+us.census.tiger.zcta5|0
+us.census.tiger.county|0
+(4 rows)
+column_id|_obs_geometryscores_numgeoms_5km_buffer
+us.census.tiger.block_group|244
+us.census.tiger.census_tract|78
+us.census.tiger.zcta5|9
+us.census.tiger.county|0
+(4 rows)
+column_id|_obs_geometryscores_numgeoms_50km_buffer
+us.census.tiger.block_group|10817
+us.census.tiger.census_tract|3396
+us.census.tiger.zcta5|484
+us.census.tiger.county|11
+(4 rows)
+column_id|_obs_geometryscores_numgeoms_500km_buffer
+us.census.tiger.block_group|48567
+us.census.tiger.census_tract|15823
+us.census.tiger.zcta5|6466
+us.census.tiger.county|295
+(4 rows)
+column_id|_obs_geometryscores_numgeoms_2500km_buffer
+us.census.tiger.block_group|165852
+us.census.tiger.census_tract|55283
+us.census.tiger.zcta5|27046
+us.census.tiger.county|2551
+(4 rows)
 _obs_geometryscores_500km_buffer_50_geoms
 t
 (1 row)
@@ -184,6 +199,12 @@ _obs_geometryscores_500km_buffer_2500_geoms
 t
 (1 row)
 _obs_geometryscores_500km_buffer_25000_geoms
+t
+(1 row)
+testarea_uses_tract
+t
+(1 row)
+points_use_bg
 t
 (1 row)
 _total_pop_in_legacy_builder_metadata

@@ -1,3 +1,11 @@
+1.4.0 (2017-03-21)
+
+__API Changes__
+
+* Allow for override of `target_area` and `target_geoms` in `OBS_GetMeta`
+  ([#276](https://github.com/CartoDB/observatory-extension/pull/265)).  This
+  allows the interface to work with points and sparse areas much btter.
+
 1.3.5 (2017-03-15)
 
 No changes.  Artifact to allow for data update.

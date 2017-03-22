@@ -5,6 +5,11 @@ __API Changes__
 * Allow for override of `target_area` and `target_geoms` in `OBS_GetMeta`
   ([#276](https://github.com/CartoDB/observatory-extension/pull/265)).  This
   allows the interface to work with points and sparse areas much btter.
+* Allow for override of `max_timespan_rank` and `max_score_rank` on an
+  item-by-item basis for metadata.
+* `numer_description`, `geom_description`, `denom_description`,
+  `numer_t_description`, `denom_t_description` and `geom_t_description` now
+  returned as part of `OBS_GetMeta`.
 
 1.3.5 (2017-03-15)
 

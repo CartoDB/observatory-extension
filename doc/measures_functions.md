@@ -196,7 +196,7 @@ UPDATE tablename
 SET segmentation = OBS_GetCategory(the_geom, 'us.census.spielman_singleton_segments.X55')
 ```
 
-## OBS_GetMeta(extent geometry, metadata json, max_timespan_rank, max_boundary_score_rank, num_target_geoms)
+## OBS_GetMeta(extent geometry, metadata json, max_timespan_rank, max_score_rank, target_geoms)
 
 The ```OBS_GetMeta(extent, metadata)``` function returns a completed Data
 Observatory metadata JSON Object for use in ```OBS_GetData(geomvals,
@@ -215,7 +215,7 @@ extent | A geometry of the extent of the input geometries
 metadata | A JSON array composed of metadata input objects.  Each indicates one desired measure for an output column, and optionally additional parameters about that column
 max_timespan_rank | How many historical time periods to include.  Defaults to 1
 max_boundary_score_rank | How many alternative boundary levels to include.  Defaults to 1
-num_target_geoms | Target number of geometries.  Boundaries with close to this many objects within `extent` will be ranked highest. 
+target_geoms | Target number of geometries.  Boundaries with close to this many objects within `extent` will be ranked highest. 
 
 The schema of the metadata input objects are as follows:
 
@@ -227,8 +227,10 @@ normalization | The desired normalization.  One of 'area', 'prenormalized', or '
 denom_id | Identifier for a desired normalization column in case `normalization` is 'denominated'.  Will be automatically assigned if necessary.  Ignored if this metadata object specifies a geometry.
 numer_timespan | The desired timespan for the measurement.  Defaults to most recent timespan available if left unspecified.
 geom_timespan | The desired timespan for the geometry.  Defaults to timespan matching numer_timespan if left unspecified.
-target_area | Instead of aiming to have `num_target_geoms` in the area of the geometry passed as `extent`, fill this area.  Unit is square degrees WGS84.  Set this to `0` if you want to use the smallest source geometry for this element of metadata, for example if you're passing in points.
-target_geoms | Override global `num_target_geoms` for this element of metadata. 
+target_area | Instead of aiming to have `target_geoms` in the area of the geometry passed as `extent`, fill this area.  Unit is square degrees WGS84.  Set this to `0` if you want to use the smallest source geometry for this element of metadata, for example if you're passing in points.
+target_geoms | Override global `target_geoms` for this element of metadata
+max_timespan_rank | Override global `max_timespan_rank` for this element of metadata
+max_score_rank | Override global `max_score_rank` for this element of metadata
 
 #### Returns
 
@@ -247,6 +249,8 @@ Metadata Output Key | Description
 numer_id | Identifier for desired measurement
 numer_timespan | Timespan that will be used of the desired measurement
 numer_name | Human-readable name of desired measure
+numer_description | Long human-readable description of the desired measure
+numer_t_description | Further information about the source table
 numer_type | PostgreSQL/PostGIS type of desired measure
 numer_colname | Internal identifier for column name
 numer_tablename | Internal identifier for table
@@ -254,6 +258,8 @@ numer_geomref_colname | Internal identifier for geomref column name
 denom_id | Identifier for desired normalization
 denom_timespan | Timespan that will be used of the desired normalization
 denom_name | Human-readable name of desired measure's normalization
+denom_description | Long human-readable description of the desired measure's normalization
+denom_t_description | Further information about the source table
 denom_type | PostgreSQL/PostGIS type of desired measure's normalization
 denom_colname | Internal identifier for normalization column name
 denom_tablename | Internal identifier for normalization table
@@ -261,12 +267,14 @@ denom_geomref_colname | Internal identifier for normalization geomref column nam
 geom_id | Identifier for desired boundary geometry
 geom_timespan | Timespan that will be used of the desired boundary geometry
 geom_name | Human-readable name of desired boundary geometry
+geom_description | Long human-readable description of the desired boundary geometry
+geom_t_description | Further information about the source table
 geom_type | PostgreSQL/PostGIS type of desired boundary geometry
 geom_colname | Internal identifier for boundary geometry column name
 geom_tablename | Internal identifier for boundary geometry table
 geom_geomref_colname | Internal identifier for boundary geometry ref column name
 timespan_rank | Ranking of this measurement by time, most recent is 1, second most recent 2, etc.
-score | The score of this measurement's boundary compared to the `extent` and `num_target_geoms` passed in.  Between 0 and 100.
+score | The score of this measurement's boundary compared to the `extent` and `target_geoms` passed in.  Between 0 and 100.
 score_rank | The ranking of this measurement's boundary, highest ranked is 1, second is 2, etc.
 numer_aggregate | The aggregate type of the numerator, either `sum`, `average`, `median`, or blank
 denom_aggregate | The aggregate type of the denominator, either `sum`, `average`, `median`, or blank

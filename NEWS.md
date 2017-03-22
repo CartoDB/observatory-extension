@@ -11,6 +11,13 @@ __API Changes__
   `numer_t_description`, `denom_t_description` and `geom_t_description` now
   returned as part of `OBS_GetMeta`.
 
+__Improvements__
+
+* Reduced amount of simplification done on input geometries (from 0.0001 above
+  500 points to 0.00001 above 1000 points).
+* Added tests to confirm that accurate results are returned from automatic
+  boundary selection
+
 1.3.5 (2017-03-15)
 
 No changes.  Artifact to allow for data update.

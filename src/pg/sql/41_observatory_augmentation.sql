@@ -180,6 +180,14 @@ BEGIN
     ), meta AS (SELECT
         id,
         f.numer_id,
+        LOWER(TRIM(BOTH '_' FROM regexp_replace(CASE WHEN f.numer_id IS NOT NULL
+          THEN CASE
+            WHEN normalization ILIKE 'area%%' THEN numer_colname || ' per sq km'
+            WHEN normalization ILIKE 'denom%%' THEN numer_colname || ' rate'
+            ELSE numer_colname
+          END || ' ' || m.numer_timespan
+          ELSE geom_name || ' ' || m.geom_timespan
+        END, '[^a-zA-Z0-9]+', '_', 'g'))) suggested_name,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_aggregate END numer_aggregate,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_colname END numer_colname,
         CASE WHEN f.numer_id IS NULL THEN NULL ELSE numer_geomref_colname END numer_geomref_colname,
@@ -237,6 +245,7 @@ BEGIN
           'timespan_rank', dense_rank() OVER (PARTITION BY id ORDER BY numer_timespan DESC),
           'score_rank', dense_rank() OVER (PARTITION BY id ORDER BY score DESC),
           'score', scores.score,
+          'suggested_name', cdb_observatory.FIRST(meta.suggested_name),
           'numer_aggregate', cdb_observatory.FIRST(meta.numer_aggregate),
           'numer_colname', cdb_observatory.FIRST(meta.numer_colname),
           'numer_geomref_colname', cdb_observatory.FIRST(meta.numer_geomref_colname),

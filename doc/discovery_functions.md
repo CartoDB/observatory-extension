@@ -327,9 +327,12 @@ timespan_id | Text | The ID of the timespan
 timespan_name | Text | A human readable name for the timespan
 timespan_description | Text | Ignored
 timespan_weight | Numeric | Ignored
+timespan_aggregate | Text | Ignored
 timespan_license | Text | Ignored
 timespan_source | Text | Ignored
-timespan_aggregate | Text | Ignored
+timespan_type | Text | Ignored
+timespan_extra | JSONB | Ignored
+timespan_tags | JSONB | Ignored
 valid_numer | Boolean | True if the `numer_id` argument is a valid numerator for this timespan, False otherwise
 valid_denom | Boolean | True if the `timespan` argument is a valid timespan for this timespan, False otherwise
 valid_geom | Boolean | True if the `geom_id` argument is a valid geometry for this timespan, False otherwise

@@ -289,6 +289,11 @@ FROM cdb_observatory.OBS_GetAvailableGeometries(
 ) WHERE valid_timespan = True)
 AS _obs_getavailablegeometries_bg_not_1996;
 
+SELECT 'subsection/tags.boundary' IN (SELECT (Jsonb_Each(geom_tags)).key
+FROM cdb_observatory.OBS_GetAvailableGeometries(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)
+)) AS _obs_getavailablegeometries_has_boundary_tag;
+
 --
 -- OBS_GetAvailableTimespans tests
 --

@@ -120,6 +120,9 @@ t
 _obs_getavailablegeometries_bg_not_1996
 t
 (1 row)
+_obs_getavailablegeometries_has_boundary_tag
+t
+(1 row)
 _obs_getavailabletimespans_2010_2014_in_all
 t
 (1 row)

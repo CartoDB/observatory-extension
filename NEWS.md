@@ -1,9 +1,22 @@
+1.5.0 (2017-04-24)
+
+__API Changes__
+
+* Add `suggested_name` to `OBS_GetMeta` responses
+  ([#281](https://github.com/CartoDB/observatory-extension/pull/281))
+* Add `geom_type`, `geom_extra`, and `geom_tags` to
+  `OBS_GetAvailableGeometries`.  This brings it up to spec with existing docs.
+  ([#282](https://github.com/CartoDB/observatory-extension/pull/282))
+* Add `timespan_type`, `timespan_extra`, and `timespan_tags` to
+  `OBS_GetAvailableTimespans` for consistency.
+  ([#282](https://github.com/CartoDB/observatory-extension/pull/282))
+
 1.4.0 (2017-03-21)
 
 __API Changes__
 
 * Allow for override of `target_area` and `target_geoms` in `OBS_GetMeta`
-  ([#276](https://github.com/CartoDB/observatory-extension/pull/265)).  This
+  ([#276](https://github.com/CartoDB/observatory-extension/pull/276)).  This
   allows the interface to work with points and sparse areas much btter.
 * Allow for override of `max_timespan_rank` and `max_score_rank` on an
   item-by-item basis for metadata.

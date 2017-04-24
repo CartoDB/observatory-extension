@@ -398,6 +398,21 @@ SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
   '[{"numer_id": "us.census.acs.B01001002", "denom_id": "us.census.acs.B01001002", "geom_id": "us.census.tiger.census_tract"}]') IS NULL
 AS obs_getmeta_conflicting_metadata;
 
+-- OBS_GetMeta provides suggested name for simple meta request
+SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001"}]'
+)->0->>'suggested_name' = 'total_pop_2011_2015' obs_getmeta_suggested_name;
+
+-- OBS_GetMeta provides suggested name for simple meta request with area norm
+SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "area"}]'
+)->0->>'suggested_name' = 'total_pop_per_sq_km_2011_2015' obs_getmeta_suggested_name_area;
+
+-- OBS_GetMeta provides suggested name for simple meta request with denom
+SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01001002", "normalization": "denom"}]'
+)->0->>'suggested_name' = 'male_pop_rate_2011_2015' obs_getmeta_suggested_name_denom;
+
 -- OBS_GetData/OBS_GetMeta by id with empty list/null
 WITH data AS (SELECT * FROM cdb_observatory.OBS_GetData(ARRAY[]::TEXT[], null))
 SELECT ARRAY_AGG(data) IS NULL AS obs_getdata_geomval_empty_null FROM data;

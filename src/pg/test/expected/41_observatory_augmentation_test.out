@@ -150,6 +150,15 @@ t|t|t|t|t|t|t|t|t|t|t|t|t|t|t
 obs_getmeta_conflicting_metadata
 t
 (1 row)
+obs_getmeta_suggested_name
+t
+(1 row)
+obs_getmeta_suggested_name_area
+t
+(1 row)
+obs_getmeta_suggested_name_denom
+t
+(1 row)
 obs_getdata_geomval_empty_null
 t
 (1 row)

@@ -246,6 +246,7 @@ fail.
 
 Metadata Output Key | Description
 --- | -----------
+suggested_name | A suggested column name for adding this to an existing table
 numer_id | Identifier for desired measurement
 numer_timespan | Timespan that will be used of the desired measurement
 numer_name | Human-readable name of desired measure

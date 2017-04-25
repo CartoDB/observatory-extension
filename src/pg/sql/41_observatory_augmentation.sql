@@ -102,8 +102,8 @@ $$ LANGUAGE plpgsql STABLE;
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMeta(
   geom geometry(Geometry, 4326),
   params JSON,
-  max_timespan_rank INTEGER DEFAULT NULL, -- cutoff for timespan ranks when there's ambiguity
-  max_score_rank INTEGER DEFAULT NULL, -- cutoff for geom ranks when there's ambiguity
+  num_timespan_options INTEGER DEFAULT NULL, -- how many timespan options to show
+  num_score_options INTEGER DEFAULT NULL, -- how many score options to show
   target_geoms INTEGER DEFAULT NULL
 )
 RETURNS JSON
@@ -115,11 +115,11 @@ DECLARE
   scores_clause TEXT;
   result JSON;
 BEGIN
-  IF max_timespan_rank IS NULL THEN
-    max_timespan_rank := 1;
+  IF num_timespan_options IS NULL THEN
+    num_timespan_options := 1;
   END IF;
-  IF max_score_rank IS NULL THEN
-    max_score_rank := 1;
+  IF num_score_options IS NULL THEN
+    num_score_options := 1;
   END IF;
 
   numer_filters := (SELECT Array_Agg(val) FILTER (WHERE val IS NOT NULL) FROM (SELECT (JSON_Array_Elements(params))->>'numer_id' val) foo);
@@ -244,6 +244,10 @@ BEGIN
           'numer_id', numer_id,
           'timespan_rank', dense_rank() OVER (PARTITION BY id ORDER BY numer_timespan DESC),
           'score_rank', dense_rank() OVER (PARTITION BY id ORDER BY score DESC),
+          'timespan_rownum', row_number() over
+            (PARTITION BY id, score ORDER BY numer_timespan DESC, Coalesce(denom_id, '')),
+          'score_rownum', row_number() over
+            (PARTITION BY id, numer_timespan ORDER BY score DESC, Coalesce(denom_id, '')),
           'score', scores.score,
           'suggested_name', cdb_observatory.FIRST(meta.suggested_name),
           'numer_aggregate', cdb_observatory.FIRST(meta.numer_aggregate),
@@ -289,8 +293,10 @@ BEGIN
       GROUP BY id, score, numer_id, denom_id, geom_id, numer_timespan
     ) SELECT JSON_AGG(metadata ORDER BY id)
       FROM groups
-      WHERE timespan_rank <= Coalesce((metadata->>'max_timespan_rank')::INTEGER, $4)
-        AND score_rank <= Coalesce((metadata->>'max_score_rank')::INTEGER, $5)
+      WHERE timespan_rank <= Coalesce((metadata->>'max_timespan_rank')::INTEGER, 'infinity'::FLOAT)
+        AND score_rank <= Coalesce((metadata->>'max_score_rank')::INTEGER, 1)
+        AND (metadata->>'timespan_rownum')::INTEGER <= $4
+        AND (metadata->>'score_rownum')::INTEGER <= $5
   $string$, meta_filter_clause, scores_clause)
   INTO result
   USING
@@ -300,8 +306,8 @@ BEGIN
     END,
     target_geoms,
     (SELECT ARRAY(SELECT json_array_elements_text(params))::json[]),
-    max_timespan_rank,
-    max_score_rank, numer_filters, geom_filters
+    num_timespan_options,
+    num_score_options, numer_filters, geom_filters
     ;
   RETURN result;
 END;

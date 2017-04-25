@@ -213,8 +213,8 @@ Name | Description
 ---- | -----------
 extent | A geometry of the extent of the input geometries
 metadata | A JSON array composed of metadata input objects.  Each indicates one desired measure for an output column, and optionally additional parameters about that column
-max_timespan_rank | How many historical time periods to include.  Defaults to 1
-max_boundary_score_rank | How many alternative boundary levels to include.  Defaults to 1
+num_timespan_options | How many historical time periods to include.  Defaults to 1
+num_score_options | How many alternative boundary levels to include.  Defaults to 1
 target_geoms | Target number of geometries.  Boundaries with close to this many objects within `extent` will be ranked highest. 
 
 The schema of the metadata input objects are as follows:
@@ -229,8 +229,8 @@ numer_timespan | The desired timespan for the measurement.  Defaults to most rec
 geom_timespan | The desired timespan for the geometry.  Defaults to timespan matching numer_timespan if left unspecified.
 target_area | Instead of aiming to have `target_geoms` in the area of the geometry passed as `extent`, fill this area.  Unit is square degrees WGS84.  Set this to `0` if you want to use the smallest source geometry for this element of metadata, for example if you're passing in points.
 target_geoms | Override global `target_geoms` for this element of metadata
-max_timespan_rank | Override global `max_timespan_rank` for this element of metadata
-max_score_rank | Override global `max_score_rank` for this element of metadata
+max_timespan_rank | Only include timespans of this recency (for example, `1` is only the most recent timespan). No limit by default
+max_score_rank | Only include boundaries of this relevance (for example, `1` is the most relevant boundary).  Is `1` by default
 
 #### Returns
 

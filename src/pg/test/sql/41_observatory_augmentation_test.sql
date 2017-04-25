@@ -336,7 +336,7 @@ FROM meta;
 -- OBS_GetMeta for point completes several partial measures with "best"
 -- metadata, includes geom alternatives if asked
 WITH meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
-  '[{"numer_id": "us.census.acs.B01001002"}]', null, 2) meta)
+  '[{"numer_id": "us.census.acs.B01001002", "max_score_rank": 2}]', null, 2) meta)
 SELECT
 (meta->0->>'id')::integer = 1 id,
 (meta->0->>'numer_id') = 'us.census.acs.B01001002' numer_id,

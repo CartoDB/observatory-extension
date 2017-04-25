@@ -73,6 +73,7 @@ SKIP_COLUMNS = set([
     , 'uk.ons.LC3204WA0004'
     , 'uk.ons.LC3204WA0007'
     , 'uk.ons.LC3204WA0010'
+    , 'br.geo.subdistritos_name'
 ])
 
 MEASURE_COLUMNS = query('''

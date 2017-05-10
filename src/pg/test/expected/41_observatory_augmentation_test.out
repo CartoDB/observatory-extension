@@ -153,6 +153,9 @@ t
 obs_getmeta_suggested_name
 t
 (1 row)
+obs_getmeta_suggested_name_implicit_area
+t
+(1 row)
 obs_getmeta_suggested_name_area
 t
 (1 row)

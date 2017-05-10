@@ -268,7 +268,7 @@ SELECT
 (meta->0->>'numer_name') = 'Total Population' numer_name,
 (meta->0->>'denom_id') IS NULL denom_id,
 (meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
-(meta->0->>'normalization') IS NULL normalization
+(meta->0->>'normalization') = 'area' normalization
 FROM meta;
 
 -- OBS_GetMeta for point completes one partial measure with "best" metadata
@@ -290,7 +290,7 @@ SELECT
 (meta->0->>'denom_type') = 'Numeric' denom_type,
 (meta->0->>'denom_name') = 'Total Population' denom_name,
 (meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
-(meta->0->>'normalization') IS NULL normalization
+(meta->0->>'normalization') = 'denominated' normalization
 FROM meta;
 
 -- OBS_GetMeta for polygon completes one partial measure with "best" metadata
@@ -308,7 +308,7 @@ SELECT
 (meta->0->>'numer_name') = 'Total Population' numer_name,
 (meta->0->>'denom_id') IS NULL denom_id,
 (meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
-(meta->0->>'normalization') IS NULL normalization
+(meta->0->>'normalization') = 'area' normalization
 FROM meta;
 
 -- OBS_GetMeta for polygon completes one partial measure with "best" metadata
@@ -330,7 +330,7 @@ SELECT
 (meta->0->>'denom_type') = 'Numeric' denom_type,
 (meta->0->>'denom_name') = 'Total Population' denom_name,
 (meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
-(meta->0->>'normalization') IS NULL normalization
+(meta->0->>'normalization') = 'denominated' normalization
 FROM meta;
 
 -- OBS_GetMeta for point completes several partial measures with "best"
@@ -352,7 +352,7 @@ SELECT
 (meta->0->>'denom_type') = 'Numeric' denom_type,
 (meta->0->>'denom_name') = 'Total Population' denom_name,
 (meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
-(meta->0->>'normalization') IS NULL normalization,
+(meta->0->>'normalization') = 'denominated' normalization,
 (meta->1->>'id')::integer = 1 id,
 (meta->1->>'numer_id') = 'us.census.acs.B01001002' numer_id,
 (meta->1->>'timespan_rank')::integer = 1 timespan_rank,
@@ -367,7 +367,7 @@ SELECT
 (meta->1->>'denom_type') = 'Numeric' denom_type,
 (meta->1->>'denom_name') = 'Total Population' denom_name,
 (meta->1->>'geom_id') = 'us.census.tiger.census_tract' geom_id,
-(meta->1->>'normalization') IS NULL normalization
+(meta->1->>'normalization') = 'denominated' normalization
 FROM meta;
 
 -- OBS_GetMeta for point completes several partial measures with "best" metadata
@@ -389,7 +389,7 @@ SELECT
 (meta->0->>'denom_type') = 'Numeric' denom_type,
 (meta->0->>'denom_name') = 'Total Population' denom_name,
 (meta->0->>'geom_id') = 'us.census.tiger.census_tract' geom_id,
-(meta->0->>'normalization') IS NULL normalization
+(meta->0->>'normalization') = 'denominated' normalization
 FROM meta;
 
 -- OBS_GetMeta for point completes several partial measures with conflicting
@@ -400,8 +400,13 @@ AS obs_getmeta_conflicting_metadata;
 
 -- OBS_GetMeta provides suggested name for simple meta request
 SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
-  '[{"numer_id": "us.census.acs.B01003001"}]'
+  '[{"numer_id": "us.census.acs.B01003001", "normalization": "predenom"}]'
 )->0->>'suggested_name' = 'total_pop_2010_2014' obs_getmeta_suggested_name;
+
+-- OBS_GetMeta provides suggested name for simple meta request with area norm
+SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
+  '[{"numer_id": "us.census.acs.B01003001"}]'
+)->0->>'suggested_name' = 'total_pop_per_sq_km_2010_2014' obs_getmeta_suggested_name_implicit_area;
 
 -- OBS_GetMeta provides suggested name for simple meta request with area norm
 SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestPoint(),
@@ -677,25 +682,25 @@ FROM data;
 -- OBS_GetData/OBS_GetMeta by geom with polygons inside a polygon + one measure
 WITH
 meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
-  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.block_group"}]') meta),
+  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "normalization": "predenom", "geom_id": "us.census.tiger.block_group"}]') meta),
 data AS (SELECT * FROM cdb_observatory.OBS_GetData(
     ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
   (SELECT meta FROM meta), false))
 SELECT every(id = 1) is TRUE id,
        count(distinct (data->0->>'value')::geometry) = 16 correct_num_geoms,
-       abs(sum((data->1->>'value')::numeric) - 15787) / 15787 < 0.001 correct_pop
+       abs(sum((data->1->>'value')::numeric) - 12327) / 12327 < 0.001 correct_pop
 FROM data;
 
 -- OBS_GetData/OBS_GetMeta by geom with polygons inside a polygon + one measure + one text
 WITH
 meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
-  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.tiger.name", "geom_id": "us.census.tiger.block_group"}]') meta),
+  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "normalization": "predenom", "geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.tiger.name", "geom_id": "us.census.tiger.block_group"}]') meta),
 data AS (SELECT * FROM cdb_observatory.OBS_GetData(
     ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
   (SELECT meta FROM meta), false))
 SELECT every(id = 1) is TRUE id,
        count(distinct (data->0->>'value')::geometry) = 16 correct_num_geoms,
-       abs(sum((data->1->>'value')::numeric) - 15787) / 15787 < 0.001 correct_pop,
+       abs(sum((data->1->>'value')::numeric) - 12327) / 12327 < 0.001 correct_pop,
        array_agg(distinct data->2->>'value') = '{"Block Group 1","Block Group 2","Block Group 3","Block Group 4","Block Group 5"}' correct_bg_names
 FROM data;
 

@@ -1,3 +1,12 @@
+1.5.1 (2017-05-16)
+
+__Improvements__
+
+* Much improved performance for `OBS_GetData` when augmenting with several
+  different geometries simultaneously ([#285](https://github.com/CartoDB/observatory-extension/pull/285))
+* Return the automatically assigned normalization type from `OBS_GetMeta`
+  ([#285](https://github.com/CartoDB/observatory-extension/pull/285))
+
 1.5.0 (2017-04-24)
 
 __API Changes__

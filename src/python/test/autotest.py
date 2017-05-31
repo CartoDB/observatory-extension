@@ -198,6 +198,8 @@ def default_lonlat(column_id):
         return (-23.53, -46.63)
     elif column_id.startswith('au.'):
         return (-33.8806, 151.2131)
+    elif column_id.startswith('test_module.'):
+        return (42.8226119029222, -2.51141249535454)
     else:
         raise Exception('No catalog point set for {}'.format(column_id))
 

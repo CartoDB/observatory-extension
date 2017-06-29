@@ -181,6 +181,86 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION cdb_observatory._OBS_GetNumerators(
+  bounds GEOMETRY DEFAULT NULL,
+  section_tags TEXT[] DEFAULT ARRAY[]::TEXT[],
+  subsection_tags TEXT[] DEFAULT ARRAY[]::TEXT[],
+  other_tags TEXT[] DEFAULT ARRAY[]::TEXT[],
+  ids TEXT[] DEFAULT ARRAY[]::TEXT[],
+  name TEXT DEFAULT NULL,
+  denom_id TEXT DEFAULT '',
+  geom_id TEXT DEFAULT '',
+  timespan TEXT DEFAULT ''
+) RETURNS TABLE (
+  numer_id TEXT,
+  numer_name TEXT,
+  numer_description TEXT,
+  numer_weight NUMERIC,
+  numer_license TEXT,
+  numer_source TEXT,
+  numer_type TEXT,
+  numer_aggregate TEXT,
+  numer_extra JSONB,
+  numer_tags JSONB,
+  valid_denom BOOLEAN,
+  valid_geom BOOLEAN,
+  valid_timespan BOOLEAN
+) AS $$
+DECLARE
+  where_clause_elements TEXT[];
+  geom_clause TEXT;
+  where_clause TEXT;
+BEGIN
+  where_clause_elements := (ARRAY[])::TEXT[];
+  where_clause := '';
+
+  IF bounds IS NOT NULL THEN
+    where_clause_elements := array_append(where_clause_elements, format($data$ST_Intersects(the_geom, '%s'::geometry)$data$, bounds));
+  END IF;
+  IF cardinality(section_tags) > 0 THEN
+    where_clause_elements := array_append(where_clause_elements, format($data$numer_tags ?| '%s'$data$, section_tags));
+  END IF;
+  IF cardinality(subsection_tags) > 0 THEN
+    where_clause_elements := array_append(where_clause_elements, format($data$numer_tags ?| '%s'$data$, subsection_tags));
+  END IF;
+  IF cardinality(other_tags) > 0 THEN
+    where_clause_elements := array_append(where_clause_elements, format($data$numer_tags ?| '%s'$data$, other_tags));
+  END IF;
+  IF cardinality(ids) > 0 THEN
+    where_clause_elements := array_append(where_clause_elements, format($data$numer_id IN (array_to_string('%s'::text[], ','))$data$, ids));
+  END IF;
+  IF name IS NOT NULL AND name != '' THEN
+    where_clause_elements := array_append(where_clause_elements, format($data$numer_name ilike '%%%s%%'$data$, name));
+  END IF;
+  IF cardinality(where_clause_elements) > 0 THEN
+    where_clause := format($clause$WHERE %s$clause$, array_to_string(where_clause_elements, ' AND '));
+  END IF;
+  RAISE DEBUG '%', array_to_string(where_clause_elements, ' AND ');
+
+  RETURN QUERY
+  EXECUTE
+  format($string$
+    SELECT numer_id::TEXT,
+           numer_name::TEXT,
+           numer_description::TEXT,
+           numer_weight::NUMERIC,
+           NULL::TEXT license,
+           NULL::TEXT source,
+           numer_type numer_type,
+           numer_aggregate numer_aggregate,
+           numer_extra::JSONB numer_extra,
+           numer_tags numer_tags,
+    $1 = ANY(denoms) valid_denom,
+    $2 = ANY(geoms) valid_geom,
+    $3 = ANY(timespans) valid_timespan
+    FROM observatory.obs_meta_numer
+    %s
+  $string$, where_clause)
+  USING denom_id, geom_id, timespan;
+  RETURN;
+END
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableDenominators(
   bounds GEOMETRY DEFAULT NULL,
   filter_tags TEXT[] DEFAULT NULL,

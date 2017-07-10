@@ -372,16 +372,28 @@ BEGIN
              geom_type::TEXT,
              geom_extra::JSONB,
              geom_tags::JSONB,
-      $1 = ANY(numers) valid_numer,
-      $2 = ANY(denoms) valid_denom,
-      $3 = ANY(timespans) valid_timespan
-      FROM observatory.obs_meta_geom
+             $1 = ANY(numers) valid_numer,
+             $2 = ANY(denoms) valid_denom,
+             CASE WHEN $3 IS NOT NULL AND $3 != '' THEN
+                -- Here we are looking for geometries with: a) geometry timespan or b) numerators linked to that geometries that fit in the
+                -- timespan passed. For example it look for geometries with timespan '2015 - 2015' or numerators linked to that geometry that has
+                -- '2015 - 2015' as one of the valid timespans.
+                -- If we pass a numerator_id, we filter by that numerator
+                CASE WHEN $1 IS NOT NULL AND $1 != '' THEN
+                  EXISTS (SELECT 1 FROM observatory.obs_meta_geom_numer_timespan onu WHERE o.geom_id = onu.geom_id AND onu.numer_id = $1 AND ($3 = ANY(onu.timespans) OR $3 IN (select(unnest(o.timespans)))))
+                ELSE
+                  EXISTS (SELECT 1 FROM observatory.obs_meta_geom_numer_timespan onu WHERE o.geom_id = onu.geom_id AND ($3 = ANY(onu.timespans) OR $3 IN (select(unnest(o.timespans)))))
+                END
+             ELSE
+              false
+             END as valid_timespan
+      FROM observatory.obs_meta_geom o
       WHERE %s (geom_tags ?& $4 OR CARDINALITY($4) = 0)
     ), scores AS (
       SELECT * FROM cdb_observatory._OBS_GetGeometryScores($5,
         (SELECT ARRAY_AGG(geom_id) FROM available_geoms)
       )
-    ) SELECT available_geoms.*, score, numtiles, notnull_percent, numgeoms,
+    ) SELECT DISTINCT ON (geom_id) available_geoms.*, score, numtiles, notnull_percent, numgeoms,
              percentfill, estnumgeoms, meanmediansize
       FROM available_geoms, scores
       WHERE available_geoms.geom_id = scores.column_id

@@ -210,6 +210,9 @@ t|t|t
 id|data_polygon_measure_one_null|data_polygon_measure_two_null
 t|t|t
 (1 row)
+id|data_polygon_measure_one_null|data_polygon_measure_two_null
+t|t|t
+(1 row)
 id|data_polygon_measure_one_predenom|data_polygon_measure_two_predenom
 t|t|t
 (1 row)

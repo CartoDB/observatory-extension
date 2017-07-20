@@ -760,16 +760,13 @@ BEGIN
               || ') val_' || colid, ', ')
             || '
             FROM _procgeoms_' || Coalesce(geom_tablename || '_' || geom_geomref_colname, api_method) || ' _procgeoms ' ||
-              Coalesce(', ' || String_Agg(DISTINCT
-                  Coalesce('observatory.' || numer_tablename,
-                    'LATERAL (SELECT * FROM cdb_observatory.' || api_method || '(_procgeoms.geom' || Coalesce(', ' ||
+              Coalesce(String_Agg(DISTINCT
+                  Coalesce('LEFT JOIN observatory.' || numer_tablename || ' ON _procgeoms.geomref = observatory.' || numer_tablename || '.' || numer_geomref_colname,
+                    ', LATERAL (SELECT * FROM cdb_observatory.' || api_method || '(_procgeoms.geom' || Coalesce(', ' ||
                         (SELECT STRING_AGG(REPLACE(val::text, '"', ''''), ', ')
                           FROM (SELECT JSON_Array_Elements(api_args) as val) as vals),
                         '') || ')) AS ' || api_method)
-              , ', '), '') ||
-            Coalesce(' WHERE ' || String_Agg(DISTINCT
-              '_procgeoms.geomref = ' || numer_tablename || '.' || numer_geomref_colname, ' AND '
-            ), '') ||
+              , ' '), '') ||
             CASE $3 WHEN True THEN E'\n GROUP BY _procgeoms.id ORDER BY _procgeoms.id '
                     ELSE           E'\n GROUP BY _procgeoms.id, _procgeoms.geomref
                                         ORDER BY _procgeoms.id, _procgeoms.geomref' END

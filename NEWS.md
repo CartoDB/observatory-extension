@@ -1,3 +1,21 @@
+1.6.0 (2017-07-20)
+
+__Improvements__
+
+* The current OBS_GetAvailableNumerators is not designed with our
+  UI in mind so it's causing a lot of troubles and we're doing so
+  many hacks to fit our UI needs and the interface of the function so this
+  function it's a better fit for our purposes. ([#300](https://github.com/CartoDB/observatory-extension/pull/300))
+* Now use the new meta table `obs_meta_geom_numer_timespan` to filter
+  the geometries by geometries timespan and/or numerator timespan (which
+  is what we get when we use the obs_getavailabletimespans) ([#302](https://github.com/CartoDB/observatory-extension/pull/302))
+
+__Bugfixes__
+
+* Right now we're doing INNER JOINS when we JOIN the `_procgeoms` and
+  the data so we end up with NULL value instead of id, NULL value. ([#298](https://github.com/CartoDB/observatory-extension/pull/298))
+
+
 1.5.1 (2017-05-16)
 
 __Improvements__

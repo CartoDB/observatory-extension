@@ -120,6 +120,142 @@ FROM cdb_observatory.OBS_GetAvailableNumerators(
 AS _obs_getavailablenumerators_no_total_pop_1996;
 
 --
+-- _OBS_GetNumerators tests
+--
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators())
+AS _obs_getnumerators_usa_pop_in_all;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+)) AS _obs_getnumerators_usa_pop_in_nyc_point;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakeEnvelope(
+      -169.8046875, 21.289374355860424,
+      -47.4609375, 72.0739114882038
+  ), 4326),
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+)) AS _obs_getnumerators_usa_pop_in_usa_extents;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(0, 0), 4326),
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+)) AS _obs_getnumerators_no_usa_pop_not_in_zero_point;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  subsection_tags => ARRAY['subsection/tags.age_gender']
+))
+AS _obs_getnumerators_usa_pop_in_age_gender_subsection;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  subsection_tags => ARRAY['subsection/tags.income']
+))
+AS _obs_getnumerators_no_pop_in_income_subsection;
+
+SELECT 'us.census.acs.B01001002' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  denom_id => 'us.census.acs.B01003001'
+) WHERE valid_denom = True)
+AS _obs_getnumerators_male_pop_denom_by_total_pop;
+
+SELECT 'us.census.acs.B19013001' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  denom_id => 'us.census.acs.B01003001'
+) WHERE valid_denom = True)
+AS _obs_getnumerators_no_income_denom_by_total_pop;
+
+SELECT 'us.zillow.AllHomes_Zhvi' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  geom_id => 'us.census.tiger.zcta5'
+) WHERE valid_geom = True)
+AS _obs_getnumerators_zillow_at_zcta5;
+
+SELECT 'us.zillow.AllHomes_Zhvi' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  geom_id => 'us.census.tiger.block_group'
+) WHERE valid_geom = True)
+AS _obs_getnumerators_no_zillow_at_block_group;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  timespan => '2010 - 2014'
+) WHERE valid_timespan = True)
+AS _obs_getnumerators_total_pop_2010_2014;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  timespan => '1996'
+) WHERE valid_timespan = True)
+AS _obs_getnumerators_no_total_pop_1996;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  name => 'tot'
+))
+AS _obs_getnumerators_total_pop_by_name;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  section_tags => '{section/tags.united_states}'
+))
+AS _obs_getnumerators_total_pop_by_section;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  section_tags => '{section/tags.ca}'
+))
+AS _obs_getnumerators_total_pop_not_in_canada;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  section_tags => '{section/tags.united_states}',
+  subsection_tags => '{subsection/tags.age_gender}'
+))
+AS _obs_getnumerators_total_pop_by_subsection;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  section_tags => '{section/tags.united_states}',
+  subsection_tags => '{subsection/tags.employment}'
+))
+AS _obs_getnumerators_total_pop_not_in_employment_subsection;
+
+SELECT 'us.census.acs.B01003001' IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  ids => '{us.census.acs.B01003001}'
+))
+AS _obs_getnumerators_total_pop_by_id;
+
+SELECT 'us.census.acs.B01003001' NOT IN (SELECT numer_id
+FROM cdb_observatory._OBS_GetNumerators(
+  ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326),
+  ids => '{us.census.acs.B01003002}'
+))
+AS _obs_getnumerators_total_pop_not_with_other_id;
+
+--
 -- OBS_GetAvailableDenominators tests
 --
 

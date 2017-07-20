@@ -596,6 +596,18 @@ SELECT id = 1 id,
        abs((data->1->>'value')::Numeric - 0.4902) / 0.4902 < 0.001 data_polygon_measure_two_null
 FROM data;
 
+-- OBS_GetData/OBS_GetMeta by geom with two measures and one return null
+WITH
+meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
+  '[{"numer_id": "us.census.acs.B19013001_quantile"}, {"numer_id": "us.census.acs.B01001002"}]') meta),
+data AS (SELECT * FROM cdb_observatory.OBS_GetData(
+    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
+  (SELECT meta FROM meta)))
+SELECT id = 1 id,
+       (data->0->>'value') is NULL data_polygon_measure_one_null,
+       abs((data->1->>'value')::Numeric - 0.4902) / 0.4902 < 0.001 data_polygon_measure_two_null
+FROM data;
+
 -- OBS_GetData/OBS_GetMeta by geom with two standard measures predenom normalization
 WITH
 meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),

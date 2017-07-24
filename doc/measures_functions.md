@@ -465,7 +465,7 @@ WITH meta AS (
     '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.county"}]'
 ) meta FROM tablename)
 SELECT id AS fips, (data->0->>'value')::Numeric AS pop_density
-FROM OBS_GetData((SELECT ARRAY_AGG((fips) FROM tablename),
+FROM OBS_GetData((SELECT ARRAY_AGG(fips) FROM tablename),
                  (SELECT meta FROM meta))
 ```
 
@@ -481,7 +481,7 @@ WITH meta AS (
 ) meta FROM tablename),
 data as (
   SELECT id AS fips, (data->0->>'value') AS pop_density
-  FROM OBS_GetData((SELECT ARRAY_AGG((fips) FROM tablename),
+  FROM OBS_GetData((SELECT ARRAY_AGG(fips) FROM tablename),
                    (SELECT meta FROM meta)))
 UPDATE tablename
 SET pop_density = data.pop_density

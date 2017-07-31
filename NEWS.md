@@ -1,4 +1,5 @@
 1.6.0 (2017-07-20)
+------------------
 
 __Improvements__
 
@@ -17,6 +18,7 @@ __Bugfixes__
 
 
 1.5.1 (2017-05-16)
+------------------
 
 __Improvements__
 
@@ -26,6 +28,7 @@ __Improvements__
   ([#285](https://github.com/CartoDB/observatory-extension/pull/285))
 
 1.5.0 (2017-04-24)
+------------------
 
 __API Changes__
 
@@ -39,6 +42,7 @@ __API Changes__
   ([#282](https://github.com/CartoDB/observatory-extension/pull/282))
 
 1.4.0 (2017-03-21)
+------------------
 
 __API Changes__
 
@@ -59,16 +63,19 @@ __Improvements__
   boundary selection
 
 1.3.5 (2017-03-15)
+------------------
 
 No changes.  Artifact to allow for data update.
 
 1.3.4 (2017-03-10)
+------------------
 
 __Bugfixes__
 
 * Remove erroneously committed `RAISE NOTICE` in `OBS_GetData`
 
 1.3.3 (2017-03-10)
+------------------
 
 __Bugfixes__
 
@@ -91,6 +98,7 @@ __Improvements__
   ([#267](https://github.com/CartoDB/observatory-extension/pull/267))
 
 1.3.2 (2017-03-02)
+------------------
 
 __Bugfixes__
 
@@ -98,6 +106,7 @@ __Bugfixes__
   This fixes issues with Camshaft.
 
 1.3.1 (2017-02-16)
+------------------
 
 __Improvements__
 
@@ -108,6 +117,7 @@ __Improvements__
   called for measures for polygons
 
 1.3.0 (2017-01-17)
+------------------
 
 __API Changes__
 
@@ -132,9 +142,8 @@ __Bugfixes__
 * Remove unnecessary dependency on `postgres_fdw`
 * `OBS_GetData()` now aggregates measures with mixed geoms correctly
 
-__API Changes__
-
 1.2.1 (2017-01-17)
+------------------
 
 __Improvements__
 
@@ -142,6 +151,7 @@ __Improvements__
   ([#243](https://github.com/CartoDB/observatory-extension/pull/233))
 
 1.2.0 (2016-12-28)
+------------------
 
 __API Changes__
 
@@ -162,6 +172,7 @@ __Improvements__
 * Return both `table_id` and `column_id` from `_OBS_GetGeometryScores`
 
 1.1.7 (2016-12-15)
+------------------
 
 __Improvements__
 
@@ -174,6 +185,7 @@ __Improvements__
 * Yields a ~50% improvement in performance for `_OBSGetGeomeryScores`.
 
 1.1.6 (2016-12-08)
+------------------
 
 __Bugfixes__
 
@@ -200,6 +212,7 @@ __Improvements__
   - Add ability to persist results to JSON for graph visualization later
 
 1.1.5 (2016-11-29)
+------------------
 
 __Bugfixes__
 
@@ -207,6 +220,7 @@ __Bugfixes__
   a geometry where it does not exist ([#220](https://github.com/CartoDB/observatory-extension/issues/220)).
 
 1.1.4 (2016-11-21)
+------------------
 
 __Bugfixes__
 
@@ -214,10 +228,12 @@ __Bugfixes__
   `OBS_GetLegacyMetadata` ([#216](https://github.com/CartoDB/observatory-extension/issues/216)).
 
 1.1.3 (2016-11-15)
+------------------
 
 * Temporarily ignore EU data for the sake of testing
 
 1.1.2 (2016-11-09)
+------------------
 
 __Improvements__
 
@@ -233,12 +249,14 @@ __API Changes (Internal)__
 * Add internal `_OBS_GetGeometryScores`
 
 1.1.1 (2016-10-14)
+------------------
 
 __Improvements__
 
 * Test points for Canada and France ([#204](https://github.com/CartoDB/observatory-extension/issues/120))
 
 1.1.0 (2016-10-04)
+------------------
 
 __Bugfixes__
 
@@ -261,6 +279,7 @@ __API Changes__
   is also referred to here ([CartoDB/design#68](https://github.com/CartoDB/design/issues/68)).
 
 1.0.7 (2016-09-20)
+------------------
 
 __Bugfixes__
 
@@ -272,6 +291,7 @@ __Improvements__
 * Automatic tests work for Canada and Thailand
 
 1.0.6 (2016-09-08)
+------------------
 
 __Improvements__
 
@@ -279,6 +299,7 @@ __Improvements__
   framework logic from the observatory measure functions.
 
 1.0.5 (2016-08-12)
+------------------
 
 __Improvements__
 
@@ -286,6 +307,7 @@ __Improvements__
   any HTTP SQL API.
 
 1.0.4 (2016-07-26)
+------------------
 
 __Bugfixes__
 
@@ -294,6 +316,7 @@ __Bugfixes__
   ([#173](https://github.com/CartoDB/observatory-extension/issues/173))
 
 1.0.3 (2016-07-25)
+------------------
 
 __Bugfixes__
 

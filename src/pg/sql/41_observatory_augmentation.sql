@@ -1076,3 +1076,46 @@ BEGIN
   RETURN result;
 END;
 $$ LANGUAGE plpgsql STABLE;
+
+-- MetadataValidation checks the metadata parameters and the geometry type
+-- of the data in order to find possible wrong cases
+CREATE OR REPLACE FUNCTION cdb_observatory.obs_metadatavalidation(
+  geometry_extent geometry(Geometry, 4326),
+  geometry_type text,
+  params JSON,
+  target_geoms INTEGER DEFAULT NULL
+)
+RETURNS TABLE(valid boolean, errors text[]) AS $$
+DECLARE
+  meta json;
+  errors text[];
+BEGIN
+  errors := (ARRAY[])::TEXT[];
+  IF geometry_type IN ('ST_Polygon', 'ST_MultiPolygon') THEN
+      FOR meta IN EXECUTE 'SELECT json_array_elements(cdb_observatory.OBS_GetMeta($1, $2, 1, 1, $3))' USING geometry_extent, params, target_geoms
+      LOOP
+          IF (meta->>'normalization' = 'denominated' AND meta->>'denom_id' is NULL) THEN
+              errors := array_append(errors, 'Normalizated measure should have a numerator and a denominator. Please review the provided options.');
+          END IF;
+          IF (meta->>'numer_aggregate' IS NULL) THEN
+              errors := array_append(errors, 'For polygon geometries, aggregation is mandatory. Please review the provided options');
+          END IF;
+          IF (meta->>'numer_aggregate' IN ('median', 'average') AND meta->>'denom_id' IS NULL) THEN
+              errors := array_append(errors, 'Median or average aggregation for polygons requires a denominator to provide weights. Please review the provided options');
+          END IF;
+          IF (meta->>'numer_aggregate' IN ('median', 'average') AND meta->>'normalization' NOT LIKE 'pre%') THEN
+              errors := array_append(errors, format('Median or average aggregation only supports prenormalized normalization, %s passed. Please review the provided options', meta->>'normalization'));
+          END IF;
+      END LOOP;
+
+      IF CARDINALITY(errors) > 0 THEN
+          RETURN QUERY EXECUTE 'SELECT FALSE, $1' USING errors;
+      ELSE
+          RETURN QUERY SELECT TRUE, ARRAY[]::TEXT[];
+      END IF;
+  ELSE
+    RETURN QUERY SELECT TRUE, ARRAY[]::TEXT[];
+  END IF;
+  RETURN;
+END;
+$$ LANGUAGE plpgsql STABLE;

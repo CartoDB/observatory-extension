@@ -52,8 +52,8 @@ def get_tablename_query(column_id, boundary_id, timespan):
 METADATA_TABLES = ['obs_table', 'obs_column_table', 'obs_column', 'obs_column_tag',
                    'obs_tag', 'obs_column_to_column', 'obs_dump_version', 'obs_meta',
                    'obs_meta_numer', 'obs_meta_denom', 'obs_meta_geom',
-                   'obs_meta_timespan', 'obs_column_table_tile',
-                   'obs_column_table_tile_simple']
+                   'obs_meta_timespan', 'obs_meta_geom_numer_timespan',
+                   'obs_column_table_tile', 'obs_column_table_tile_simple']
 
 FIXTURES = [
     ('us.census.acs.B01003001_quantile', 'us.census.tiger.census_tract', '2010 - 2014'),

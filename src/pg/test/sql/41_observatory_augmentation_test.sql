@@ -973,3 +973,9 @@ WITH _geoms AS (
 FROM geoms, results
 WHERE cartodb_id = id
 ;
+
+-- OBS_MetadataValidation
+
+SELECT * FROM cdb_observatory.OBS_MetadataValidation(NULL, 'ST_Polygon', '[{"numer_id": "us.census.acs.B01003001","denom_id": null,"normalization": "prenormalized","geom_id": null,"numer_timespan": "2010 - 2014"}]'::json, 500);
+SELECT * FROM cdb_observatory.OBS_MetadataValidation(NULL, 'ST_Polygon', '[{"numer_id": "us.census.acs.B25058001","denom_id": null,"normalization": "denominated","geom_id": null,"numer_timespan": "2010 - 2014"}]'::json, 500);
+SELECT * FROM cdb_observatory.OBS_MetadataValidation(NULL, 'ST_Polygon', '[{"numer_id": "us.census.acs.B15003001","denom_id": null,"normalization": "denominated","geom_id": null,"numer_timespan": "2010 - 2014"}]'::json, 500);

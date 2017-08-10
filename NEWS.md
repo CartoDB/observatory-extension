@@ -1,3 +1,18 @@
+1.7.0 (2017-08-dd)
+------------------
+
+__Improvements__
+
+* Add Travis support to execute the extension tests ([#183](https://github.com/CartoDB/observatory-extension/issues/183))
+
+__API Changes__
+
+* Add new function `OBS_MetadataValidation` ([#303](https://github.com/CartoDB/observatory-extension/pull/303))
+
+__Bugfixes__
+
+* Fixed parentheses for obs_getdata with ids
+
 1.6.0 (2017-07-20)
 ------------------
 

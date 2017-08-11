@@ -323,47 +323,42 @@ SELECT OBS_GetMeta(
 
 ## OBS_MetadataValidation(extent geometry, geometry_type text, metadata json, target_geoms)
 
-The ```OBS_MetadataValidation``` function peforms a validation check over
-the known issues using the extent, type of geometry and metadata we're going
-to use in the ```OBS_GetMeta``` function.
+The ```OBS_MetadataValidation``` function performs a validation check over the known issues using the extent, type of geometry, and metadata that is being used in the ```OBS_GetMeta``` function.
 
 #### Arguments
 
 Name | Description
 ---- | -----------
 extent | A geometry of the extent of the input geometries
-geometry_type | The geometry type of the source data.
-metadata | A JSON array composed of metadata input objects.  Each indicates one desired measure for an output column, and optionally additional parameters about that column
-target_geoms | Target number of geometries.  Boundaries with close to this many objects within `extent` will be ranked highest.
+geometry_type | The geometry type of the source data
+metadata | A JSON array composed of metadata input objects. Each indicates one desired measure for an output column, and optional additional parameters about that column
+target_geoms | Target number of geometries. Boundaries with close to this many objects within `extent` will be ranked highest
 
 The schema of the metadata input objects are as follows:
 
 Metadata Input Key | Description
 --- | -----------
-numer_id | The identifier for the desired measurement.  If left blank, but a `geom_id` is specified, the column will return a geometry instead of a measurement.
-geom_id | Identifier for a desired geographic boundary level to use when calculating measures.  Will be automatically assigned if undefined.  If defined but `numer_id` is blank, then the column will return a geometry instead of a measurement.
-normalization | The desired normalization.  One of 'area', 'prenormalized', or 'denominated'.  'Area' will normalize the measure per square kilometer, 'prenormalized' will return the original value, and 'denominated' will normalize by a denominator.  Ignored if this metadata object specifies a geometry.
-denom_id | Identifier for a desired normalization column in case `normalization` is 'denominated'.  Will be automatically assigned if necessary.  Ignored if this metadata object specifies a geometry.
-numer_timespan | The desired timespan for the measurement.  Defaults to most recent timespan available if left unspecified.
-geom_timespan | The desired timespan for the geometry.  Defaults to timespan matching numer_timespan if left unspecified.
-target_area | Instead of aiming to have `target_geoms` in the area of the geometry passed as `extent`, fill this area.  Unit is square degrees WGS84.  Set this to `0` if you want to use the smallest source geometry for this element of metadata, for example if you're passing in points.
+numer_id | The identifier for the desired measurement. If left blank, a `geom_id` is specified and the column returns a geometry, instead of a measurement
+geom_id | Identifier for a desired geographic boundary level used to calculate measures. If undefined, this is automatically assigned. If defined, `numer_id` is blank and the column returns a geometry, instead of a measurement
+normalization | The desired normalization. One of 'area', 'prenormalized', or 'denominated'.  'Area' will normalize the measure per square kilometer, 'prenormalized' will return the original value, and 'denominated' will normalize by a denominator. If the metadata object specifies a geometry, this is ignored
+denom_id | When `normalization` is 'denominated', this is the identifier for a desired normalization column. This is automatically assigned. If the metadata object specifies a geometry, this is ignored
+numer_timespan | The desired timespan for the measurement. If left unspecified, it defaults to the most recent timespan available
+geom_timespan | The desired timespan for the geometry. If left unspecified, it defaults to the timespan matching `numer_timespan`
+target_area | Instead of aiming to have `target_geoms` in the area of the geometry passed as `extent`, fill this area. Unit is square degrees WGS84. Set this to `0` if you want to use the smallest source geometry for this element of metadata. For example, if you are passing in points
 target_geoms | Override global `target_geoms` for this element of metadata
-max_timespan_rank | Only include timespans of this recency (for example, `1` is only the most recent timespan). No limit by default
-max_score_rank | Only include boundaries of this relevance (for example, `1` is the most relevant boundary).  Is `1` by default
+max_timespan_rank | Only include timespans of this recency (For example, `1` is only the most recent timespan). There is no limit by default
+max_score_rank | Only include boundaries of this relevance (for example, `1` is the most relevant boundary). The default is `1`
 
 #### Returns
 
 Key | Description
 --- | -----------
-valid | A boolean field that represents if the validation was succesful or not
-errors | A text array with all the possible errors.
+valid | A boolean field that represents if the validation was successful or not
+errors | A text array with all possible errors
 
 #### Examples
 
-Validate metadata with two additional column of US census
-data, using a boundary relevant for the geometry provided and latest timespan.
-Limit to only the most recent column most relevant to the extent & density of
-input geometries in `tablename`.
+Validate metadata with two additional columns of US census data; using a boundary relevant for the geometry provided and the latest timespan. Limited to the most recent column, and the most relevant, based on the extent and density of input geometries in `tablename`.
 
 ```SQL
 SELECT OBS_MetadataValidation(

@@ -77,7 +77,7 @@ SKIP_COLUMNS = set([
 ])
 
 MEASURE_COLUMNS = query('''
-SELECT ARRAY_AGG(DISTINCT numer_id) numer_ids,
+SELECT FIRST(distinct numer_id) numer_ids,
        numer_aggregate,
        denom_reltype,
        section_tags
@@ -86,52 +86,8 @@ WHERE numer_weight > 0
   AND numer_id NOT IN ('{skip}')
   AND section_tags IS NOT NULL
   AND subsection_tags IS NOT NULL
-GROUP BY numer_aggregate, section_tags, denom_reltype
+GROUP BY numer_id, numer_aggregate, section_tags, denom_reltype
 '''.format(skip="', '".join(SKIP_COLUMNS))).fetchall()
-
-#CATEGORY_COLUMNS = query('''
-#SELECT distinct numer_id
-#FROM observatory.obs_meta
-#WHERE numer_type ILIKE 'text'
-#AND numer_weight > 0
-#''').fetchall()
-#
-#BOUNDARY_COLUMNS = query('''
-#SELECT id FROM observatory.obs_column
-#WHERE type ILIKE 'geometry'
-#AND weight > 0
-#''').fetchall()
-#
-#US_CENSUS_MEASURE_COLUMNS = query('''
-#SELECT distinct numer_name
-#FROM observatory.obs_meta
-#WHERE numer_type ILIKE 'numeric'
-#AND 'us.census.acs' = ANY (subsection_tags)
-#AND numer_weight > 0
-#''').fetchall()
-
-
-#def default_geometry_id(column_id):
-#    '''
-#    Returns default test point for the column_id.
-#    '''
-#    if column_id == 'whosonfirst.wof_disputed_geom':
-#        return 'ST_SetSRID(ST_MakePoint(76.57, 33.78), 4326)'
-#    elif column_id == 'whosonfirst.wof_marinearea_geom':
-#        return 'ST_SetSRID(ST_MakePoint(-68.47, 43.33), 4326)'
-#    elif column_id in ('us.census.tiger.school_district_elementary',
-#                       'us.census.tiger.school_district_secondary',
-#                       'us.census.tiger.school_district_elementary_clipped',
-#                       'us.census.tiger.school_district_secondary_clipped'):
-#        return 'ST_SetSRID(ST_MakePoint(-73.7067, 40.7025), 4326)'
-#    elif column_id.startswith('es.ine'):
-#        return 'ST_SetSRID(ST_MakePoint(-2.51141249535454, 42.8226119029222), 4326)'
-#    elif column_id.startswith('us.zillow'):
-#        return 'ST_SetSRID(ST_MakePoint(-81.3544048197256, 28.3305906291771), 4326)'
-#    elif column_id.startswith('ca.'):
-#        return ''
-#    else:
-#        return 'ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)'
 
 
 def default_lonlat(column_id):
@@ -142,11 +98,6 @@ def default_lonlat(column_id):
         return (76.57, 33.78)
     elif column_id == 'whosonfirst.wof_marinearea_geom':
         return (-68.47, 43.33)
-    elif column_id in ('us.census.tiger.school_district_elementary',
-                       'us.census.tiger.school_district_secondary',
-                       'us.census.tiger.school_district_elementary_clipped',
-                       'us.census.tiger.school_district_secondary_clipped'):
-        return (40.7025, -73.7067)
     elif column_id.startswith('uk'):
         if 'WA' in column_id:
             return (51.46844551219723, -3.184833526611328)
@@ -178,6 +129,11 @@ def default_lonlat(column_id):
         return (48.860875144709475, 2.3613739013671875)
     elif column_id.startswith('ca.'):
         return (43.65594991256823, -79.37965393066406)
+    elif column_id in ('us.census.tiger.school_district_elementary',
+                       'us.census.tiger.school_district_secondary',
+                       'us.census.tiger.school_district_elementary_clipped',
+                       'us.census.tiger.school_district_secondary_clipped'):
+        return (40.7025, -73.7067)
     elif column_id.startswith('us.census.'):
         return (28.3305906291771, -81.3544048197256)
     elif column_id.startswith('us.dma.'):
@@ -217,27 +173,24 @@ def default_area(column_id):
         point=point)
     return area
 
-#@parameterized(US_CENSUS_MEASURE_COLUMNS)
-#def test_get_us_census_measure_points(name):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetUSCensusMeasure({point}, '{name}')
-#                 '''.format(name=name.replace("'", "''"),
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            point=default_point('')))
-#    rows = resp.fetchall()
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
 
 def grouped_measure_columns():
+    groupbypoint = dict()
     for numer_ids, numer_aggregate, denom_reltype, section_tags in MEASURE_COLUMNS:
-        for colgroup in grouper(numer_ids, 50):
+        point = default_lonlat(numer_ids)
+        if point in groupbypoint:
+            groupbypoint[point].append(numer_ids)
+        else:
+            groupbypoint[point] = [numer_ids]
+
+    for key, value in groupbypoint.iteritems():
+        for colgroup in grouper(value, 50):
             yield [c for c in colgroup if c], numer_aggregate, denom_reltype, section_tags
 
 
 @parameterized(grouped_measure_columns())
 def test_get_measure_points(numer_ids, numer_aggregate, denom_reltype, section_tags):
-    _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, default_point(numer_ids[0]))
+    _test_measures(numer_ids, default_point(numer_ids[0]))
 
 
 @parameterized(grouped_measure_columns())
@@ -245,13 +198,12 @@ def test_get_measure_areas(numer_ids, numer_aggregate, denom_reltype, section_ta
     if numer_aggregate is None or numer_aggregate.lower() not in ('sum', 'median', 'average'):
         return
     if numer_aggregate.lower() in ('median', 'average') \
-       and (denom_reltype is None \
-            or denom_reltype.lower() != 'universe'):
+       and (denom_reltype is None or denom_reltype.lower() != 'universe'):
         return
-    _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, default_area(numer_ids[0]))
+    _test_measures(numer_ids, default_area(numer_ids[0]))
 
 
-def _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, geom):
+def _test_measures(numer_ids, geom):
     in_params = []
     for numer_id in numer_ids:
         in_params.append({
@@ -284,90 +236,3 @@ def _test_measures(numer_ids, numer_aggregate, section_tags, denom_reltype, geom
     assert_equal(len(vals), len(in_params))
     for i, val in enumerate(vals):
         assert_is_not_none(val, 'NULL for {}'.format(in_params[i]['numer_id']))
-
-
-#@parameterized(CATEGORY_COLUMNS)
-#def test_get_category_areas(column_id):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetCategory({area}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            area=default_area(column_id)))
-#    assert_equal(resp.status_code, 200)
-#    rows = resp.json()['rows']
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
-#@parameterized(CATEGORY_COLUMNS)
-#def test_get_category_points(column_id):
-#    if column_id in SKIP_COLUMNS:
-#        raise SkipTest('Column {} should be skipped'.format(column_id))
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetCategory({point}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            point=default_point(column_id)))
-#    rows = resp.fetchall()
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
-#@parameterized(BOUNDARY_COLUMNS)
-#def test_get_boundaries_by_geometry(column_id):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetBoundariesByGeometry({area}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            area=default_area(column_id)))
-#    assert_equal(resp.status_code, 200)
-#    rows = resp.json()['rows']
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
-#@parameterized(BOUNDARY_COLUMNS)
-#def test_get_points_by_geometry(column_id):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetPointsByGeometry({area}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            area=default_area(column_id)))
-#    assert_equal(resp.status_code, 200)
-#    rows = resp.json()['rows']
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
-#@parameterized(BOUNDARY_COLUMNS)
-#def test_get_boundary_points(column_id):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetBoundary({point}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            point=default_point(column_id)))
-#    assert_equal(resp.status_code, 200)
-#    rows = resp.json()['rows']
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
-#@parameterized(BOUNDARY_COLUMNS)
-#def test_get_boundary_id(column_id):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetBoundaryId({point}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            point=default_point(column_id)))
-#    assert_equal(resp.status_code, 200)
-#    rows = resp.json()['rows']
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-
-#@parameterized(BOUNDARY_COLUMNS)
-#def test_get_boundary_by_id(column_id):
-#    resp = query('''
-#SELECT * FROM {schema}OBS_GetBoundaryById({geometry_id}, '{column_id}')
-#                 '''.format(column_id=column_id,
-#                            schema='cdb_observatory.' if USE_SCHEMA else '',
-#                            geometry_id=default_geometry_id(column_id)))
-#    assert_equal(resp.status_code, 200)
-#    rows = resp.json()['rows']
-#    assert_equal(1, len(rows))
-#    assert_is_not_none(rows[0][0])
-

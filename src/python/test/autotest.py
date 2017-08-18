@@ -86,7 +86,7 @@ SKIP_COLUMNS = set([
 ])
 
 MEASURE_COLUMNS = query('''
-SELECT FIRST(distinct numer_id) numer_ids,
+SELECT cdb_observatory.FIRST(distinct numer_id) numer_ids,
        numer_aggregate,
        denom_reltype
 FROM observatory.obs_meta

@@ -1,4 +1,4 @@
-1.7.0 (2017-08-dd)
+1.7.0 (2017-08-18)
 ------------------
 
 __Improvements__
@@ -12,6 +12,7 @@ __API Changes__
 __Bugfixes__
 
 * Fixed parentheses for obs_getdata with ids
+* Fixed failing tests due changes in the data dump for some TIGER geometries
 
 1.6.0 (2017-07-20)
 ------------------

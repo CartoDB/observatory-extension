@@ -1,5 +1,4 @@
 from nose.tools import assert_equal, assert_is_not_none
-from nose.plugins.skip import SkipTest
 from nose_parameterized import parameterized
 
 from itertools import izip_longest
@@ -55,38 +54,48 @@ SKIP_COLUMNS = set([
     u'us.census.tiger.mtfcc',
     u'whosonfirst.wof_county_name',
     u'whosonfirst.wof_region_name',
-    'fr.insee.P12_RP_CHOS', 'fr.insee.P12_RP_HABFOR'
-    , 'fr.insee.P12_RP_EAUCH', 'fr.insee.P12_RP_BDWC'
-    , 'fr.insee.P12_RP_MIDUR', 'fr.insee.P12_RP_CLIM'
-    , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
-    , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
-    , 'fr.insee.P12_ACTOCC15P_ILT45D'
-    , 'fr.insee.P12_RP_CHOS', 'fr.insee.P12_RP_HABFOR'
-    , 'fr.insee.P12_RP_EAUCH', 'fr.insee.P12_RP_BDWC'
-    , 'fr.insee.P12_RP_MIDUR', 'fr.insee.P12_RP_CLIM'
-    , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
-    , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
-    , 'fr.insee.P12_ACTOCC15P_ILT45D'
-    , 'uk.ons.LC3202WA0007'
-    , 'uk.ons.LC3202WA0010'
-    , 'uk.ons.LC3202WA0004'
-    , 'uk.ons.LC3204WA0004'
-    , 'uk.ons.LC3204WA0007'
-    , 'uk.ons.LC3204WA0010'
-    , 'br.geo.subdistritos_name'
+    u'fr.insee.P12_RP_CHOS',
+    u'fr.insee.P12_RP_HABFOR',
+    u'fr.insee.P12_RP_EAUCH',
+    u'fr.insee.P12_RP_BDWC',
+    u'fr.insee.P12_RP_MIDUR',
+    u'fr.insee.P12_RP_CLIM',
+    u'fr.insee.P12_RP_MIBOIS',
+    u'fr.insee.P12_RP_CASE',
+    u'fr.insee.P12_RP_TTEGOU',
+    u'fr.insee.P12_RP_ELEC',
+    u'fr.insee.P12_ACTOCC15P_ILT45D',
+    u'fr.insee.P12_RP_CHOS',
+    u'fr.insee.P12_RP_HABFOR',
+    u'fr.insee.P12_RP_EAUCH',
+    u'fr.insee.P12_RP_BDWC',
+    u'fr.insee.P12_RP_MIDUR',
+    u'fr.insee.P12_RP_CLIM',
+    u'fr.insee.P12_RP_MIBOIS',
+    u'fr.insee.P12_RP_CASE',
+    u'fr.insee.P12_RP_TTEGOU',
+    u'fr.insee.P12_RP_ELEC',
+    u'fr.insee.P12_ACTOCC15P_ILT45D',
+    u'uk.ons.LC3202WA0007',
+    u'uk.ons.LC3202WA0010',
+    u'uk.ons.LC3202WA0004',
+    u'uk.ons.LC3204WA0004',
+    u'uk.ons.LC3204WA0007',
+    u'uk.ons.LC3204WA0010',
+    u'br.geo.subdistritos_name'
 ])
 
 MEASURE_COLUMNS = query('''
 SELECT FIRST(distinct numer_id) numer_ids,
        numer_aggregate,
-       denom_reltype,
-       section_tags
+       denom_reltype
 FROM observatory.obs_meta
 WHERE numer_weight > 0
   AND numer_id NOT IN ('{skip}')
+  AND numer_id NOT LIKE 'eu.%' --Skipping Eurostat
   AND section_tags IS NOT NULL
   AND subsection_tags IS NOT NULL
-GROUP BY numer_id, numer_aggregate, section_tags, denom_reltype
+GROUP BY numer_id, numer_aggregate, denom_reltype
 '''.format(skip="', '".join(SKIP_COLUMNS))).fetchall()
 
 
@@ -109,22 +118,6 @@ def default_lonlat(column_id):
         return (28.3305906291771, -81.3544048197256)
     elif column_id.startswith('mx.'):
         return (19.41347699386547, -99.17019367218018)
-    elif column_id.startswith('th.'):
-        return (13.725377712079784, 100.49263000488281)
-    # cols for French Guyana only
-    #elif column_id in ('fr.insee.P12_RP_CHOS', 'fr.insee.P12_RP_HABFOR'
-    #                   , 'fr.insee.P12_RP_EAUCH', 'fr.insee.P12_RP_BDWC'
-    #                   , 'fr.insee.P12_RP_MIDUR', 'fr.insee.P12_RP_CLIM'
-    #                   , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
-    #                   , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
-    #                   , 'fr.insee.P12_ACTOCC15P_ILT45D'
-    #                   , 'fr.insee.P12_RP_CHOS', 'fr.insee.P12_RP_HABFOR'
-    #                   , 'fr.insee.P12_RP_EAUCH', 'fr.insee.P12_RP_BDWC'
-    #                   , 'fr.insee.P12_RP_MIDUR', 'fr.insee.P12_RP_CLIM'
-    #                   , 'fr.insee.P12_RP_MIBOIS', 'fr.insee.P12_RP_CASE'
-    #                   , 'fr.insee.P12_RP_TTEGOU', 'fr.insee.P12_RP_ELEC'
-    #                   , 'fr.insee.P12_ACTOCC15P_ILT45D'):
-    #    return (4.938408371206558, -52.32908248901367)
     elif column_id.startswith('fr.'):
         return (48.860875144709475, 2.3613739013671875)
     elif column_id.startswith('ca.'):
@@ -132,11 +125,11 @@ def default_lonlat(column_id):
     elif column_id in ('us.census.tiger.school_district_elementary',
                        'us.census.tiger.school_district_secondary',
                        'us.census.tiger.school_district_elementary_clipped',
-                       'us.census.tiger.school_district_secondary_clipped'):
+                       'us.census.tiger.school_district_secondary_clipped',
+                       'us.census.tiger.school_district_elementary_geoname',
+                       'us.census.tiger.school_district_secondary_geoname'):
         return (40.7025, -73.7067)
     elif column_id.startswith('us.census.'):
-        return (28.3305906291771, -81.3544048197256)
-    elif column_id.startswith('us.dma.'):
         return (28.3305906291771, -81.3544048197256)
     elif column_id.startswith('us.ihme.'):
         return (28.3305906291771, -81.3544048197256)
@@ -148,8 +141,6 @@ def default_lonlat(column_id):
         return (28.3305906291771, -81.3544048197256)
     elif column_id.startswith('us.epa.'):
         return (28.3305906291771, -81.3544048197256)
-    elif column_id.startswith('eu.'):
-        raise SkipTest('No tests for Eurostat!')
     elif column_id.startswith('br.'):
         return (-23.53, -46.63)
     elif column_id.startswith('au.'):
@@ -158,49 +149,62 @@ def default_lonlat(column_id):
         raise Exception('No catalog point set for {}'.format(column_id))
 
 
-def default_point(column_id):
-    lat, lng = default_lonlat(column_id)
+def default_point(test_point):
+    lat, lng = test_point
     return 'ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326)'.format(
         lat=lat, lng=lng)
 
 
-def default_area(column_id):
+def default_area(test_point):
     '''
     Returns default test area for the column_id
     '''
-    point = default_point(column_id)
+    point = default_point(test_point)
     area = 'ST_Transform(ST_Buffer(ST_Transform({point}, 3857), 250), 4326)'.format(
         point=point)
     return area
 
 
-def grouped_measure_columns():
+def filter_points():
+    return MEASURE_COLUMNS
+
+
+def filter_areas():
+    filtered = []
+    for numer_ids, numer_aggregate, denom_reltype in MEASURE_COLUMNS:
+        if numer_aggregate is None or numer_aggregate.lower() not in ('sum', 'median', 'average'):
+            continue
+        if numer_aggregate.lower() in ('median', 'average') \
+                and (denom_reltype is None or denom_reltype.lower() != 'universe'):
+            continue
+        filtered.append((numer_ids, numer_aggregate, denom_reltype))
+
+    return filtered
+
+
+def grouped_measure_columns(filtered_columns):
     groupbypoint = dict()
-    for numer_ids, numer_aggregate, denom_reltype, section_tags in MEASURE_COLUMNS:
+    for row in filtered_columns:
+        numer_ids = row[0]
         point = default_lonlat(numer_ids)
         if point in groupbypoint:
             groupbypoint[point].append(numer_ids)
         else:
             groupbypoint[point] = [numer_ids]
 
-    for key, value in groupbypoint.iteritems():
-        for colgroup in grouper(value, 50):
-            yield [c for c in colgroup if c], numer_aggregate, denom_reltype, section_tags
+    for point, numer_ids in groupbypoint.iteritems():
+        for colgroup in grouper(numer_ids, 50):
+            yield point, [c for c in colgroup if c]
 
 
-@parameterized(grouped_measure_columns())
-def test_get_measure_points(numer_ids, numer_aggregate, denom_reltype, section_tags):
-    _test_measures(numer_ids, default_point(numer_ids[0]))
+@parameterized(grouped_measure_columns(filter_points()))
+def test_get_measure_points(point, numer_ids):
+    _test_measures(numer_ids, default_point(point))
 
 
-@parameterized(grouped_measure_columns())
-def test_get_measure_areas(numer_ids, numer_aggregate, denom_reltype, section_tags):
-    if numer_aggregate is None or numer_aggregate.lower() not in ('sum', 'median', 'average'):
-        return
-    if numer_aggregate.lower() in ('median', 'average') \
-       and (denom_reltype is None or denom_reltype.lower() != 'universe'):
-        return
-    _test_measures(numer_ids, default_area(numer_ids[0]))
+@parameterized(grouped_measure_columns(filter_areas()))
+def test_get_measure_areas(point, numer_ids):
+    _test_measures(numer_ids, default_area(point))
 
 
 def _test_measures(numer_ids, geom):

@@ -1,3 +1,4 @@
 requests
 nose
 nose_parameterized
+psycopg2

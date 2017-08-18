@@ -304,3 +304,12 @@ tract_sample|tract_max_error|tract_avg_error|tract_min_error
 no_bg_point_error
 t
 (1 row)
+valid|errors
+t|{}
+(1 row)
+valid|errors
+f|{"Median or average aggregation only supports prenormalized normalization, denominated passed. Please review the provided options"}
+(1 row)
+valid|errors
+f|{"Normalizated measure should have a numerator and a denominator. Please review the provided options."}
+(1 row)

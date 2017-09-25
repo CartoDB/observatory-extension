@@ -44,33 +44,7 @@ for q in (
                                  -73.81885528564453,41.745696344339564, 4326),
                  'us.census.tiger.county_clipped')) foo
            ORDER BY ST_NPoints(the_geom) DESC
-           LIMIT 50;''',
-        'DROP TABLE IF EXISTS obs_perftest_country_simple',
-        '''CREATE TABLE obs_perftest_country_simple (cartodb_id SERIAL PRIMARY KEY,
-           geom GEOMETRY,
-           name TEXT) ''',
-        '''INSERT INTO obs_perftest_country_simple (geom, name)
-           SELECT the_geom geom,
-                  geom_refs AS name
-           FROM (SELECT * FROM {schema}OBS_GetBoundariesByGeometry(
-                 st_makeenvelope(-179,-89, 179,89, 4326),
-                 'whosonfirst.wof_country_geom')) foo
-           ORDER BY ST_NPoints(the_geom) ASC
-           LIMIT 50;''',
-        'DROP TABLE IF EXISTS obs_perftest_country_complex',
-        '''CREATE TABLE obs_perftest_country_complex (cartodb_id SERIAL PRIMARY KEY,
-           geom GEOMETRY,
-           name TEXT) ''',
-        '''INSERT INTO obs_perftest_country_complex (geom, name)
-           SELECT the_geom geom,
-                  geom_refs AS name
-           FROM (SELECT * FROM {schema}OBS_GetBoundariesByGeometry(
-                 st_makeenvelope(-179,-89, 179,89, 4326),
-                 'whosonfirst.wof_country_geom')) foo
-           ORDER BY ST_NPoints(the_geom) DESC
-           LIMIT 50;''',
-        #'''SET statement_timeout = 5000;'''
-):
+           LIMIT 50;'''):
     q_formatted = q.format(
         schema='cdb_observatory.' if USE_SCHEMA else '',
     )
@@ -118,15 +92,7 @@ def record(params, results):
 
     ('complex', '_OBS_GetGeometryScores', 'NULL', 1),
     ('complex', '_OBS_GetGeometryScores', 'NULL', 500),
-    ('complex', '_OBS_GetGeometryScores', 'NULL', 3000),
-
-    ('country_simple', '_OBS_GetGeometryScores', 'NULL', 1),
-    ('country_simple', '_OBS_GetGeometryScores', 'NULL', 500),
-    ('country_simple', '_OBS_GetGeometryScores', 'NULL', 5000),
-
-    ('country_complex', '_OBS_GetGeometryScores', 'NULL', 1),
-    ('country_complex', '_OBS_GetGeometryScores', 'NULL', 500),
-    ('country_complex', '_OBS_GetGeometryScores', 'NULL', 5000),
+    ('complex', '_OBS_GetGeometryScores', 'NULL', 3000)
 ])
 def test_getgeometryscores_performance(geom_complexity, api_method, filters, target_geoms):
     print api_method, geom_complexity, filters, target_geoms

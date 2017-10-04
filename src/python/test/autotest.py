@@ -208,35 +208,54 @@ def test_get_measure_areas(point, numer_ids):
 
 
 def _test_measures(numer_ids, geom):
-    in_params = []
-    for numer_id in numer_ids:
-        in_params.append({
-            'numer_id': numer_id,
-            'normalization': 'predenominated'
-        })
-
-    params = query(u'''
-        SELECT {schema}OBS_GetMeta({geom}, '{in_params}')
-    '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
-               geom=geom,
-               in_params=json.dumps(in_params))).fetchone()[0]
-
-    # We can get duplicate IDs from multi-denominators, so for now we
-    # compress those measures into a single
-    params = OrderedDict([(p['id'], p) for p in params]).values()
-    assert_equal(len(params), len(in_params),
-                 'Inconsistent out and in params for {}'.format(in_params))
-
     q = u'''
-    SELECT * FROM {schema}OBS_GetData(ARRAY[({geom}, 1)::geomval], '{params}')
+    SELECT {schema}OBS_GetAvailableTimespans({geom})
     '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
-               geom=geom,
-               params=json.dumps(params).replace(u"'", "''"))
-    resp = query(q).fetchone()
-    assert_is_not_none(resp, 'NULL returned for {}'.format(in_params))
-    rawvals = resp[1]
-    vals = [v['value'] for v in rawvals]
+               geom=geom)
+    timespans = query(q).fetchall()
 
-    assert_equal(len(vals), len(in_params))
-    for i, val in enumerate(vals):
-        assert_is_not_none(val, 'NULL for {}'.format(in_params[i]['numer_id']))
+    for timespan in timespans:
+        timespan = timespan[0][1:-1].split(',')[0]
+
+        q = u'''
+        SELECT {schema}OBS_GetAvailableBoundaries({geom}, '{timespan}')
+        '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
+                   geom=geom, timespan=timespan)
+        boundaries = query(q).fetchall()
+
+        for boundary in boundaries:
+            boundary = boundary[0][1:-1].split(',')[0]
+
+            in_params = []
+            for numer_id in numer_ids:
+                in_params.append({
+                    'numer_id': numer_id,
+                    'normalization': 'predenominated',
+                    'numer_timespan': timespan,
+                    'geom_id': boundary
+                })
+
+            q = u'''
+            SELECT {schema}OBS_GetMeta({geom}, '{in_params}')
+            '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
+                       geom=geom, in_params=json.dumps(in_params))
+            params = query(q).fetchone()[0]
+
+            # We can get duplicate IDs from multi-denominators, so for now we
+            # compress those measures into a single
+            params = OrderedDict([(p['id'], p) for p in params]).values()
+            assert_equal(len(params), len(in_params),
+                         'Inconsistent out and in params for {}'.format(in_params))
+
+            q = u'''
+            SELECT * FROM {schema}OBS_GetData(ARRAY[({geom}, 1)::geomval], '{params}')
+            '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
+                       geom=geom, params=json.dumps(params).replace(u"'", "''"))
+            resp = query(q).fetchone()
+            assert_is_not_none(resp, 'NULL returned for {}'.format(in_params))
+            rawvals = resp[1]
+            vals = [v['value'] for v in rawvals]
+
+            assert_equal(len(vals), len(in_params))
+            for i, val in enumerate(vals):
+                assert_is_not_none(val, 'NULL for {}'.format(in_params[i]['numer_id']))

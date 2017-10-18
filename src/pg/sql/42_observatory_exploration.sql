@@ -323,7 +323,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableGeometries(
   filter_tags TEXT[] DEFAULT NULL,
   numer_id TEXT DEFAULT NULL,
   denom_id TEXT DEFAULT NULL,
-  timespan TEXT DEFAULT NULL
+  timespan TEXT DEFAULT NULL,
+  number_geoms INTEGER DEFAULT NULL
 ) RETURNS TABLE (
   geom_id TEXT,
   geom_name TEXT,
@@ -390,15 +391,16 @@ BEGIN
       FROM observatory.obs_meta_geom o
       WHERE %s (geom_tags ?& $4 OR CARDINALITY($4) = 0)
     ), scores AS (
-      SELECT * FROM cdb_observatory._OBS_GetGeometryScores($5,
-        (SELECT ARRAY_AGG(geom_id) FROM available_geoms)
+      SELECT * FROM cdb_observatory._OBS_GetGeometryScores(bounds => $5,
+        filter_geom_ids => (SELECT ARRAY_AGG(geom_id) FROM available_geoms),
+        desired_num_geoms => $6::integer
       )
     ) SELECT DISTINCT ON (geom_id) available_geoms.*, score, numtiles, notnull_percent, numgeoms,
              percentfill, estnumgeoms, meanmediansize
       FROM available_geoms, scores
       WHERE available_geoms.geom_id = scores.column_id
   $string$, geom_clause)
-  USING numer_id, denom_id, timespan, filter_tags, bounds;
+  USING numer_id, denom_id, timespan, filter_tags, bounds, number_geoms;
   RETURN;
 END
 $$ LANGUAGE plpgsql;

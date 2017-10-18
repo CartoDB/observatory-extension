@@ -228,7 +228,7 @@ SELECT * FROM cdb_observatory.OBS_GetAvailableDenominators(
 WHERE valid_timespan IS True;
 ```
 
-## OBS_GetAvailableGeometries(bounds, filter_tags, numer_id, denom_id, timespan)
+## OBS_GetAvailableGeometries(bounds, filter_tags, numer_id, denom_id, timespan, number_geometries)
 
 Return available geometries within a boundary and with the specified
 `filter_tags`.
@@ -242,6 +242,7 @@ filter_tags | Text[] | a list of filters.  Only geometries for which all of thes
 numer_id | Text | the ID of a numerator to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_numer` (optional)
 denom_id | Text | the ID of a denominator to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_denom` (optional)
 timespan | Text | the ID of a timespan to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_timespan` (optional)
+number_geometries | Integer | Number of geometries of the source data in order to calculate more accurately the score value to know which geometry fits better with the provided extent. (optional)
 
 #### Returns
 

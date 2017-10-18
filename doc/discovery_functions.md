@@ -242,7 +242,7 @@ filter_tags | Text[] | a list of filters.  Only geometries for which all of thes
 numer_id | Text | the ID of a numerator to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_numer` (optional)
 denom_id | Text | the ID of a denominator to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_denom` (optional)
 timespan | Text | the ID of a timespan to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_timespan` (optional)
-number_geometries | Integer | calculates the score value based on a specified numeric parameter. This is useful if you need to adjust the accuracy of the number of geometries relative to the bounding box. (optional)
+number_geometries | Integer | an additional variable that is used to adjust the calculation of the [score](https://carto.com/docs/carto-engine/data/discovery-functions/#returns-4) (optional)
 
 #### Returns
 

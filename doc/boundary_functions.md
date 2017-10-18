@@ -2,7 +2,7 @@
 
 Use the following functions to retrieve [Boundary](https://carto.com/docs/carto-engine/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
-You can [access](https://carto.com/docs/carto-engine/data/accessing) boundaries through CARTO Builder. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](http://docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access](https://carto.com/docs/carto-engine/data/accessing) boundaries through CARTO Builder. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](https://carto.com/docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
 ## OBS_GetBoundariesByGeometry(geom geometry, geometry_id text)
 
@@ -123,7 +123,7 @@ SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
 
 ## OBS_GetBoundaryId(point_geometry, boundary_id)
 
-The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID Glossary](http://docs/carto-engine/data/glossary/#boundary-ids). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
+The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID Glossary](https://carto.com/docs/carto-engine/data/glossary/#boundary-ids). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
 
 #### Arguments
 

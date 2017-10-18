@@ -1,3 +1,10 @@
+1.8.0 (2017-10-18)
+------------------
+
+__Improvements__
+
+* Add `number_geometries` field to `OBS_GetAvailableGeometries` in order to provide the number of geometries from the source data to be used in the score calculation ([#313](https://github.com/CartoDB/observatory-extension/issues/313))
+
 1.7.0 (2017-08-18)
 ------------------
 

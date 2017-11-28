@@ -95,7 +95,7 @@ def record(params, results):
     ('complex', '_OBS_GetGeometryScores', 'NULL', 3000)
 ])
 def test_getgeometryscores_performance(geom_complexity, api_method, filters, target_geoms):
-    print api_method, geom_complexity, filters, target_geoms
+    print(api_method, geom_complexity, filters, target_geoms)
 
     rownums = (1, 5, 10, ) if 'complex' in geom_complexity else (5, 25, 50,)
     results = []
@@ -118,7 +118,7 @@ def test_getgeometryscores_performance(geom_complexity, api_method, filters, tar
             'qps': qps,
             'stmt': stmt
         })
-        print rows, ': ', qps, ' QPS'
+        print(rows, ': ', qps, ' QPS')
 
     if 'OBS_RECORD_TEST' in os.environ:
         record({
@@ -177,7 +177,7 @@ def test_getgeometryscores_performance(geom_complexity, api_method, filters, tar
     ('complex', 'OBS_GetCategory', None, 'offset_geom', "'us.census.tiger.census_tract'"),
 ])
 def test_getmeasure_performance(geom_complexity, api_method, normalization, geom, boundary):
-    print api_method, geom_complexity, normalization, geom, boundary
+    print(api_method, geom_complexity, normalization, geom, boundary)
     col = 'measure' if 'measure' in api_method.lower() else 'category'
     results = []
 
@@ -201,7 +201,7 @@ def test_getmeasure_performance(geom_complexity, api_method, normalization, geom
             'qps': qps,
             'stmt': stmt
         })
-        print rows, ': ', qps, ' QPS'
+        print(rows, ': ', qps, ' QPS')
 
     if 'OBS_RECORD_TEST' in os.environ:
         record({
@@ -249,7 +249,7 @@ def test_getmeasure_performance(geom_complexity, api_method, normalization, geom
     ('complex', 'denominator', 'offset_geom', "'us.census.tiger.county'"),
 ])
 def test_getdata_performance(geom_complexity, normalization, geom, boundary):
-    print geom_complexity, normalization, geom, boundary
+    print(geom_complexity, normalization, geom, boundary)
 
     cols = ['us.census.acs.B01001002',
             'us.census.acs.B01001003',
@@ -305,7 +305,7 @@ def test_getdata_performance(geom_complexity, normalization, geom, boundary):
                 'qps': qps,
                 'stmt': stmt
             })
-            print rows, ': ', qps, ' QPS'
+            print(rows, ': ', qps, ' QPS')
 
         if 'OBS_RECORD_TEST' in os.environ:
             record({

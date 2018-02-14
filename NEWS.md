@@ -1,3 +1,11 @@
+1.9.0 (2018-02-14)
+------------------
+
+__Improvements__
+
+* Improved `OBS_GetAvailableTimespans` for the DO Timespans project ([bigmetadata/#422](https://github.com/CartoDB/bigmetadata/issues/422))
+* Fixed documentation
+
 1.8.0 (2017-10-18)
 ------------------
 

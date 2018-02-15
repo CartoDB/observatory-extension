@@ -1,5 +1,6 @@
 language: c
-dist: precise
+group: travis_stable
+sudo: required
 
 env:
   global:
@@ -31,8 +32,7 @@ before_install:
   - sudo apt-get -y install postgresql-9.5-postgis-2.2=2.2.2.0-cdb2
 
   # configure it to accept local connections from postgres
-  - echo -e "# TYPE  DATABASE        USER            ADDRESS                 METHOD \nlocal   all             postgres                                trust\nlocal   all             all                                     trust\nhost    all             all             127.0.0.1/32            trust" \
-    | sudo tee /etc/postgresql/9.5/main/pg_hba.conf
+  - echo -e "# TYPE  DATABASE        USER            ADDRESS                 METHOD \nlocal   all             postgres                                trust\nlocal   all             all                                     trust\nhost    all             all             127.0.0.1/32            trust" \ | sudo tee /etc/postgresql/9.5/main/pg_hba.conf
   - sudo /etc/init.d/postgresql restart 9.5
 
 install:
@@ -40,4 +40,4 @@ install:
 
 script:
   - cd src/pg
-  - make test || { cat src/pg/test/regression.diffs; false; }
+  - make test || { cat $TRAVIS_BUILD_DIR/src/pg/test/regression.diffs; false; }

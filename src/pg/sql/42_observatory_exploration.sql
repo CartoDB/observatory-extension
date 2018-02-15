@@ -381,7 +381,7 @@ BEGIN
                 -- '2015 - 2015' as one of the valid timespans.
                 -- If we pass a numerator_id, we filter by that numerator
                 CASE WHEN $1 IS NOT NULL AND $1 != '' THEN
-                  EXISTS (SELECT 1 FROM observatory.obs_meta_geom_numer_timespan onu WHERE o.geom_id = onu.geom_id AND onu.numer_id = $1 AND ($3 = ANY(onu.numer_timespans) OR $3 IN (select(unnest(o.numer_timespans)))))
+                  EXISTS (SELECT 1 FROM observatory.obs_meta_geom_numer_timespan onu WHERE o.geom_id = onu.geom_id AND onu.numer_id = $1 AND ($3 = ANY(onu.timespans) OR $3 IN (select(unnest(o.timespans)))))
                 ELSE
                   EXISTS (SELECT 1 FROM observatory.obs_meta_geom_numer_timespan onu WHERE o.geom_id = onu.geom_id AND ($3 = ANY(onu.geom_timespans) OR $3 IN (select(unnest(o.geom_timespans)))))
                 END

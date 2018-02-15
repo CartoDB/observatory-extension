@@ -405,13 +405,6 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS cdb_observatory.OBS_GetAvailableTimespans(
-  bounds GEOMETRY,
-  filter_tags TEXT[],
-  numer_id TEXT,
-  denom_id TEXT,
-  geom_id TEXT
-);
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableTimespans(
   bounds GEOMETRY DEFAULT NULL,
   filter_tags TEXT[] DEFAULT NULL,

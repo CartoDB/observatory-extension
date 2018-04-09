@@ -12,17 +12,17 @@ SET client_min_messages TO WARNING;
 
 -- expect most recent census tract boundary at cartodb nyc
 -- timespan implictly null
-SELECT cdb_observatory.OBS_GetBoundary(
+SELECT st_envelope(cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
   'us.census.tiger.census_tract'
-) = :'cartodb_census_tract_geometry' As OBS_GetBoundary_cartodb_census_tract;
+)) = st_envelope(st_asewkb(:'cartodb_census_tract_geometry')) As OBS_GetBoundary_cartodb_census_tract;
 
 -- expect most recent census county boundary (brooklyn) at cartodb nyc
 -- timespan implictly null
-SELECT cdb_observatory.OBS_GetBoundary(
+SELECT st_envelope(cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
   'us.census.tiger.county'
-) = :'cartodb_county_geometry' As OBS_GetBoundary_cartodb_county;
+)) = st_envelope(st_asewkb(:'cartodb_county_geometry')) As OBS_GetBoundary_cartodb_county;
 
 -- expect null geometry since boundary_id is null
 -- timespan implictly null
@@ -39,11 +39,11 @@ SELECT cdb_observatory.OBS_GetBoundary(
 ) IS NULL As OBS_GetBoundary_null_island_census_tract;
 
 -- expect census tract boundary at cartodb nyc from 2014
-SELECT cdb_observatory.OBS_GetBoundary(
+SELECT st_envelope(cdb_observatory.OBS_GetBoundary(
   cdb_observatory._TestPoint(),
   'us.census.tiger.census_tract',
   '2015'
-) = :'cartodb_census_tract_geometry' As OBS_GetBoundary_year_census_tract;
+)) = st_envelope(st_asewkb(:'cartodb_census_tract_geometry')) As OBS_GetBoundary_year_census_tract;
 
 -- should return null
 -- look for census tracts a year before census released them
@@ -86,10 +86,10 @@ SELECT cdb_observatory.OBS_GetBoundaryId(
 
 -- should give geometry of King's County/Brooklyn, NY
 
-SELECT cdb_observatory.OBS_GetBoundaryById(
+SELECT st_envelope(cdb_observatory.OBS_GetBoundaryById(
   '36047',
   'us.census.tiger.county'
-) = :'cartodb_county_geometry' As OBS_GetBoundaryById_cartodb_county;
+)) = st_envelope(st_asewkb(:'cartodb_county_geometry')) As OBS_GetBoundaryById_cartodb_county;
 
 -- Should match output of GetBoundary on similar inputs
 SELECT cdb_observatory.OBS_GetBoundaryById(
@@ -101,11 +101,11 @@ SELECT cdb_observatory.OBS_GetBoundaryById(
 ) As OBS_GetBoundaryById_compared_with_obs_GetBoundary;
 
 -- should give null since boundary_id does not match geometry reference id
-SELECT cdb_observatory.OBS_GetBoundaryById(
+SELECT st_envelope(cdb_observatory.OBS_GetBoundaryById(
   '36047',
   'us.census.tiger.county',
   '2015'
-) = :'cartodb_county_geometry' OBS_GetBoundaryById_boundary_id_mismatch_geom_id;
+)) = st_envelope(st_asewkb(:'cartodb_county_geometry')) OBS_GetBoundaryById_boundary_id_mismatch_geom_id;
 
 -- should give null since boundary_id does not match geometry reference id
 SELECT cdb_observatory.OBS_GetBoundaryById(

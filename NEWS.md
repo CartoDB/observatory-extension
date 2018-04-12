@@ -1,9 +1,12 @@
-1.9.0 (2018-02-14)
+1.9.0 (2018-04-16)
 ------------------
 
 __Improvements__
 
-* Improved `OBS_GetAvailableTimespans` for the DO Timespans project ([bigmetadata/#422](https://github.com/CartoDB/bigmetadata/issues/422))
+* Improved `OBS_GetAvailableGeometries` for the DO Timespans project ([#325](https://github.com/CartoDB/observatory-extension/pull/325))
+* Improved `OBS_GetAvailableTimespans` for the DO Timespans project ([#324](https://github.com/CartoDB/bigmetadata/issues/324))
+* Modified the denominated suggested_name to mitigate collisions ([#327](https://github.com/CartoDB/observatory-extension/pull/327))
+* Fixed some errors so now the extension supports PostgreSQL 10 ([#329](https://github.com/CartoDB/observatory-extension/pull/329))
 * Fixed documentation
 
 1.8.0 (2017-10-18)

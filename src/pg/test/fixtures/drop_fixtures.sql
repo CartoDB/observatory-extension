@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS observatory.obs_tag;
 DROP TABLE IF EXISTS observatory.obs_column_to_column;
 DROP TABLE IF EXISTS observatory.obs_dump_version;
 DROP TABLE IF EXISTS observatory.obs_meta;
+DROP TABLE IF EXISTS observatory.obs_table_to_table;
 DROP TABLE IF EXISTS observatory.obs_meta_numer;
 DROP TABLE IF EXISTS observatory.obs_meta_denom;
 DROP TABLE IF EXISTS observatory.obs_meta_geom;

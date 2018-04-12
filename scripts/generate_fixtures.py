@@ -2,12 +2,18 @@ import os
 import psycopg2
 import subprocess
 
+PGUSER = os.environ.get('PGUSER', 'postgres')
+PGPASSWORD = os.environ.get('PGPASSWORD', '')
+PGHOST=os.environ.get('PGHOST', 'localhost')
+PGPORT=os.environ.get('PGPORT', '5432')
+PGDATABASE=os.environ.get('PGDATABASE', 'postgres')
+
 DB_CONN = psycopg2.connect('postgres://{user}:{password}@{host}:{port}/{database}'.format(
-    user=os.environ.get('PGUSER', 'postgres'),
-    password=os.environ.get('PGPASSWORD', ''),
-    host=os.environ.get('PGHOST', 'localhost'),
-    port=os.environ.get('PGPORT', '5432'),
-    database=os.environ.get('PGDATABASE', 'postgres'),
+    user=PGUSER,
+    password=PGPASSWORD,
+    host=PGHOST,
+    port=PGPORT,
+    database=PGDATABASE
 ))
 CURSOR = DB_CONN.cursor()
 
@@ -207,15 +213,12 @@ FIXTURES = [
     ('us.census.spielman_singleton_segments.X55', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2014-01'),
     ('us.zillow.AllHomes_Zhvi', 'us.census.tiger.zcta5', '2016-06'),
-    ('whosonfirst.wof_country_name', 'whosonfirst.wof_country_geom', '2016'),
-    ('us.census.acs.B01003001', 'us.census.tiger.zcta5_clipped', '2010 - 2014'),
-    ('us.census.acs.B01003001', 'us.census.tiger.block_group_clipped', '2010 - 2014'),
-    ('us.census.acs.B01003001', 'us.census.tiger.census_tract_clipped', '2010 - 2014'),
-    ('us.census.tiger.fullname', 'us.census.tiger.pointlm_geom', '2016'),
-    ('us.census.tiger.fullname', 'us.census.tiger.prisecroads_geom', '2016'),
-    ('us.census.tiger.name', 'us.census.tiger.county', '2015'),
-    ('us.census.tiger.name', 'us.census.tiger.county_clipped', '2015'),
-    ('us.census.tiger.name', 'us.census.tiger.block_group', '2015'),
+    ('us.census.acs.B01003001', 'us.census.tiger.zcta5', '2010 - 2014'),
+    ('us.census.acs.B01003001', 'us.census.tiger.block_group', '2010 - 2014'),
+    ('us.census.acs.B01003001', 'us.census.tiger.census_tract', '2010 - 2014'),
+    ('us.census.tiger.place_geoname', 'us.census.tiger.place_clipped', '2015'),
+    ('us.census.tiger.county_geoname', 'us.census.tiger.county_clipped', '2015'),
+    ('us.census.tiger.block_group_geoname', 'us.census.tiger.block_group', '2015'),
 ]
 
 OUTFILE_PATH = os.path.join(os.path.dirname(__file__), '..',
@@ -230,7 +233,8 @@ def dump(cols, tablename, where=''):
             tablename=tablename,
         ))
 
-    subprocess.check_call('pg_dump -x --section=pre-data -t observatory.{tablename} '
+    subprocess.check_call('PGPASSWORD={pgpassword} PGUSER={pguser} PGHOST={pghost} PGDATABASE={pgdb} '
+                          'pg_dump -x --section=pre-data -t observatory.{tablename} '
                           ' | sed "s:SET search_path.*::" '
                           ' | sed "s:CREATE TABLE :CREATE TABLE observatory.:" '
                           ' | sed "s:ALTER TABLE.*OWNER.*::" '
@@ -238,19 +242,27 @@ def dump(cols, tablename, where=''):
                           ' >> {outfile}'.format(
                               tablename=tablename,
                               outfile=OUTFILE_PATH,
+                              pgpassword=PGPASSWORD,
+                              pghost=PGHOST,
+                              pgdb=PGDATABASE,
+                              pguser=PGUSER
                           ), shell=True)
 
     with open(OUTFILE_PATH, 'a') as outfile:
         outfile.write('COPY observatory."{}" FROM stdin WITH CSV HEADER;\n'.format(tablename))
 
     subprocess.check_call('''
-      psql -c "COPY (SELECT {cols} \
+      PGPASSWORD={pgpassword} psql -U {pguser} -d {pgdb} -h {pghost} -c "COPY (SELECT {cols} \
       FROM observatory.{tablename} {where}) \
       TO STDOUT WITH CSV HEADER" >> {outfile}'''.format(
           cols=cols,
           tablename=tablename,
           where=where,
           outfile=OUTFILE_PATH,
+          pgpassword=PGPASSWORD,
+          pghost=PGHOST,
+          pgdb=PGDATABASE,
+          pguser=PGUSER
       ), shell=True)
 
     with open(OUTFILE_PATH, 'a') as outfile:

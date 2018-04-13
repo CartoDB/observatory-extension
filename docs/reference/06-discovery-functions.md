@@ -1,8 +1,8 @@
-# Discovery Functions
+## Discovery Functions
 
 If you are using the [discovery methods]({{ site.dataobservatory_docs}}/guides/overview/#discovery-methods) from the Data Observatory, use the following functions to retrieve [boundary]({{ site.dataobservatory_docs}}/guides/overview/#boundary-data) and [measures]({{ site.dataobservatory_docs}}/guides/overview/#measures-data) data.
 
-## OBS_Search(search_term)
+### OBS_Search(search_term)
 
 Use arbitrary text to search all available measures
 
@@ -31,7 +31,7 @@ source | where the data came from (e.g. US Census Bureau)
 SELECT * FROM OBS_Search('home value')
 ```
 
-## OBS_GetAvailableBoundaries(point_geometry)
+### OBS_GetAvailableBoundaries(point_geometry)
 
 Returns available `boundary_id`s at a given point geometry.
 
@@ -57,7 +57,7 @@ time_span | the timespan attached the boundary. this does not mean that the boun
 SELECT * FROM OBS_GetAvailableBoundaries(CDB_LatLng(40.7, -73.9))
 ```
 
-## OBS_GetAvailableNumerators(bounds, filter_tags, denom_id, geom_id, timespan)
+### OBS_GetAvailableNumerators(bounds, filter_tags, denom_id, geom_id, timespan)
 
 Return available numerators within a boundary and with the specified
 `filter_tags`.
@@ -151,7 +151,7 @@ SELECT * FROM OBS_GetAvailableNumerators(
 WHERE valid_timespan IS True;
 ```
 
-## OBS_GetAvailableDenominators(bounds, filter_tags, numer_id, geom_id, timespan)
+### OBS_GetAvailableDenominators(bounds, filter_tags, numer_id, geom_id, timespan)
 
 Return available denominators within a boundary and with the specified
 `filter_tags`.
@@ -228,7 +228,7 @@ SELECT * FROM OBS_GetAvailableDenominators(
 WHERE valid_timespan IS True;
 ```
 
-## OBS_GetAvailableGeometries(bounds, filter_tags, numer_id, denom_id, timespan, number_geometries)
+### OBS_GetAvailableGeometries(bounds, filter_tags, numer_id, denom_id, timespan, number_geometries)
 
 Return available geometries within a boundary and with the specified
 `filter_tags`.

@@ -236,7 +236,6 @@ def dump(cols, tablename, where=''):
     subprocess.check_call('PGPASSWORD={pgpassword} PGUSER={pguser} PGHOST={pghost} PGDATABASE={pgdb} '
                           'pg_dump -x --section=pre-data -t observatory.{tablename} '
                           ' | sed "s:SET search_path.*::" '
-                          ' | sed "s:CREATE TABLE :CREATE TABLE observatory.:" '
                           ' | sed "s:ALTER TABLE.*OWNER.*::" '
                           ' | sed "s:SET idle_in_transaction_session_timeout.*::" '
                           ' >> {outfile}'.format(

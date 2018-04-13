@@ -32,7 +32,7 @@ value | the raw or normalized measure
 
 Add a measure to an empty numeric column based on point locations in your table.
 
-```SQL
+```sql
 UPDATE tablename
 SET total_population = OBS_GetUSCensusMeasure(the_geom, 'Total Population')
 ```

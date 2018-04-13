@@ -2,11 +2,11 @@
 
 For Enterprise account plans, the [Data Observatory](https://carto.com/data) provides access to a searchable catalog of advanced location data, such as census block, population segments, boundaries and so on. A set of SQL functions allow you to augment your own data and broaden your analysis by discovering boundaries and measures of data from this catalog.
 
-This section describes the Data Observatory methods and the type of data that it returns.
+This section describes the Data Observatory functions and the type of data that it returns.
 
-### Methods Overview
+### Functions Overview
 
-There are several methods for accessing different categories of data into your visualizations. You can discover and retrieve data by requesting OBS functions from the Data Observatory. These Data Observatory functions are designed for specific, targeted methods of data analysis. The response for these functions are classified into two primary types of data results; measures and boundaries.
+There are several functions for accessing different categories of data into your visualizations. You can discover and retrieve data by requesting OBS functions from the Data Observatory. These Data Observatory functions are designed for specific, targeted methods of data analysis. The response for these functions are classified into two primary types of data results; measures and boundaries.
 
 - Boundaries are the geospatial boundaries you need to map or aggregate your data. Examples include Country Borders, Zip Code Tabulation Areas, and Counties
 
@@ -14,34 +14,34 @@ There are several methods for accessing different categories of data into your v
 
 Depending on the OBS function, you will get one, or both, types of data in your result. See [Measures and Boundary Data](#measures-and-boundary-results) for details about available data.
 
-#### Measures Methods
+#### Measures Functions
 
 Use location-based measures to analyze your data by accessing population and industry measurements at point locations, or within a region or polygon. These include variables for demographic, economic, and other types of information.
 
 - See [Measures Functions]({{ site.dataobservatory_docs }}/reference/#measures-functions) for specific OBS functions
 - Returns Measures data results
 
-#### Boundary Methods
+#### Boundary Functions
 
 Use global boundaries to analyze your data by accessing multi-scaled geometries for visualizations. Examples include US Block Groups and Census Tracts. These enable you to aggregate your data into geometric polygons. You can also use your own data to query specific boundaries.
 
 - See [Boundary Functions]({{ site.dataobservatory_docs }}/reference/#boundary-functions) for specific OBS functions
 - Returns Boundary data results
 
-#### Discovery Methods
+#### Discovery Functions
 
-Discovery Methods provide easier ways for you to find Measures and Boundaries of interest in the Data Observatory. The Discovery functions allow you to perform targeted searches for Measures, or use your own data to discover what is available at a given location. As this is a **retrieval tool** of the Data Observatory, the query results do not change your table. The response back displays one or more identifiers as matches to your search criteria. Each unique identifier can _then_ be used as part of other OBS functions to access any of the other Data Observatory methods.
+Discovery Functions provide easier ways for you to find Measures and Boundaries of interest in the Data Observatory. The Discovery functions allow you to perform targeted searches for Measures, or use your own data to discover what is available at a given location. As this is a **retrieval tool** of the Data Observatory, the query results do not change your table. The response back displays one or more identifiers as matches to your search criteria. Each unique identifier can _then_ be used as part of other OBS functions to access any of the other Data Observatory functions.
 
 - See [Discovery Functions]({{ site.dataobservatory_docs }}/reference/#discovery-functions) for specific OBS functions
 - Returns Boundary or Measures matches for your data
 
 ### Measures and Boundary Results
 
-The response from the Data Observatory methods are classified as either Measures or Boundary. Depending on your OBS function, you will get one, or both, types of data in your result.
+The response from the Data Observatory functions are classified as either Measures or Boundary. Depending on your OBS function, you will get one, or both, types of data in your result.
 
 #### Measures Data
 
-Measures provide details about local populations, markets, industries and other dimensions. You can search for available Measures using the Discovery methods, or by viewing the Data Catalog. Measures can be requested for Point locations, or can be summarized for Polygons (regions). In general, Point location requests will return raw aggregate values (e.g. Median Rent), or will provide amounts per square kilometer (e.g. Population). The total square kilometers of the area searched will be returned, allowing you to get raw counts, if needed. Alternatively, if you search over a polygon, raw counts will be returned.
+Measures provide details about local populations, markets, industries and other dimensions. You can search for available Measures using the Discovery functions, or by viewing the Data Catalog. Measures can be requested for Point locations, or can be summarized for Polygons (regions). In general, Point location requests will return raw aggregate values (e.g. Median Rent), or will provide amounts per square kilometer (e.g. Population). The total square kilometers of the area searched will be returned, allowing you to get raw counts, if needed. Alternatively, if you search over a polygon, raw counts will be returned.
 
 The following table indicates where Measures data results are available. Measures can include raw measures and when indicated, can provide geometries.
 

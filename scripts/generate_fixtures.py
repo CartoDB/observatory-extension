@@ -358,6 +358,10 @@ def main():
                         timespans=','.join(["'{}'".format(x) for _, _, x in FIXTURES]),
                         table_ids=','.join(["'{}'".format(x) for _, _, x in unique_tables])
                     )
+        elif tablename in ('obs_table_to_table'):
+            where = '''WHERE source_id IN ({table_ids})'''.format(
+                        table_ids=','.join(["'{}'".format(x) for _, _, x in unique_tables])
+                    )
         else:
             where = ''
         dump('*', tablename, where)
@@ -366,12 +370,6 @@ def main():
         if 'zcta5' in table_id or 'zillow_zip' in table_id:
             where = '\'11%\''
             compare = 'LIKE'
-        elif 'pri_sec_roads' in table_id or 'point_landmark' in table_id:
-            dump('*', tablename, 'WHERE geom && ST_MakeEnvelope(-74,40.69,-73.9,40.72, 4326)')
-            continue
-        elif 'whosonfirst' in table_id:
-            where = "('85632785','85633051','85633111','85633147','85633253','85633267')"
-            compare = 'IN'
         elif 'county' in table_id and 'tiger' in table_id:
             where = "('48061', '36047')"
             compare = 'IN'

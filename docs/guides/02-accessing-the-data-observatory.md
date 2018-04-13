@@ -26,7 +26,7 @@ This procedure describes how to access the Data Observatory functions by applyin
 
 2) [View the Data Observatory Catalog](https://cartodb.github.io/bigmetadata/index.html)
 
-An overview for each of the analyzed methods of data appears, and indicates the unique function signature needed to access the catalog item. You can copy the OBS function from the Data Observatory catalog and modify the placeholder parameters shown in curly brackets (e.g. "{table_name}").
+An overview for each of the analyzed functions of data appears, and indicates the unique function signature needed to access the catalog item. You can copy the OBS function from the Data Observatory catalog and modify the placeholder parameters shown in curly brackets (e.g. "{table_name}").
 
 3) From _Your datasets_ dashboard in CARTO, click _NEW DATASET_ and _CREATE EMPTY DATASET_. 
 
@@ -36,7 +36,7 @@ This creates an untitled table. You can get population measurements from the Dat
 
 5) Apply the OBS function to modify your table. 
 
-For example, the following image displays a SQL query using the Boundary method, [`OBS_GetBoundariesByGeometry(geom geometry, geometry_id text)`](https://carto.com/docs/carto-engine/data/boundary-functions/#obsgetboundariesbygeometrygeom-geometry-geometryid-text) function. The SQL query inserts the boundary data as a single polygon geometry for each row of data. 
+For example, the following image displays a SQL query using the Boundary function, [`OBS_GetBoundariesByGeometry(geom geometry, geometry_id text)`](https://carto.com/docs/carto-engine/data/boundary-functions/#obsgetboundariesbygeometrygeom-geometry-geometryid-text) function. The SQL query inserts the boundary data as a single polygon geometry for each row of data. 
 
 ![Query OBS Function in empty dataset](../img/obs_getboundary.jpg)
 
@@ -101,7 +101,7 @@ The following usage notes are recommended when using the Data Observatory functi
 
 	The Data Observatory is **recommended** to be used with INSERT or UPDATE operations, for applying analyzed measures and boundaries data to your tables. While SELECT (retrieve) is standard for SQL API requests, be mindful of quota consumption and use INSERT (to insert a new record) or UPDATE (to update an existing record), for best practices. 
 
-	**Exception:** [Discovery Methods]({{ site.dataobservatory_docs }}/guides/overview/#discovery-methods) are the exception. You can use SELECT as these functions are not actually retrieving data, they are retrieving ids that you can use for other functions.
+	**Exception:** [Discovery Functions]({{ site.dataobservatory_docs }}/guides/overview/#discovery-functions) are the exception. You can use SELECT as these functions are not actually retrieving data, they are retrieving ids that you can use for other functions.
 
 - You can reduce storage space for unneeded geometries and optimize query optimizations by applying the PostGIS [`ST_Simplify`](http://www.postgis.org/docs/ST_Simplify.html) function. For example, you can simplify the `the_geom` for a large table of polygons and reduce the size of them for quicker rendering. For other tips, see the [most commonly used PostGIS functions]({{ site.baseurl }}/faqs/postgresql-and-postgis/#what-are-the-most-common-postgis-functions) that you can apply with CARTO
 

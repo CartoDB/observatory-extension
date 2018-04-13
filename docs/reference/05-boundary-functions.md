@@ -112,7 +112,7 @@ geom | WKB geometry
 
 Overwrite a point geometry with a boundary geometry that contains it in your table
 
-```SQL
+```sql
 UPDATE tablename
 SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
 ```
@@ -145,7 +145,7 @@ geometry_id | a string identifier of a geometry in the Boundaries
 
 Write the US Census block group geoid that contains the point geometry for every row as a new column in your table.
 
-```SQL
+```sql
 UPDATE tablename
 SET geometry_id = OBS_GetBoundaryId(the_geom, 'us.census.tiger.block_group')
 ```
@@ -178,7 +178,7 @@ geom | a WGS84 polygon geometry
 
 Use a table of `geometry_id`s (e.g., geoid from the U.S. Census) to select the unique boundaries that they correspond to and insert into a table called, `overlapping_polygons`. This is a useful method for creating new choropleths of aggregate data.
 
-```SQL
+```sql
 INSERT INTO overlapping_polygons (the_geom, geometry_id, point_count)
 SELECT
   OBS_GetBoundaryById(geometry_id, 'us.census.tiger.county') As the_geom,

@@ -63,7 +63,7 @@ value | the raw or normalized measure
 
 Add a measure to an empty numeric column based on polygons in your table
 
-```SQL
+```sql
 UPDATE tablename
 SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
@@ -94,7 +94,7 @@ value | the raw or normalized measure
 
 Add a measure to an empty numeric column based on point locations in your table
 
-```SQL
+```sql
 UPDATE tablename
 SET median_home_value_sqft = OBS_GetMeasure(the_geom, 'us.zillow.AllHomes_MedianValuePerSqft')
 ```
@@ -125,7 +125,7 @@ value | the raw or normalized measure
 
 Add a measure to an empty column based on polygons in your table
 
-```SQL
+```sql
 UPDATE tablename
 SET household_count = OBS_GetMeasure(the_geom, 'us.census.acs.B11001001')
 ```
@@ -159,7 +159,7 @@ value | the raw measure associated with `geom_ref`
 
 Add a measure to an empty column based on county geoids in your table
 
-```SQL
+```sql
 UPDATE tablename
 SET household_count = OBS_GetMeasureById(geoid_column, 'us.census.acs.B11001001', 'us.census.tiger.county')
 ```
@@ -191,7 +191,7 @@ value | a text based category found at the supplied point
 
 Add the Category to an empty column text column based on point locations in your table
 
-```SQL
+```sql
 UPDATE tablename
 SET segmentation = OBS_GetCategory(the_geom, 'us.census.spielman_singleton_segments.X55')
 ```
@@ -288,7 +288,7 @@ data, using a boundary relevant for the geometry provided and latest timespan.
 Limit to only the most recent column most relevant to the extent & density of
 input geometries in `tablename`.
 
-```SQL
+```sql
 SELECT OBS_GetMeta(
   ST_SetSRID(ST_Extent(the_geom), 4326),
   '[{"numer_id": "us.census.acs.B01003001"}]',
@@ -300,7 +300,7 @@ SELECT OBS_GetMeta(
 Obtain metadata that can augment with one additional column of US population
 data, using census tract boundaries.
 
-```SQL
+```sql
 SELECT OBS_GetMeta(
   ST_SetSRID(ST_Extent(the_geom), 4326),
   '[{"numer_id": "us.census.acs.B01003001", "geom_id": "us.census.tiger.census_tract"}]',
@@ -312,7 +312,7 @@ SELECT OBS_GetMeta(
 Obtain metadata that can augment with two additional columns, one for total
 population and one for male population.
 
-```SQL
+```sql
 SELECT OBS_GetMeta(
   ST_SetSRID(ST_Extent(the_geom), 4326),
   '[{"numer_id": "us.census.acs.B01003001"}, {"numer_id": "us.census.acs.B01001002"}]',
@@ -360,7 +360,7 @@ errors | A text array with all possible errors
 
 Validate metadata with two additional columns of US census data; using a boundary relevant for the geometry provided and the latest timespan. Limited to the most recent column, and the most relevant, based on the extent and density of input geometries in `tablename`.
 
-```SQL
+```sql
 SELECT OBS_MetadataValidation(
   ST_SetSRID(ST_Extent(the_geom), 4326),
   ST_GeometryType(the_geom),
@@ -408,7 +408,7 @@ array.
 
 Obtain population densities for every geometry in a table, keyed by cartodb_id:
 
-```SQL
+```sql
 WITH meta AS (
   SELECT OBS_GetMeta(
     ST_SetSRID(ST_Extent(the_geom), 4326),
@@ -423,7 +423,7 @@ FROM OBS_GetData((SELECT ARRAY_AGG((the_geom, cartodb_id)::geomval) FROM tablena
 Update a table with a blank numeric column called `pop_density` with population
 densities:
 
-```SQL
+```sql
 WITH meta AS (
   SELECT OBS_GetMeta(
     ST_SetSRID(ST_Extent(the_geom), 4326),
@@ -444,7 +444,7 @@ Update a table with two measurements at once, population density and household
 density.  The table should already have a Numeric column `pop_density` and
 `household_density`.
 
-```SQL
+```sql
 WITH meta AS (
   SELECT OBS_GetMeta(
     ST_SetSRID(ST_Extent(the_geom),4326),
@@ -507,7 +507,7 @@ array.
 Obtain population densities for every row of a table with FIPS code county IDs
 (USA).
 
-```SQL
+```sql
 WITH meta AS (
   SELECT OBS_GetMeta(
     ST_SetSRID(ST_Extent(the_geom), 4326),
@@ -522,7 +522,7 @@ Update a table with population densities for every FIPS code county ID (USA).
 This table has a blank column called `pop_density` and fips codes stored in a
 column `fips`.
 
-```SQL
+```sql
 WITH meta AS (
   SELECT OBS_GetMeta(
     ST_SetSRID(ST_Extent(the_geom), 4326),

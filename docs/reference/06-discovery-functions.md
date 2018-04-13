@@ -27,7 +27,7 @@ source | where the data came from (e.g. US Census Bureau)
 
 #### Example
 
-```SQL
+```sql
 SELECT * FROM OBS_Search('home value')
 ```
 
@@ -53,7 +53,7 @@ time_span | the timespan attached the boundary. this does not mean that the boun
 
 #### Example
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableBoundaries(CDB_LatLng(40.7, -73.9))
 ```
 
@@ -96,7 +96,7 @@ valid_timespan | Boolean | True if the `timespan` argument is a valid timespan f
 
 Obtain all numerators that are available within a small rectangle.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326))
 ```
@@ -104,7 +104,7 @@ SELECT * FROM OBS_GetAvailableNumerators(
 Obtain all numerators that are available within a small rectangle and are for
 the United States only.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states}');
 ```
@@ -112,7 +112,7 @@ SELECT * FROM OBS_GetAvailableNumerators(
 Obtain all numerators that are available within a small rectangle and are
 employment related for the United States only.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states, subsection/tags.employment}');
 ```
@@ -120,7 +120,7 @@ SELECT * FROM OBS_GetAvailableNumerators(
 Obtain all numerators that are available within a small rectangle and are
 related to both employment and age & gender for the United States only.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states, subsection/tags.employment, subsection/tags.age_gender}');
 ```
@@ -128,7 +128,7 @@ SELECT * FROM OBS_GetAvailableNumerators(
 Obtain all numerators that work with US population (`us.census.acs.B01003001`)
 as a denominator.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01003001')
 WHERE valid_denom IS True;
@@ -137,7 +137,7 @@ WHERE valid_denom IS True;
 Obtain all numerators that work with US states (`us.census.tiger.state`)
 as a geometry.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, 'us.census.tiger.state')
 WHERE valid_geom IS True;
@@ -145,7 +145,7 @@ WHERE valid_geom IS True;
 
 Obtain all numerators available in the timespan `2011 - 2015`.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, '2011 - 2015')
 WHERE valid_timespan IS True;
@@ -190,7 +190,7 @@ valid_timespan | Boolean | True if the `timespan` argument is a valid timespan f
 
 Obtain all denominators that are available within a small rectangle.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326));
 ```
@@ -198,14 +198,14 @@ SELECT * FROM OBS_GetAvailableDenominators(
 Obtain all denominators that are available within a small rectangle and are for
 the United States only.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states}');
 ```
 
 Obtain all denominators for male population (`us.census.acs.B01001002`).
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01001002')
 WHERE valid_numer IS True;
@@ -214,7 +214,7 @@ WHERE valid_numer IS True;
 Obtain all denominators that work with US states (`us.census.tiger.state`)
 as a geometry.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, 'us.census.tiger.state')
 WHERE valid_geom IS True;
@@ -222,7 +222,7 @@ WHERE valid_geom IS True;
 
 Obtain all denominators available in the timespan `2011 - 2015`.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, '2011 - 2015')
 WHERE valid_timespan IS True;
@@ -274,7 +274,7 @@ meanmediansize | Numeric | Ignored
 
 Obtain all geometries that are available within a small rectangle.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326));
 ```
@@ -282,14 +282,14 @@ SELECT * FROM OBS_GetAvailableGeometries(
 Obtain all geometries that are available within a small rectangle and are for
 the United States only.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states}');
 ```
 
 Obtain all geometries that work with total population (`us.census.acs.B01003001`).
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01003001')
 WHERE valid_numer IS True;
@@ -297,7 +297,7 @@ WHERE valid_numer IS True;
 
 Obtain all geometries with timespan  `2015`.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, '2015')
 WHERE valid_timespan IS True;
@@ -342,14 +342,14 @@ valid_geom | Boolean | True if the `geom_id` argument is a valid geometry for th
 
 Obtain all timespans that are available within a small rectangle.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableTimespans(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326));
 ```
 
 Obtain all timespans for total population (`us.census.acs.B01003001`).
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableTimespans(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01003001')
 WHERE valid_numer IS True;
@@ -358,7 +358,7 @@ WHERE valid_numer IS True;
 Obtain all timespans that work with US states (`us.census.tiger.state`)
 as a geometry.
 
-```SQL
+```sql
 SELECT * FROM OBS_GetAvailableTimespans(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, 'us.census.tiger.state')
 WHERE valid_geom IS True;

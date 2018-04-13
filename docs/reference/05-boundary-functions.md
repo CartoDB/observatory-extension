@@ -1,10 +1,10 @@
-# Boundary Functions
+## Boundary Functions
 
 Use the following functions to retrieve [Boundary](https://carto.com/docs/carto-engine/data/overview/#boundary-data) data. Data ranges from small areas (e.g. US Census Block Groups) to large areas (e.g. Countries). You can access boundaries by point location lookup, bounding box lookup, direct ID access and several other methods described below.
 
 You can [access](https://carto.com/docs/carto-engine/data/accessing) boundaries through CARTO Builder. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](https://carto.com/docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
-## OBS_GetBoundariesByGeometry(geom geometry, geometry_id text)
+### OBS_GetBoundariesByGeometry(geom geometry, geometry_id text)
 
 The ```OBS_GetBoundariesByGeometry(geometry, geometry_id)``` method returns a set of boundary geometries that intersect a supplied geometry. This can be used to find all boundaries that are within or overlap a bounding box. You have the ability to choose whether to retrieve all boundaries that intersect your supplied bounding box or only those that fall entirely inside of your bounding box.
 
@@ -88,7 +88,7 @@ FROM OBS_GetPointsByGeometry(
 
 * If a geometry other than a point is passed as the first argument, an error is thrown: `Invalid geometry type (ST_Point), expecting 'ST_MultiPolygon' or 'ST_Polygon'`
 
-## OBS_GetBoundary(point_geometry, boundary_id)
+### OBS_GetBoundary(point_geometry, boundary_id)
 
 The ```OBS_GetBoundary(point_geometry, boundary_id)``` method returns a boundary geometry defined as overlapping the point geometry and from the desired boundary set (e.g. Census Tracts). See the [Boundary ID Glossary](https://carto.com/docs/carto-engine/data/glossary/#boundary-ids). This is a useful method for performing aggregations of points.
 
@@ -121,7 +121,7 @@ SET the_geom = OBS_GetBoundary(the_geom, 'us.census.tiger.block_group')
 
 * If a geometry other than a point is passed, an error is thrown: `Invalid geometry type (ST_Line), expecting 'ST_Point'`
 
-## OBS_GetBoundaryId(point_geometry, boundary_id)
+### OBS_GetBoundaryId(point_geometry, boundary_id)
 
 The ```OBS_GetBoundaryId(point_geometry, boundary_id)``` returns a unique geometry_id for the boundary geometry that contains a given point geometry. See the [Boundary ID Glossary](https://carto.com/docs/carto-engine/data/glossary/#boundary-ids). The method can be combined with ```OBS_GetBoundaryById(geometry_id)``` to create a point aggregation workflow.
 
@@ -154,7 +154,7 @@ SET geometry_id = OBS_GetBoundaryId(the_geom, 'us.census.tiger.block_group')
 
 * If a geometry other than a point is passed, an error is thrown: `Invalid geometry type (ST_Line), expecting 'ST_Point'`
 
-## OBS_GetBoundaryById(geometry_id, boundary_id)
+### OBS_GetBoundaryById(geometry_id, boundary_id)
 
 The ```OBS_GetBoundaryById(geometry_id, boundary_id)``` returns the boundary geometry for a unique geometry_id. A geometry_id can be found using the ```OBS_GetBoundaryId(point_geometry, boundary_id)``` method described above.
 
@@ -188,7 +188,7 @@ FROM tablename
 GROUP BY geometry_id
 ```
 
-## OBS_GetBoundariesByPointAndRadius(point geometry, radius numeric, boundary_id text)
+### OBS_GetBoundariesByPointAndRadius(point geometry, radius numeric, boundary_id text)
 
 The ```OBS_GetBoundariesByPointAndRadius(point, radius, boundary_id)``` method returns boundary geometries and their geographical identifiers that intersect (or are contained by) a circle centered on a point with a radius.
 
@@ -230,7 +230,7 @@ FROM OBS_GetBoundariesByPointAndRadius(
 
 * If a geometry other than a point is passed, an error is thrown. E.g., `Invalid geometry type (ST_Line), expecting 'ST_Point'`
 
-## OBS_GetPointsByPointAndRadius(point geometry, radius numeric, boundary_id text)
+### OBS_GetPointsByPointAndRadius(point geometry, radius numeric, boundary_id text)
 
 The ```OBS_GetPointsByPointAndRadius(point, radius, boundary_id)``` method returns point geometries on boundaries (e.g., a point that lies on a Census tract) and their geographical identifiers that intersect (or are contained by) a circle centered on a point with a radius.
 

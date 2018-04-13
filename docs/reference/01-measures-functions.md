@@ -1,12 +1,12 @@
-# Measures Functions
+## Measures Functions
 
-[Data Observatory Measures](https://carto.com/docs/carto-engine/data/overview/#measures-methods) are the numerical location data you can access. The measure functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (point or polygon) and receiving back a measure (an absolute value) for that location.
+[Data Observatory Measures]({{site.dataobservatory_docs}}/guides/overview/#methods-overview) are the numerical location data you can access. The measure functions allow you to access individual measures to augment your own data or integrate in your analysis workflows. Measures are used by sending an identifier or a geometry (point or polygon) and receiving back a measure (an absolute value) for that location.
 
 There are hundreds of measures and the list is growing with each release. You can currently discover and learn about measures contained in the Data Observatory by downloading our [Data Catalog](https://cartodb.github.io/bigmetadata/index.html).
 
-You can [access](https://carto.com/docs/carto-engine/data/accessing) measures through CARTO Builder. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you](https://carto.com/docs/carto-engine/data/accessing/#best-practices) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
+You can [access]({{site.dataobservatory_docs}}/guides/overview/accessing-the-data-observatory/) measures through CARTO Builder. The same methods will work if you are using the CARTO Engine to develop your application. We [encourage you]({{site.dataobservatory_docs}}/guides/overview/accessing-the-data-observatory/) to use table modifying methods (UPDATE and INSERT) over dynamic methods (SELECT).
 
-## OBS_GetUSCensusMeasure(point geometry, measure_name text)
+### OBS_GetUSCensusMeasure(point geometry, measure_name text)
 
 The ```OBS_GetUSCensusMeasure(point, measure_name)``` function returns a measure based on a subset of the US Census variables at a point location. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory. To access the full list, use measure IDs with the ```OBS_GetMeasure``` function below.
 
@@ -37,7 +37,7 @@ UPDATE tablename
 SET total_population = OBS_GetUSCensusMeasure(the_geom, 'Total Population')
 ```
 
-## OBS_GetUSCensusMeasure(polygon geometry, measure_name text)
+### OBS_GetUSCensusMeasure(polygon geometry, measure_name text)
 
 The ```OBS_GetUSCensusMeasure(polygon, measure_name)``` function returns a measure based on a subset of the US Census variables within a given polygon. The ```OBS_GetUSCensusMeasure``` function is limited to only a subset of all measures that are available in the Data Observatory. To access the full list, use the ```OBS_GetMeasure``` function below.
 
@@ -68,7 +68,7 @@ UPDATE tablename
 SET local_male_population = OBS_GetUSCensusMeasure(the_geom, 'Male Population')
 ```
 
-## OBS_GetMeasure(point geometry, measure_id text)
+### OBS_GetMeasure(point geometry, measure_id text)
 
 The ```OBS_GetMeasure(point, measure_id)``` function returns any Data Observatory measure at a point location. You can browse all available Measures in the [Catalog](https://cartodb.github.io/bigmetadata/index.html).
 
@@ -99,7 +99,7 @@ UPDATE tablename
 SET median_home_value_sqft = OBS_GetMeasure(the_geom, 'us.zillow.AllHomes_MedianValuePerSqft')
 ```
 
-## OBS_GetMeasure(polygon geometry, measure_id text)
+### OBS_GetMeasure(polygon geometry, measure_id text)
 
 The ```OBS_GetMeasure(polygon, measure_id)``` function returns any Data Observatory measure calculated within a polygon.
 
@@ -134,7 +134,7 @@ SET household_count = OBS_GetMeasure(the_geom, 'us.census.acs.B11001001')
 
 * If an unrecognized normalization type is input, raises error: `'Only valid inputs for "normalize" are "area" (default) and "denominator".`
 
-## OBS_GetMeasureById(geom_ref text, measure_id text, boundary_id text)
+### OBS_GetMeasureById(geom_ref text, measure_id text, boundary_id text)
 
 The ```OBS_GetMeasureById(geom_ref, measure_id, boundary_id)``` function returns any Data Observatory measure that corresponds to the boundary in ```boundary_id``` that has a geometry reference of ```geom_ref```.
 
@@ -196,7 +196,7 @@ UPDATE tablename
 SET segmentation = OBS_GetCategory(the_geom, 'us.census.spielman_singleton_segments.X55')
 ```
 
-## OBS_GetMeta(extent geometry, metadata json, max_timespan_rank, max_score_rank, target_geoms)
+### OBS_GetMeta(extent geometry, metadata json, max_timespan_rank, max_score_rank, target_geoms)
 
 The ```OBS_GetMeta(extent, metadata)``` function returns a completed Data
 Observatory metadata JSON Object for use in ```OBS_GetData(geomvals,
@@ -321,7 +321,7 @@ SELECT OBS_GetMeta(
 ) FROM tablename
 ```
 
-## OBS_MetadataValidation(extent geometry, geometry_type text, metadata json, target_geoms)
+### OBS_MetadataValidation(extent geometry, geometry_type text, metadata json, target_geoms)
 
 The ```OBS_MetadataValidation``` function performs a validation check over the known issues using the extent, type of geometry, and metadata that is being used in the ```OBS_GetMeta``` function.
 
@@ -370,7 +370,7 @@ SELECT OBS_MetadataValidation(
 GROUP BY ST_GeometryType(the_geom)
 ```
 
-## OBS_GetData(geomvals array[geomval], metadata json)
+### OBS_GetData(geomvals array[geomval], metadata json)
 
 The ```OBS_GetData(geomvals, metadata)``` function returns a measure and/or
 geometry corresponding to the `metadata` JSON array for each every Geometry of

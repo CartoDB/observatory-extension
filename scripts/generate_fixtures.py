@@ -218,6 +218,7 @@ FIXTURES = [
     ('us.census.acs.B01003001', 'us.census.tiger.census_tract', '2010 - 2014'),
     ('us.census.tiger.place_geoname', 'us.census.tiger.place_clipped', '2015'),
     ('us.census.tiger.county_geoname', 'us.census.tiger.county_clipped', '2015'),
+    ('us.census.tiger.county_geoname', 'us.census.tiger.county', '2015'),
     ('us.census.tiger.block_group_geoname', 'us.census.tiger.block_group', '2015'),
 ]
 

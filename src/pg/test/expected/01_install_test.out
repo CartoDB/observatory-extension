@@ -2,3 +2,171 @@
 CREATE EXTENSION postgis;
 -- Install the extension
 CREATE EXTENSION observatory VERSION 'dev';
+\i test/fixtures/load_fixtures.sql
+SET client_min_messages TO WARNING;
+\set ECHO none
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+

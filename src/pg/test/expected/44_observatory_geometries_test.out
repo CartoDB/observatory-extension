@@ -42,12 +42,6 @@ t
 obs_getboundarybyid_boundary_id_mismatch_geom_id
 t
 (1 row)
-_obs_getboundariesbygeometry_roads_around_cartodb
-t
-(1 row)
-_obs_getboundariesbygeometry_points_around_cartodb
-t
-(1 row)
 _obs_getboundariesbygeometry_tracts_around_cartodb
 t
 (1 row)
@@ -58,9 +52,6 @@ obs_getboundariesbygeometry_tracts_around_cartodb
 t
 (1 row)
 obs_getboundariesbygeometry_tracts_around_null_island
-t
-(1 row)
-obs_getboundariesbygeometry_wof
 t
 (1 row)
 obs_getboundariesbypointandradius_around_cartodb

@@ -232,15 +232,15 @@ us.census.tiger.zcta5|9
 us.census.tiger.county|0
 (4 rows)
 column_id|_obs_geometryscores_numgeoms_50km_buffer
-us.census.tiger.block_group|10817
+us.census.tiger.block_group|10818
 us.census.tiger.census_tract|3396
-us.census.tiger.zcta5|484
+us.census.tiger.zcta5|483
 us.census.tiger.county|11
 (4 rows)
 column_id|_obs_geometryscores_numgeoms_500km_buffer
-us.census.tiger.block_group|48567
-us.census.tiger.census_tract|15823
-us.census.tiger.zcta5|6466
+us.census.tiger.block_group|48569
+us.census.tiger.census_tract|15825
+us.census.tiger.zcta5|6465
 us.census.tiger.county|295
 (4 rows)
 column_id|_obs_geometryscores_numgeoms_2500km_buffer

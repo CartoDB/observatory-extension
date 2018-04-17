@@ -1,6 +1,5 @@
 \pset format unaligned
 \set ECHO all
-\i test/fixtures/load_fixtures.sql
 SET client_min_messages TO WARNING;
 \set ECHO none
 
@@ -47,12 +46,6 @@ SELECT cdb_observatory._OBS_StandardizeMeasureName('test 343 %% 2 qqq }}{{}}') =
 
 SELECT cdb_observatory.OBS_DumpVersion()
   IS NOT NULL AS OBS_DumpVersion_notnull;
-
--- Should fail to perform intersection
-SELECT ST_IsValid(ST_Intersection(
-        cdb_observatory.OBS_GetBoundaryByID('48061', 'us.census.tiger.county'),
-        cdb_observatory.OBS_GetBoundaryByID('48061', 'us.census.tiger.county_clipped')
-)) AS complex_intersection_fails;
 
 -- Should succeed in intersecting
 SELECT ST_IsValid(cdb_observatory.safe_intersection(

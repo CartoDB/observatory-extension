@@ -503,7 +503,7 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC)
        = ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-             'us.census.tiger.county', 'us.census.tiger.zcta5']
+               'us.census.tiger.zcta5', 'us.census.tiger.county']
        AS _obs_geometryscores_5km_buffer
        FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 5000)::Geometry(Geometry, 4326),
@@ -532,8 +532,8 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
       WHERE table_id LIKE '%2015%';
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC)
-       = ARRAY['us.census.tiger.county', 'us.census.tiger.census_tract',
-             'us.census.tiger.zcta5', 'us.census.tiger.block_group']
+       = ARRAY['us.census.tiger.county', 'us.census.tiger.zcta5',
+             'us.census.tiger.census_tract', 'us.census.tiger.block_group']
       AS _obs_geometryscores_2500km_buffer
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 2500000)::Geometry(Geometry, 4326),
@@ -593,7 +593,7 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC)
       = ARRAY['us.census.tiger.zcta5', 'us.census.tiger.census_tract',
-              'us.census.tiger.county', 'us.census.tiger.block_group']
+              'us.census.tiger.block_group', 'us.census.tiger.county']
       AS _obs_geometryscores_500km_buffer_500_geoms
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),
@@ -613,7 +613,7 @@ SELECT ARRAY_AGG(column_id ORDER BY score DESC) =
 
 SELECT ARRAY_AGG(column_id ORDER BY score DESC)
        = ARRAY['us.census.tiger.block_group', 'us.census.tiger.census_tract',
-               'us.census.tiger.county', 'us.census.tiger.zcta5']
+               'us.census.tiger.zcta5', 'us.census.tiger.county']
       AS _obs_geometryscores_500km_buffer_25000_geoms
       FROM cdb_observatory._OBS_GetGeometryScores(
   ST_Buffer(ST_SetSRID(ST_MakePoint(-73.9, 40.7), 4326)::Geography, 50000)::Geometry(Geometry, 4326),

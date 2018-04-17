@@ -22,14 +22,14 @@ SELECT cdb_observatory.OBS_GetSegmentSnapshot(
 )::text is null as null_island_segmentation;
 
 -- Point-based OBS_GetMeasure with zillow
-SELECT abs(OBS_GetMeasure_zhvi_point - 597900) / 597900 < 5.0 AS OBS_GetMeasure_zhvi_point_test FROM cdb_observatory.OBS_GetMeasure(
-  ST_SetSRID(ST_Point(-73.94602417945862, 40.6768220087458), 4326),
+SELECT abs(OBS_GetMeasure_zhvi_point - 446000) / 446000 < 5.0 AS OBS_GetMeasure_zhvi_point_test FROM cdb_observatory.OBS_GetMeasure(
+  ST_SetSRID(ST_Point(-73.90820503234865, 40.69469600456701), 4326),
   'us.zillow.AllHomes_Zhvi', null, 'us.census.tiger.zcta5', '2014-01'
 ) As t(OBS_GetMeasure_zhvi_point);
 
 -- Point-based OBS_GetMeasure with later measure
-SELECT abs(OBS_GetMeasure_zhvi_point_default_latest - 995400) / 995400 < 5.0 AS OBS_GetMeasure_zhvi_point_default_latest_test FROM cdb_observatory.OBS_GetMeasure(
-  ST_SetSRID(ST_Point(-73.94602417945862, 40.6768220087458), 4326),
+SELECT abs(OBS_GetMeasure_zhvi_point_default_latest - 701400) / 701400 < 5.0 AS OBS_GetMeasure_zhvi_point_default_latest_test FROM cdb_observatory.OBS_GetMeasure(
+  ST_SetSRID(ST_Point(-73.90820503234865, 40.69469600456701), 4326),
   'us.zillow.AllHomes_Zhvi', null, 'us.census.tiger.zcta5', '2016-06'
 ) As t(OBS_GetMeasure_zhvi_point_default_latest);
 
@@ -677,7 +677,7 @@ data AS (SELECT * FROM cdb_observatory.OBS_GetData(
   (SELECT meta FROM meta)))
 SELECT id = 1 id,
        data->0->>'value' = 'Hispanic Black mix multilingual, high poverty, renters, uses public transport' data_poly_categorical,
-       abs((data->1->>'value')::Numeric - 15787) / 15787 < 0.0001 valcol
+       abs((data->1->>'value')::Numeric - 15790) / 15790 < 0.0001 valcol
 FROM data;
 
 -- OBS_GetData/OBS_GetMeta by geom with polygons inside a polygon
@@ -700,45 +700,21 @@ data AS (SELECT * FROM cdb_observatory.OBS_GetData(
   (SELECT meta FROM meta), false))
 SELECT every(id = 1) is TRUE id,
        count(distinct (data->0->>'value')::geometry) = 16 correct_num_geoms,
-       abs(sum((data->1->>'value')::numeric) - 12327) / 12327 < 0.001 correct_pop
+       abs(sum((data->1->>'value')::numeric) - 12329) / 12329 < 0.001 correct_pop
 FROM data;
 
 -- OBS_GetData/OBS_GetMeta by geom with polygons inside a polygon + one measure + one text
 WITH
 meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
-  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "normalization": "predenom", "geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.tiger.name", "geom_id": "us.census.tiger.block_group"}]') meta),
+  '[{"geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.acs.B01003001", "normalization": "predenom", "geom_id": "us.census.tiger.block_group"}, {"numer_id": "us.census.tiger.block_group_geoname", "geom_id": "us.census.tiger.block_group"}]') meta),
 data AS (SELECT * FROM cdb_observatory.OBS_GetData(
     ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
   (SELECT meta FROM meta), false))
 SELECT every(id = 1) is TRUE id,
        count(distinct (data->0->>'value')::geometry) = 16 correct_num_geoms,
-       abs(sum((data->1->>'value')::numeric) - 12327) / 12327 < 0.001 correct_pop,
+       abs(sum((data->1->>'value')::numeric) - 12329) / 12329 < 0.001 correct_pop,
        array_agg(distinct data->2->>'value') = '{"Block Group 1","Block Group 2","Block Group 3","Block Group 4","Block Group 5"}' correct_bg_names
 FROM data;
-
--- OBS_GetData/OBS_GetMeta by geom with points inside a polygon
-WITH
-meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
-  '[{"geom_id": "us.census.tiger.pointlm_geom"}]') meta),
-data AS (SELECT * FROM cdb_observatory.OBS_GetData(
-    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
-  (SELECT meta FROM meta), false))
-SELECT every(id = 1) AS id,
-       count(distinct (data->0->>'value')::geometry(point, 4326)) = 3 correct_num_points
-FROM data;
-
--- OBS_GetData/OBS_GetMeta by geom with points inside a polygon + one text
-WITH
-meta AS (SELECT cdb_observatory.OBS_GetMeta(cdb_observatory._TestArea(),
-  '[{"geom_id": "us.census.tiger.pointlm_geom"}, {"geom_id": "us.census.tiger.pointlm_geom", "numer_id": "us.census.tiger.fullname"}]') meta),
-data AS (SELECT * FROM cdb_observatory.OBS_GetData(
-    ARRAY[(cdb_observatory._TestArea(), 1)::geomval],
-  (SELECT meta FROM meta), false))
-SELECT every(id = 1) AS id,
-       count(distinct (data->0->>'value')::geometry(point, 4326)) = 3 correct_num_points,
-       array_agg(data->1->>'value') = '{"Bushwick Yards","Edward Block Square","Bushwick Houses"}' pointgeom_names
-FROM data;
-
 
 -- OBS_GetData by id with one standard measure
 WITH
@@ -896,7 +872,8 @@ WITH _geoms AS (
     FALSE
   )
   WHERE data->0->>'geomref' LIKE '36047%'
-  ORDER BY RANDOM()
+  and (data->1->>'value')::numeric > 1000
+  ORDER BY geom_ref
 ), geoms AS (
   SELECT *, row_number() OVER () cartodb_id FROM _geoms
 ), samples AS (

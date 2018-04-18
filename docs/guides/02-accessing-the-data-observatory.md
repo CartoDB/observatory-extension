@@ -6,9 +6,7 @@ The workflow for accessing the Data Observatory includes using a SQL query to ap
 
 You must have an Enterprise account and be familiar with using SQL requests.
 
-- The Data Observatory catalog includes data that is managed by CARTO, on a SaaS cloud platform. For Enterprise users, the Data Observatory can be enabled by contacting CARTO
-
-	**Note:** The following error appears if the Data Observatory has not been enabled for your account, `You have reached the limit of your quota`. [Contact Sales](mailto:sales@carto.com) if this error message appears.
+- The Data Observatory catalog includes data that is managed by CARTO, on a SaaS cloud platform. For Enterprise users, the Data Observatory can be enabled by contacting CARTO.
 
 - A set of Data Observatory functions (prefaced with "OBS" for Observatory), allow you to retrieve boundaries and measures data through a SQL request. These functions should be used with UPDATE and INSERT statements, not SELECT statements, as we are currently not supporting dynamic use of the Data Observatory 
 

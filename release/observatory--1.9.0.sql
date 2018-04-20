@@ -1830,9 +1830,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetAvailableTimespans(
   timespan_tags JSONB,
   valid_numer BOOLEAN,
   valid_denom BOOLEAN,
-  valid_geom BOOLEAN,
-  timespan_alias TEXT,
-  timespan_range DATERANGE
+  valid_geom BOOLEAN
 ) AS $$
 DECLARE
   geom_clause TEXT;
@@ -1861,9 +1859,7 @@ BEGIN
            NULL::JSONB timespan_tags,
     COALESCE($1 = ANY(numers), false) valid_numer,
     COALESCE($2 = ANY(denoms), false) valid_denom,
-    COALESCE($3 = ANY(geoms), false) valid_geom_id,
-           timespan_alias::TEXT,
-           timespan_range::DATERANGE
+    COALESCE($3 = ANY(geoms), false) valid_geom_id
     FROM observatory.obs_meta_timespan
     WHERE %s (timespan_tags ?& $4 OR CARDINALITY($4) = 0)
   $string$, geom_clause)

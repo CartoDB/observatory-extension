@@ -249,10 +249,10 @@ BEGIN
           'suggested_name', cdb_observatory.FIRST(
             LOWER(TRIM(BOTH '_' FROM regexp_replace(CASE WHEN numer_id IS NOT NULL
               THEN CASE
-                WHEN normalization ILIKE 'area%%' THEN numer_colname || ' per sq km'
-                WHEN normalization ILIKE 'denom%%' THEN numer_colname || ' rate'
-                ELSE numer_colname
-              END || ' ' || numer_timespan
+                WHEN normalization ILIKE 'area%%' THEN numer_colname || ' per sq km' || ' ' || numer_timespan
+                WHEN normalization ILIKE 'denom%%' THEN numer_colname || ' ' || numer_timespan || ' by ' || denom_colname
+                ELSE numer_colname || ' ' || numer_timespan
+              END
               ELSE geom_name || ' ' || geom_timespan
             END, '[^a-zA-Z0-9]+', '_', 'g')))
           ),

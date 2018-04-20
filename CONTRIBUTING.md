@@ -28,8 +28,8 @@ Run the tests with `make test`.
 
 Update extension in a working database with:
 ```
-ALTER EXTENSION observatory VERSION TO 'current';
-ALTER EXTENSION observatory VERSION TO 'dev';
+ALTER EXTENSION observatory UPDATE TO 'current';
+ALTER EXTENSION observatory UPDATE TO 'dev';
 ```
 
 Note: we keep the current development version install as 'dev' always;

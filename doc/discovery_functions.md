@@ -97,7 +97,7 @@ valid_timespan | Boolean | True if the `timespan` argument is a valid timespan f
 Obtain all numerators that are available within a small rectangle.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableNumerators(
+SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326))
 ```
 
@@ -105,7 +105,7 @@ Obtain all numerators that are available within a small rectangle and are for
 the United States only.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableNumerators(
+SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states}');
 ```
 
@@ -113,7 +113,7 @@ Obtain all numerators that are available within a small rectangle and are
 employment related for the United States only.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableNumerators(
+SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states, subsection/tags.employment}');
 ```
 
@@ -121,7 +121,7 @@ Obtain all numerators that are available within a small rectangle and are
 related to both employment and age & gender for the United States only.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableNumerators(
+SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states, subsection/tags.employment, subsection/tags.age_gender}');
 ```
 
@@ -129,7 +129,7 @@ Obtain all numerators that work with US population (`us.census.acs.B01003001`)
 as a denominator.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableNumerators(
+SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01003001')
 WHERE valid_denom IS True;
 ```
@@ -138,7 +138,7 @@ Obtain all numerators that work with US states (`us.census.tiger.state`)
 as a geometry.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableNumerators(
+SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, 'us.census.tiger.state')
 WHERE valid_geom IS True;
 ```
@@ -146,7 +146,7 @@ WHERE valid_geom IS True;
 Obtain all numerators available in the timespan `2011 - 2015`.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableNumerators(
+SELECT * FROM OBS_GetAvailableNumerators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, '2011 - 2015')
 WHERE valid_timespan IS True;
 ```
@@ -191,7 +191,7 @@ valid_timespan | Boolean | True if the `timespan` argument is a valid timespan f
 Obtain all denominators that are available within a small rectangle.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableDenominators(
+SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326));
 ```
 
@@ -199,14 +199,14 @@ Obtain all denominators that are available within a small rectangle and are for
 the United States only.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableDenominators(
+SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states}');
 ```
 
 Obtain all denominators for male population (`us.census.acs.B01001002`).
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableDenominators(
+SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01001002')
 WHERE valid_numer IS True;
 ```
@@ -215,7 +215,7 @@ Obtain all denominators that work with US states (`us.census.tiger.state`)
 as a geometry.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableDenominators(
+SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, 'us.census.tiger.state')
 WHERE valid_geom IS True;
 ```
@@ -223,7 +223,7 @@ WHERE valid_geom IS True;
 Obtain all denominators available in the timespan `2011 - 2015`.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableDenominators(
+SELECT * FROM OBS_GetAvailableDenominators(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, '2011 - 2015')
 WHERE valid_timespan IS True;
 ```
@@ -242,7 +242,7 @@ filter_tags | Text[] | a list of filters.  Only geometries for which all of thes
 numer_id | Text | the ID of a numerator to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_numer` (optional)
 denom_id | Text | the ID of a denominator to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_denom` (optional)
 timespan | Text | the ID of a timespan to check whether the geometry is valid against.  Will not reduce length of returned table, but will change values for `valid_timespan` (optional)
-number_geometries | Integer | Number of geometries of the source data in order to calculate more accurately the score value to know which geometry fits better with the provided extent. (optional)
+number_geometries | Integer | an additional variable that is used to adjust the calculation of the [score](https://carto.com/docs/carto-engine/data/discovery-functions/#returns-4) (optional)
 
 #### Returns
 
@@ -275,7 +275,7 @@ meanmediansize | Numeric | Ignored
 Obtain all geometries that are available within a small rectangle.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableGeometries(
+SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326));
 ```
 
@@ -283,14 +283,14 @@ Obtain all geometries that are available within a small rectangle and are for
 the United States only.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableGeometries(
+SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), '{section/tags.united_states}');
 ```
 
 Obtain all geometries that work with total population (`us.census.acs.B01003001`).
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableGeometries(
+SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01003001')
 WHERE valid_numer IS True;
 ```
@@ -298,7 +298,7 @@ WHERE valid_numer IS True;
 Obtain all geometries with timespan  `2015`.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableGeometries(
+SELECT * FROM OBS_GetAvailableGeometries(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, '2015')
 WHERE valid_timespan IS True;
 ```
@@ -343,14 +343,14 @@ valid_geom | Boolean | True if the `geom_id` argument is a valid geometry for th
 Obtain all timespans that are available within a small rectangle.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableTimespans(
+SELECT * FROM OBS_GetAvailableTimespans(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326));
 ```
 
 Obtain all timespans for total population (`us.census.acs.B01003001`).
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableTimespans(
+SELECT * FROM OBS_GetAvailableTimespans(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, 'us.census.acs.B01003001')
 WHERE valid_numer IS True;
 ```
@@ -359,7 +359,7 @@ Obtain all timespans that work with US states (`us.census.tiger.state`)
 as a geometry.
 
 ```SQL
-SELECT * FROM cdb_observatory.OBS_GetAvailableTimespans(
+SELECT * FROM OBS_GetAvailableTimespans(
   ST_MakeEnvelope(-74, 41, -73, 40, 4326), NULL, NULL, NULL, 'us.census.tiger.state')
 WHERE valid_geom IS True;
 ```

@@ -2,6 +2,11 @@
 
 I'd like to request a new data observatory extension deploy: dump + extension
 
+**VERY IMPORTANT!!!**
+
+PLEASE USE `python scripts/generate_fixtures.py` TO GENERATE NEW FIXTURES FOR
+THE NEW DUMP AND OVERRIDE IT IN THIS PROJECT BEFORE PASS THE TESTS
+
 ## Performance comparison to last deployment
 
 Please include link here to comparison perftests:
@@ -18,6 +23,6 @@ Please put here the dump id to be deployed: <dump_id>
 
 Add down here the PR links to be added and deployed:
 
-  - 
+  -
 
-// @CartoDB/dataservices
+// @CartoDB/datateam

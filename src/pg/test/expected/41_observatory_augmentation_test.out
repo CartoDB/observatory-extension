@@ -240,12 +240,6 @@ t|t|t
 id|correct_num_geoms|correct_pop|correct_bg_names
 t|t|t|t
 (1 row)
-id|correct_num_points
-t|t
-(1 row)
-id|correct_num_points|pointgeom_names
-t|t|t
-(1 row)
 id|obs_getdata_by_id_one_measure_null
 t|t
 (1 row)
@@ -299,7 +293,7 @@ tract_sample|tract_max_error|tract_avg_error|tract_min_error
 25|t|t|t
 50|t|t|t
 100|t|t|t
-761|t|t|t
+741|t|t|t
 (9 rows)
 no_bg_point_error
 t

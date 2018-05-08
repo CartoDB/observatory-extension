@@ -3,6 +3,7 @@ RETURNS NUMERIC[] AS $$
 import math
 def tile2lnglat(z, x, y):
     n = 2.0 ** z
+    y = (1 << z) - y - 1
 
     lon = x / n * 360.0 - 180.0
     lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * y / n)))

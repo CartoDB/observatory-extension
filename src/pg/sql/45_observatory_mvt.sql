@@ -110,7 +110,7 @@ BEGIN
                 -- SUM (numer * (% OBS geom in user geom)) / area of big geom
                 ' ROUND(CAST(SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
                 ' * _procgeoms.pct_obs' ||
-                ' ) / (Nullif(ST_Area(cdb_observatory.FIRST(_procgeoms.geom)::Geography), 0) / 1000000) AS NUMERIC), 4) '
+                ' ) / (Nullif(ST_Area(cdb_observatory.FIRST(_procgeoms.mvtgeom)::Geography), 0) / 1000000) AS NUMERIC), 4) '
               -- median/average measures with universe
               WHEN LOWER(numer_aggregate) IN ('median', 'average') AND
                   denom_reltype ILIKE 'universe' AND LOWER(normalization) LIKE 'pre%'
@@ -143,7 +143,7 @@ BEGIN
               -- geometry
             WHEN numer_id IS NULL THEN
               '''geomref'', _procgeoms.geomref, ' ||
-              '''value'', ' || 'cdb_observatory.FIRST(_procgeoms.geom)::TEXT'
+              '''value'', ' || 'cdb_observatory.FIRST(_procgeoms.mvtgeom)::TEXT'
               -- code below will return the intersection of the user's geom and the
               -- OBS geom
               --'''value'', ' || 'ST_Union(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename ||
@@ -155,7 +155,7 @@ BEGIN
         FROM _procgeoms_' || Coalesce(geom_tablename || '_' || geom_geomref_colname, api_method) || ' _procgeoms ' ||
           Coalesce(String_Agg(DISTINCT
               Coalesce('LEFT JOIN observatory.' || numer_tablename || ' ON _procgeoms.geomref = observatory.' || numer_tablename || '.' || numer_geomref_colname,
-                ', LATERAL (SELECT * FROM cdb_observatory.' || api_method || '(_procgeoms.geom' || Coalesce(', ' ||
+                ', LATERAL (SELECT * FROM cdb_observatory.' || api_method || '(_procgeoms.mvtgeom' || Coalesce(', ' ||
                     (SELECT STRING_AGG(REPLACE(val::text, '"', ''''), ', ')
                       FROM (SELECT JSON_Array_Elements(api_args) as val) as vals),
                     '') || ')) AS ' || api_method)

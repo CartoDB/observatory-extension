@@ -90,12 +90,12 @@ BEGIN
           String_Agg('json_build_object(' || CASE
             -- api-delivered values
             WHEN api_method IS NOT NULL THEN
-            '''value'', ' ||
+            '''' || numer_colname || ''', ' ||
               'ARRAY_AGG( ' ||
                 api_method || '.' || numer_colname || ')::' || numer_type || '[]'
             -- numeric internal values
             WHEN cdb_observatory.isnumeric(numer_type) THEN
-            '''value'', ' || CASE
+            '''' || numer_colname || ''', ' || CASE
               -- denominated
               WHEN LOWER(normalization) LIKE 'denom%'
                 THEN CASE
@@ -144,11 +144,11 @@ BEGIN
 
             -- categorical/text
             WHEN LOWER(numer_type) LIKE 'text' THEN
-              '''value'', ' || 'MODE() WITHIN GROUP (ORDER BY ' || numer_tablename || '.' || numer_colname || ') '
+              '''' || numer_colname || ''', ' || 'MODE() WITHIN GROUP (ORDER BY ' || numer_tablename || '.' || numer_colname || ') '
               -- geometry
             WHEN numer_id IS NULL THEN
               '''geomref'', _procgeoms.geomref, ' ||
-              '''value'', ' || 'cdb_observatory.FIRST(_procgeoms.mvtgeom)::TEXT'
+              '''' || numer_colname || ''', ' || 'cdb_observatory.FIRST(_procgeoms.mvtgeom)::TEXT'
               -- code below will return the intersection of the user's geom and the
               -- OBS geom
               --'''value'', ' || 'ST_Union(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename ||

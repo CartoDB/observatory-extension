@@ -182,7 +182,7 @@ BEGIN
   _json_clause AS (SELECT
     'SELECT ST_AsMVT(q, ''data'', $3) FROM (' ||
     'SELECT ' || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom,
-        to_JSONB(ARRAY[' || (SELECT String_Agg('val_' || colid, ', ') FROM _meta) || '])
+        to_JSONB(' || (SELECT String_Agg('val_' || colid, ', ') FROM _meta) || ')
       FROM ' || String_Agg(cte_name, ', ') ||
     Coalesce(' WHERE ' || val_joins, ') q')
     AS json_clause

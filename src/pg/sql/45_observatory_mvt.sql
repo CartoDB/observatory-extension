@@ -24,6 +24,7 @@ extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT 
 RETURNS TABLE (mvt BYTEA)
 AS $$
 DECLARE
+  tolerance NUMERIC DEFAULT 100;
   bounds NUMERIC[];
   geom GEOMETRY;
   ext BOX2D;
@@ -70,7 +71,9 @@ BEGIN
                       Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)
               END pct_obs' || '
           FROM _geoms, observatory.' || geom_tablename || '
-          WHERE ST_Intersects(_geoms.geom, ' || geom_tablename || '.' || geom_colname || '))'
+          WHERE ST_Intersects(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')'
+          || ' AND ST_Area(st_intersection(' || geom_tablename || '.' || geom_colname || ', _geoms.geom)) > ST_Area($1) / $6 '
+          || ')'
       AS procgeom_clause
     FROM _meta
     GROUP BY api_method, geom_tablename, geom_geomref_colname, geom_colname
@@ -215,7 +218,7 @@ BEGIN
             String_Agg(procgeom_clauses, E',\n       '),
             String_Agg(val_clauses, E',\n       '),
             json_clause)
-  USING geom, ext, extent, buf, clip_geom;
+  USING geom, ext, extent, buf, clip_geom, tolerance;
   RETURN;
 
 END

@@ -57,7 +57,7 @@ BEGIN
   -- asked-for measures in the Observatory.
   _procgeom_clauses AS (
     SELECT
-      '_procgeoms_' || Coalesce(geom_tablename || '_' || geom_geomref_colname, api_method) || ' AS (' ||
+      '_procgeoms_' || Coalesce(left(geom_tablename,10) || '_' || geom_geomref_colname, api_method) || ' AS (' ||
           'SELECT ' ||
             'ST_AsMVTGeom(st_intersection(' || geom_tablename || '.' || geom_colname || ', _geoms.geom), ST_MakeBox2D(ST_Point(0, 0), ST_Point($2, $2)), $2, $3, $4) AS mvtgeom, ' ||
             geom_tablename || '.' || geom_geomref_colname || ' AS geomref, ' ||
@@ -80,7 +80,7 @@ BEGIN
   -- provide values according to users geometries.
   _val_clauses AS (
     SELECT
-      '_vals_' || Coalesce(geom_tablename || '_' || geom_geomref_colname, api_method) || ' AS (
+      '_vals_' || Coalesce(left(geom_tablename,10) || '_' || geom_geomref_colname, api_method) || ' AS (
         SELECT _procgeoms.geomref, _procgeoms.mvtgeom, ' ||
           String_Agg('json_build_object(' || CASE
             -- api-delivered values
@@ -105,7 +105,7 @@ BEGIN
                 END
               -- areaNormalized
               WHEN LOWER(normalization) LIKE 'area%'
-                THEN 
+                THEN
                 -- areaNormalized polygon interpolation
                 -- SUM (numer * (% OBS geom in user geom)) / area of big geom
                 ' ROUND(CAST(SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
@@ -152,7 +152,7 @@ BEGIN
             END
           || ') val_' || colid, ', ')
         || '
-        FROM _procgeoms_' || Coalesce(geom_tablename || '_' || geom_geomref_colname, api_method) || ' _procgeoms ' ||
+        FROM _procgeoms_' || Coalesce(left(geom_tablename,10) || '_' || geom_geomref_colname, api_method) || ' _procgeoms ' ||
           Coalesce(String_Agg(DISTINCT
               Coalesce('LEFT JOIN observatory.' || numer_tablename || ' ON _procgeoms.geomref = observatory.' || numer_tablename || '.' || numer_geomref_colname,
                 ', LATERAL (SELECT * FROM cdb_observatory.' || api_method || '(_procgeoms.mvtgeom' || Coalesce(', ' ||
@@ -164,7 +164,7 @@ BEGIN
                                     ORDER BY _procgeoms.geomref'
       || ')'
       AS val_clause,
-      '_vals_' || Coalesce(geom_tablename || '_' || geom_geomref_colname, api_method) AS cte_name
+      '_vals_' || Coalesce(left(geom_tablename, 10) || '_' || geom_geomref_colname, api_method) AS cte_name
     FROM _meta
     GROUP BY geom_tablename, geom_geomref_colname, geom_colname, api_method
   ),
@@ -180,9 +180,8 @@ BEGIN
   -- Generate JSON clause.  This puts together vals from val_clauses
   _json_clause AS (SELECT
     'SELECT ST_AsMVT(q, ''data'', $2) FROM (' ||
-    'SELECT ' || cdb_observatory.FIRST(cte_name) || '.geomref::TEXT id, '
-        || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom, 
-        to_JSONB(ARRAY[' || (SELECT String_Agg('val_' || colid, ', ') FROM _meta) || '])
+    'SELECT ' || cdb_observatory.FIRST(cte_name) || '.geomref::TEXT id, ' || (SELECT String_Agg('val_' || colid || '->>''value'' as val_' || colid, ', ') FROM _meta) || ', '
+        || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom
       FROM ' || String_Agg(cte_name, ', ') ||
     Coalesce(' WHERE ' || val_joins, ') q')
     AS json_clause

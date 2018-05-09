@@ -12,7 +12,7 @@ def tile2lnglat(z, x, y):
     return lon, lat
 
 lon0, lat0 = tile2lnglat(z, x, y)
-lon1, lat1 = tile2lnglat(z, x+1, y+1)
+lon1, lat1 = tile2lnglat(z, x+1, y-1)
 
 return [lon0, lat0, lon1, lat1]
 $$ LANGUAGE plpythonu;

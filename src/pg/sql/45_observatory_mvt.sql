@@ -181,7 +181,7 @@ BEGIN
   _json_clause AS (SELECT
     'SELECT ST_AsMVT(q, ''data'', $2) FROM (' ||
     'SELECT ' || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom,'
-              || (SELECT String_Agg('val_' || colid || '->>''value'' as val_' || colid, ', ') FROM _meta) || ', 
+              || (SELECT String_Agg('val_' || colid || '->>''value'' as val_' || colid, ', ') FROM _meta) || ' 
       FROM ' || String_Agg(cte_name, ', ') ||
     Coalesce(' WHERE ' || val_joins, ') q')
     AS json_clause

@@ -35,6 +35,7 @@ DECLARE
 BEGIN
   bounds := cdb_observatory.OBS_GetTileBounds(z, x, y);
   geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
+  ext := ST_MakeBox2D(ST_Point(bounds[1], bounds[2]), ST_Point(bounds[3], bounds[4]));
   meta := cdb_observatory.obs_getmeta(geom, params::json, 1::integer, 1::integer, 1::integer);
 
   /* Read metadata to generate clauses for query */
@@ -57,9 +58,9 @@ BEGIN
   -- asked-for measures in the Observatory.
   _procgeom_clauses AS (
     SELECT
-      '_procgeoms_' || Coalesce(left(geom_tablename,10) || '_' || geom_geomref_colname, api_method) || ' AS (' ||
+      '_procgeoms_' || Coalesce(left(geom_tablename,40) || '_' || geom_geomref_colname, api_method) || ' AS (' ||
           'SELECT ' ||
-            'ST_AsMVTGeom(st_intersection(' || geom_tablename || '.' || geom_colname || ', _geoms.geom), ST_MakeBox2D(ST_Point(0, 0), ST_Point($2, $2)), $2, $3, $4) AS mvtgeom, ' ||
+            'ST_AsMVTGeom(st_intersection(' || geom_tablename || '.' || geom_colname || ', _geoms.geom), $2, $3, $4, $5) AS mvtgeom, ' ||
             geom_tablename || '.' || geom_geomref_colname || ' AS geomref, ' ||
             'CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')
                     THEN ST_Area(_geoms.geom) / Nullif(ST_Area(' || geom_tablename || '.' || geom_colname || '), 0)
@@ -80,7 +81,7 @@ BEGIN
   -- provide values according to users geometries.
   _val_clauses AS (
     SELECT
-      '_vals_' || Coalesce(left(geom_tablename,10) || '_' || geom_geomref_colname, api_method) || ' AS (
+      '_vals_' || Coalesce(left(geom_tablename,40) || '_' || geom_geomref_colname, api_method) || ' AS (
         SELECT _procgeoms.geomref, _procgeoms.mvtgeom, ' ||
           String_Agg('json_build_object(' || CASE
             -- api-delivered values
@@ -152,7 +153,7 @@ BEGIN
             END
           || ') val_' || colid, ', ')
         || '
-        FROM _procgeoms_' || Coalesce(left(geom_tablename,10) || '_' || geom_geomref_colname, api_method) || ' _procgeoms ' ||
+        FROM _procgeoms_' || Coalesce(left(geom_tablename,40) || '_' || geom_geomref_colname, api_method) || ' _procgeoms ' ||
           Coalesce(String_Agg(DISTINCT
               Coalesce('LEFT JOIN observatory.' || numer_tablename || ' ON _procgeoms.geomref = observatory.' || numer_tablename || '.' || numer_geomref_colname,
                 ', LATERAL (SELECT * FROM cdb_observatory.' || api_method || '(_procgeoms.mvtgeom' || Coalesce(', ' ||
@@ -164,7 +165,7 @@ BEGIN
                                     ORDER BY _procgeoms.geomref'
       || ')'
       AS val_clause,
-      '_vals_' || Coalesce(left(geom_tablename, 10) || '_' || geom_geomref_colname, api_method) AS cte_name
+      '_vals_' || Coalesce(left(geom_tablename, 40) || '_' || geom_geomref_colname, api_method) AS cte_name
     FROM _meta
     GROUP BY geom_tablename, geom_geomref_colname, geom_colname, api_method
   ),
@@ -179,9 +180,9 @@ BEGIN
 
   -- Generate JSON clause.  This puts together vals from val_clauses
   _json_clause AS (SELECT
-    'SELECT ST_AsMVT(q, ''data'', $2) FROM (' ||
-    'SELECT ' || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom,'
-              || (SELECT String_Agg('val_' || colid || '->>''value'' as val_' || colid, ', ') FROM _meta) || ' 
+    'SELECT ST_AsMVT(q, ''data'', $3) FROM (' ||
+    'SELECT ' || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom,
+        to_JSONB(ARRAY[' || (SELECT String_Agg('val_' || colid, ', ') FROM _meta) || '])
       FROM ' || String_Agg(cte_name, ', ') ||
     Coalesce(' WHERE ' || val_joins, ') q')
     AS json_clause
@@ -214,7 +215,7 @@ BEGIN
             String_Agg(procgeom_clauses, E',\n       '),
             String_Agg(val_clauses, E',\n       '),
             json_clause)
-  USING geom, extent, buf, clip_geom;
+  USING geom, ext, extent, buf, clip_geom;
   RETURN;
 
 END

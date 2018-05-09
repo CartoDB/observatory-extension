@@ -188,7 +188,7 @@ BEGIN
     'SELECT ' || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom,
         to_JSONB(' || (SELECT String_Agg('val_' || colid, ', ') FROM _meta) || ')
       FROM ' || String_Agg(cte_name, ', ') ||
-    ' WHERE ST_Area(' || cdb_observatory.FIRST(cte_name) || '.mvtgeom) / ST_Perimeter(' || cdb_observatory.FIRST(cte_name) || '.mvtgeom)' || ' > 0.001' ||
+    ' WHERE ST_Area(' || cdb_observatory.FIRST(cte_name) || '.mvtgeom) > 0' ||
     Coalesce(' AND ' || val_joins, ') q')
     AS json_clause
     FROM _val_clauses, _val_joins

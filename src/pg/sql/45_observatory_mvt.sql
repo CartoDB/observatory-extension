@@ -61,6 +61,7 @@ BEGIN
     SELECT
       '_procgeoms_' || Coalesce(left(geom_tablename,40) || '_' || geom_geomref_colname, api_method) || ' AS (' ||
           'SELECT ' ||
+            'st_intersection(' || geom_tablename || '.' || geom_colname || ', _geoms.geom) AS geom, ' ||
             'ST_AsMVTGeom(st_intersection(' || geom_tablename || '.' || geom_colname || ', _geoms.geom), $2, $3, $4, $5) AS mvtgeom, ' ||
             geom_tablename || '.' || geom_geomref_colname || ' AS geomref, ' ||
             'CASE WHEN ST_Within(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')
@@ -72,7 +73,7 @@ BEGIN
               END pct_obs' || '
           FROM _geoms, observatory.' || geom_tablename || '
           WHERE ST_Intersects(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')'
-          || ' AND ST_Area(st_intersection(' || geom_tablename || '.' || geom_colname || ', _geoms.geom)) > ST_Area($1) / $6 '
+          --|| ' AND ST_Area(st_intersection(' || geom_tablename || '.' |QUERY| geom_colname || ', _geoms.geom)) > ST_Area($1) / $6 '
           || ')'
       AS procgeom_clause
     FROM _meta
@@ -114,7 +115,7 @@ BEGIN
                 -- SUM (numer * (% OBS geom in user geom)) / area of big geom
                 ' ROUND(CAST(SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
                 ' * _procgeoms.pct_obs' ||
-                ' ) / (Nullif(ST_Area(cdb_observatory.FIRST(_procgeoms.mvtgeom)::Geography), 0) / 1000000) AS NUMERIC), 4) '
+                ' ) / (Nullif(ST_Area(cdb_observatory.FIRST(_procgeoms.geom)::Geography), 0) / 1000000) AS NUMERIC), 4) '
               -- median/average measures with universe
               WHEN LOWER(numer_aggregate) IN ('median', 'average') AND
                   denom_reltype ILIKE 'universe' AND LOWER(normalization) LIKE 'pre%'

@@ -24,7 +24,6 @@ extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT 
 RETURNS TABLE (mvt BYTEA)
 AS $$
 DECLARE
-  tolerance NUMERIC DEFAULT 100;
   bounds NUMERIC[];
   geom GEOMETRY;
   ext BOX2D;
@@ -73,7 +72,6 @@ BEGIN
               END pct_obs' || '
           FROM _geoms, observatory.' || geom_tablename || '
           WHERE ST_Intersects(_geoms.geom, ' || geom_tablename || '.' || geom_colname || ')'
-          --|| ' AND ST_Area(st_intersection(' || geom_tablename || '.' |QUERY| geom_colname || ', _geoms.geom)) > ST_Area($1) / $6 '
           || ')'
       AS procgeom_clause
     FROM _meta
@@ -101,7 +99,6 @@ BEGIN
                 THEN CASE
                 WHEN denom_tablename IS NULL THEN ' NULL '
                 -- denominated polygon interpolation
-                -- SUM (numer * (% OBS geom in user geom)) / SUM (denom * (% OBS geom in user geom))
                 ELSE
                 ' ROUND(CAST(SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
                 ' * _procgeoms.pct_obs ' ||
@@ -112,7 +109,6 @@ BEGIN
               WHEN LOWER(normalization) LIKE 'area%'
                 THEN
                 -- areaNormalized polygon interpolation
-                -- SUM (numer * (% OBS geom in user geom)) / area of big geom
                 ' ROUND(CAST(SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
                 ' * _procgeoms.pct_obs' ||
                 ' ) / (Nullif(ST_Area(cdb_observatory.FIRST(_procgeoms.geom)::Geography), 0) / 1000000) AS NUMERIC), 4) '
@@ -121,9 +117,6 @@ BEGIN
                   denom_reltype ILIKE 'universe' AND LOWER(normalization) LIKE 'pre%'
                 THEN
                 -- predenominated polygon interpolation weighted by universe
-                -- SUM (numer * denom * (% user geom in OBS geom)) / SUM (denom * (% user geom in OBS geom))
-                --     (10 * 1000 * 1) / (1000 * 1) = 10
-                --     (10 * 1000 * 1 + 50 * 10 * 1) / (1000 + 10) = 10500 / 10000 = 10.5
                 ' ROUND(CAST(SUM(' || numer_tablename || '.' || numer_colname ||
                 ' * ' || denom_tablename || '.' || denom_colname ||
                 ' * _procgeoms.pct_obs ' ||
@@ -133,7 +126,6 @@ BEGIN
               WHEN numer_aggregate ILIKE 'sum' AND LOWER(normalization) LIKE 'pre%'
                 THEN
                 -- predenominated polygon interpolation
-                -- SUM (numer * (% user geom in OBS geom))
                 ' ROUND(CAST(SUM(' || numer_tablename || '.' || numer_colname || ' ' ||
                 ' * _procgeoms.pct_obs) AS NUMERIC), 4) '
               -- Everything else. Point only!
@@ -149,10 +141,6 @@ BEGIN
             WHEN numer_id IS NULL THEN
               '''geomref'', _procgeoms.geomref, ' ||
               '''' || numer_colname || ''', ' || 'cdb_observatory.FIRST(_procgeoms.mvtgeom)::TEXT'
-              -- code below will return the intersection of the user's geom and the
-              -- OBS geom
-              --'''value'', ' || 'ST_Union(cdb_observatory.safe_intersection(_geoms.geom, ' || geom_tablename ||
-              --    '.' || geom_colname || '))::TEXT'
             ELSE ''
             END
           || ') val_' || colid, ', ')
@@ -186,7 +174,7 @@ BEGIN
   _json_clause AS (SELECT
     'SELECT ST_AsMVT(q, ''data'', $3) FROM (' ||
     'SELECT ' || cdb_observatory.FIRST(cte_name) || '.mvtgeom geom,
-        to_JSONB(' || (SELECT String_Agg('val_' || colid, ', ') FROM _meta) || ')
+        replace(' || (SELECT String_Agg('val_' || colid, '::TEXT || ') FROM _meta) || ', ''}{'', '', '')::jsonb
       FROM ' || String_Agg(cte_name, ', ') ||
     ' WHERE ST_Area(' || cdb_observatory.FIRST(cte_name) || '.mvtgeom) > 0' ||
     Coalesce(' AND ' || val_joins, ') q')
@@ -205,6 +193,10 @@ BEGIN
     json_clause
   USING meta;
 
+  IF procgeom_clauses IS NULL OR val_clauses IS NULL OR json_clause IS NULL THEN
+    RETURN;
+  END IF;
+
   /* Execute query */
   RETURN QUERY EXECUTE format($query$
     WITH _geoms AS (%s),
@@ -220,7 +212,7 @@ BEGIN
             String_Agg(procgeom_clauses, E',\n       '),
             String_Agg(val_clauses, E',\n       '),
             json_clause)
-  USING geom, ext, extent, buf, clip_geom, tolerance;
+  USING geom, ext, extent, buf, clip_geom;
   RETURN;
 
 END

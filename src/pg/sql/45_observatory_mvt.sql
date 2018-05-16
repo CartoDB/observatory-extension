@@ -217,3 +217,146 @@ BEGIN
 
 END
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(z INTEGER, x INTEGER, y INTEGER,
+geography_level TEXT,
+do_measurements TEXT[],
+mastercard_measurements TEXT[],
+mastercard_category TEXT DEFAULT 'Total Retail',
+extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT True)
+RETURNS TABLE (mvt BYTEA)
+AS $$
+DECLARE
+  mastercard_schema CONSTANT TEXT DEFAULT 'us.mastercard';
+  mastercard_geoid CONSTANT TEXT DEFAULT 'region_id';
+  mastercard_category_column CONSTANT TEXT DEFAULT 'category';
+  mastercard_table TEXT;
+
+  bounds NUMERIC[];
+  geom GEOMETRY;
+  ext BOX2D;
+
+  measurement TEXT;
+  getmeta_parameters TEXT;
+  meta JSON;
+
+  numer_tablenames_do TEXT;
+  numer_tablenames_mc TEXT;
+  numer_colnames_do TEXT;
+  numer_colnames_do_normalized TEXT;
+  numer_colnames_mc TEXT;
+  numer_colnames_mc_normalized TEXT;
+  geom_tablenames TEXT;
+  geom_colnames TEXT;
+  geom_geomref_colnames TEXT;
+  geom_geomref_colnames_qualified TEXT;
+  geom_relations_do TEXT;
+  geom_relations_mc TEXT;
+BEGIN
+  bounds := cdb_observatory.OBS_GetTileBounds(z, x, y);
+  geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
+  ext := ST_MakeBox2D(ST_Point(bounds[1], bounds[2]), ST_Point(bounds[3], bounds[4]));
+
+  ---------DO---------
+  getmeta_parameters := '[ ';
+  FOREACH measurement IN ARRAY do_measurements LOOP 
+    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || '"},';
+  END LOOP;
+  getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
+
+  meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+
+  IF meta IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT  string_agg(distinct 'observatory.'||numer_tablename, ',') numer_tablenames,
+          string_agg(distinct numer_tablename||'.'||numer_colname, ',') numer_colnames,
+          string_agg(distinct numer_colname||'/area_ratio '||numer_colname, ',') numer_colnames_normalized,
+          (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
+          (array_agg(distinct geom_colname))[1] geom_colnames,
+          (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
+          (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
+          string_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname, ' AND ') geom_relations
+    INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
+         geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
+    FROM json_to_recordset(meta)
+      AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
+           numer_type TEXT, denom_id TEXT, denom_aggregate TEXT, denom_colname TEXT, denom_geomref_colname TEXT, denom_tablename TEXT,
+           denom_type TEXT, denom_reltype TEXT, geom_id TEXT, geom_colname TEXT, geom_geomref_colname TEXT, geom_tablename TEXT,
+           geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
+
+  IF numer_tablenames_do IS NULL OR numer_colnames_do IS NULL OR numer_colnames_do_normalized IS NULL OR geom_tablenames IS NULL OR
+     geom_colnames IS NULL OR geom_geomref_colnames IS NULL OR geom_geomref_colnames_qualified IS NULL OR geom_relations_do IS NULL THEN
+    RETURN;
+  END IF;
+
+  ---------MasterCard---------
+  SELECT tablename from pg_tables
+    INTO mastercard_table
+   WHERE schemaname = mastercard_schema
+     AND tablename LIKE '%'||(string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)]||'%';
+
+  SELECT string_agg(column_name, ','), string_agg(distinct column_name||'/area_ratio '||column_name, ',')
+    INTO numer_colnames_mc, numer_colnames_mc_normalized
+    FROM information_schema.columns
+   WHERE table_schema = mastercard_schema
+     AND table_name = mastercard_table
+     AND column_name = ANY(mastercard_measurements);
+
+  numer_tablenames_mc := '"'||mastercard_schema||'".'||mastercard_table;
+  geom_relations_mc := mastercard_table||'.'||mastercard_geoid||'='||geom_geomref_colnames_qualified;
+
+  IF numer_colnames_mc IS NULL OR numer_colnames_mc_normalized IS NULL OR numer_tablenames_mc IS NULL OR geom_relations_mc IS NULL THEN
+    RETURN;
+  END IF;
+
+  ---------Query build and execution---------
+    /*
+      %1$s: geom_colnames
+      %2$s: numer_colnames_do (DO measurements)
+      %3$s: numer_colnames_mc (MasterCard measurements)
+      %4$s: numer_tablenames_mc (MasterCard measurements)
+      %5$s: geom_tablenames
+      %6$s: geom_relations_do (DO measurements)
+      %7$s: geom_relations_mc (MasterCard measurements)
+      %8$s: numer_tablenames_do (DO measurements)
+      %9$s: mastercard_table
+      %10$s: mastercard_category_column
+      %11$s: numer_colnames_do_normalized (Area normalized DO measurements)
+      %12$s: numer_colnames_mc_normalized (Area normalized MasterCard measurements)
+      %13$s: geom_geomref_colnames
+
+      $1: ext (BOX2D)
+      $2: extent
+      $3: buf
+      $4: clip_geom
+      $5: geom
+      $6: mastercard_category
+    */
+  RETURN QUERY EXECUTE format(
+    $query$
+    SELECT ST_AsMVT(q, 'data', $2) FROM (
+      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %13$s as id, %11$s, %12$s FROM (
+        SELECT  %1$s the_geom,  %13$s, %2$s, %3$s,
+                CASE  WHEN ST_Within($5, %1$s)
+                        THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
+                      WHEN ST_Within(%1$s, $5)
+                        THEN 1
+                      ELSE ST_Area(cdb_observatory.safe_intersection($5, %1$s)) / Nullif(ST_Area(%1$s), 0)
+                END area_ratio
+          FROM %4$s, %5$s, %6$s
+        WHERE st_intersects(%1$s, $5)
+          AND %7$s
+          AND %8$s
+          AND %9$s.%10$s=$6
+      ) p
+    ) q
+    $query$,
+    geom_colnames, numer_colnames_do, numer_colnames_mc, numer_tablenames_do, numer_tablenames_mc,
+    geom_tablenames, geom_relations_do, geom_relations_mc, mastercard_table, mastercard_category_column,
+    numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames)
+  USING ext, extent, buf, clip_geom, geom, mastercard_category
+  RETURN;
+END
+$$ LANGUAGE plpgsql PARALLEL RESTRICTED;

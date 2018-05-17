@@ -265,6 +265,7 @@ DECLARE
   simplification_tolerance NUMERIC DEFAULT 0.0001;
   area_normalization TEXT DEFAULT '';
   i INTEGER DEFAULT 0;
+  clipped TEXT default '';
 BEGIN
   IF area_normalized THEN
     area_normalization := '/area_ratio';
@@ -274,12 +275,16 @@ BEGIN
     WHEN geography_level = state_geoname THEN
       simplification_tolerance := 0.1;
     WHEN geography_level = county_geoname THEN
+      clipped := '_clipped';
       simplification_tolerance := 0.01;
     WHEN geography_level = tract_geoname THEN
+      clipped := '_clipped';
       simplification_tolerance := 0.001;
     WHEN geography_level = blockgroup_geoname THEN
+      clipped := '_clipped';
       simplification_tolerance := 0.0001;
     WHEN geography_level = block_geoname THEN
+      clipped := '_clipped';
       simplification_tolerance := 0.0001;
     ELSE
       RETURN;
@@ -292,7 +297,7 @@ BEGIN
   ---------DO---------
   getmeta_parameters := '[ ';
   FOREACH measurement IN ARRAY do_measurements LOOP 
-    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || '_clipped"},';
+    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || clipped ||'"},';
   END LOOP;
   getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
 

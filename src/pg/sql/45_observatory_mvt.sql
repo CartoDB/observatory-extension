@@ -241,7 +241,9 @@ DECLARE
   getmeta_parameters TEXT;
   meta JSON;
 
-  numer_tablenames_do TEXT;
+  numer_tablename_do TEXT;
+  numer_tablenames_do TEXT[];
+  numer_tablenames_do_outer TEXT DEFAULT '';
   numer_tablenames_mc TEXT;
   numer_colnames_do TEXT;
   numer_colnames_do_normalized TEXT;
@@ -251,10 +253,11 @@ DECLARE
   geom_colnames TEXT;
   geom_geomref_colnames TEXT;
   geom_geomref_colnames_qualified TEXT;
-  geom_relations_do TEXT;
+  geom_relations_do TEXT[];
   geom_relations_mc TEXT;
 
   area_normalization TEXT DEFAULT '';
+  i INTEGER DEFAULT 0;
 BEGIN
   IF area_normalized THEN
     area_normalization := '/area_ratio';
@@ -277,14 +280,14 @@ BEGIN
     RETURN;
   END IF;
 
-  SELECT  string_agg(distinct 'observatory.'||numer_tablename, ',') numer_tablenames,
+  SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
           string_agg(distinct numer_tablename||'.'||numer_colname, ',') numer_colnames,
           string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',') numer_colnames_normalized,
           (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
           (array_agg(distinct geom_colname))[1] geom_colnames,
           (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
           (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
-          string_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname, ' AND ') geom_relations
+          array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
     INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
          geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
     FROM json_to_recordset(meta)
@@ -297,6 +300,12 @@ BEGIN
      geom_colnames IS NULL OR geom_geomref_colnames IS NULL OR geom_geomref_colnames_qualified IS NULL OR geom_relations_do IS NULL THEN
     RETURN;
   END IF;
+
+  i := 0;
+  FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
+    i := i + 1;
+    numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+  END LOOP;
 
   ---------MasterCard---------
   SELECT tablename from pg_tables
@@ -344,24 +353,23 @@ BEGIN
   RETURN QUERY EXECUTE format(
     $query$
     SELECT ST_AsMVT(q, 'data', $2) FROM (
-      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %13$s as id, %11$s, %12$s, area_ratio FROM (
-        SELECT  %1$s the_geom,  %13$s, %2$s, %3$s,
+      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s, %11$s, area_ratio FROM (
+        SELECT  %1$s the_geom,  %12$s, %2$s, %3$s,
                 CASE  WHEN ST_Within($5, %1$s)
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
                       WHEN ST_Within(%1$s, $5)
                         THEN 1
                       ELSE ST_Area(cdb_observatory.safe_intersection($5, %1$s)) / Nullif(ST_Area(%1$s), 0)
                 END area_ratio
-          FROM %4$s, %5$s, %6$s
+          FROM %6$s
+               %4$s
+               LEFT OUTER JOIN %5$s ON %7$s AND %8$s.%9$s=$6
         WHERE st_intersects(%1$s, $5)
-          AND %7$s
-          AND %8$s
-          AND %9$s.%10$s=$6
       ) p
     ) q
     $query$,
-    geom_colnames, numer_colnames_do, numer_colnames_mc, numer_tablenames_do, numer_tablenames_mc,
-    geom_tablenames, geom_relations_do, geom_relations_mc, mastercard_table, mastercard_category_column,
+    geom_colnames, numer_colnames_do, numer_colnames_mc, numer_tablenames_do_outer, numer_tablenames_mc,
+    geom_tablenames, geom_relations_mc, mastercard_table, mastercard_category_column,
     numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames)
   USING ext, extent, buf, clip_geom, geom, mastercard_category
   RETURN;

@@ -228,6 +228,12 @@ extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT 
 RETURNS TABLE (mvt BYTEA)
 AS $$
 DECLARE
+  state_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.state';
+  county_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.county';
+  tract_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.census_tract';
+  blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
+  block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
+
   mastercard_schema CONSTANT TEXT DEFAULT 'us.mastercard';
   mastercard_geoid CONSTANT TEXT DEFAULT 'region_id';
   mastercard_category_column CONSTANT TEXT DEFAULT 'category';
@@ -256,12 +262,28 @@ DECLARE
   geom_relations_do TEXT[];
   geom_relations_mc TEXT;
 
+  simplification_tolerance NUMERIC DEFAULT 0.0001;
   area_normalization TEXT DEFAULT '';
   i INTEGER DEFAULT 0;
 BEGIN
   IF area_normalized THEN
     area_normalization := '/area_ratio';
   END IF;
+
+  CASE
+    WHEN geography_level = state_geoname THEN
+      simplification_tolerance := 0.1;
+    WHEN geography_level = county_geoname THEN
+      simplification_tolerance := 0.01;
+    WHEN geography_level = tract_geoname THEN
+      simplification_tolerance := 0.001;
+    WHEN geography_level = blockgroup_geoname THEN
+      simplification_tolerance := 0.0001;
+    WHEN geography_level = block_geoname THEN
+      simplification_tolerance := 0.0001;
+    ELSE
+      RETURN;
+  END CASE;
 
   bounds := cdb_observatory.OBS_GetTileBounds(z, x, y);
   geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
@@ -270,7 +292,7 @@ BEGIN
   ---------DO---------
   getmeta_parameters := '[ ';
   FOREACH measurement IN ARRAY do_measurements LOOP 
-    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || '"},';
+    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || '_clipped"},';
   END LOOP;
   getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
 
@@ -359,7 +381,7 @@ BEGIN
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
                       WHEN ST_Within(%1$s, $5)
                         THEN 1
-                      ELSE ST_Area(cdb_observatory.safe_intersection($5, %1$s)) / Nullif(ST_Area(%1$s), 0)
+                      ELSE ST_Area(cdb_observatory.safe_intersection(st_simplifyvw(%1$s, $7), $5)) / Nullif(ST_Area(%1$s), 0)
                 END area_ratio
           FROM %6$s
                %4$s
@@ -371,7 +393,7 @@ BEGIN
     geom_colnames, numer_colnames_do, numer_colnames_mc, numer_tablenames_do_outer, numer_tablenames_mc,
     geom_tablenames, geom_relations_mc, mastercard_table, mastercard_category_column,
     numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames)
-  USING ext, extent, buf, clip_geom, geom, mastercard_category
+  USING ext, extent, buf, clip_geom, geom, mastercard_category, simplification_tolerance
   RETURN;
 END
 $$ LANGUAGE plpgsql PARALLEL RESTRICTED;

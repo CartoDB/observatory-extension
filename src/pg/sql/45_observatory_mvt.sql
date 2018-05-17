@@ -222,6 +222,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(z INTEGER, x INTEGER, 
 geography_level TEXT,
 do_measurements TEXT[],
 mastercard_measurements TEXT[],
+area_normalized BOOLEAN DEFAULT False,
 mastercard_category TEXT DEFAULT 'Total Retail',
 extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT True)
 RETURNS TABLE (mvt BYTEA)
@@ -252,7 +253,13 @@ DECLARE
   geom_geomref_colnames_qualified TEXT;
   geom_relations_do TEXT;
   geom_relations_mc TEXT;
+
+  area_normalization TEXT DEFAULT '';
 BEGIN
+  IF area_normalized THEN
+    area_normalization := '/area_ratio';
+  END IF;
+
   bounds := cdb_observatory.OBS_GetTileBounds(z, x, y);
   geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
   ext := ST_MakeBox2D(ST_Point(bounds[1], bounds[2]), ST_Point(bounds[3], bounds[4]));
@@ -272,7 +279,7 @@ BEGIN
 
   SELECT  string_agg(distinct 'observatory.'||numer_tablename, ',') numer_tablenames,
           string_agg(distinct numer_tablename||'.'||numer_colname, ',') numer_colnames,
-          string_agg(distinct numer_colname||'/area_ratio '||numer_colname, ',') numer_colnames_normalized,
+          string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',') numer_colnames_normalized,
           (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
           (array_agg(distinct geom_colname))[1] geom_colnames,
           (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
@@ -297,7 +304,7 @@ BEGIN
    WHERE schemaname = mastercard_schema
      AND tablename LIKE '%'||(string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)]||'%';
 
-  SELECT string_agg(column_name, ','), string_agg(distinct column_name||'/area_ratio '||column_name, ',')
+  SELECT string_agg(column_name, ','), string_agg(distinct column_name||area_normalization||' '||column_name, ',')
     INTO numer_colnames_mc, numer_colnames_mc_normalized
     FROM information_schema.columns
    WHERE table_schema = mastercard_schema
@@ -337,7 +344,7 @@ BEGIN
   RETURN QUERY EXECUTE format(
     $query$
     SELECT ST_AsMVT(q, 'data', $2) FROM (
-      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %13$s as id, %11$s, %12$s FROM (
+      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %13$s as id, %11$s, %12$s, area_ratio FROM (
         SELECT  %1$s the_geom,  %13$s, %2$s, %3$s,
                 CASE  WHEN ST_Within($5, %1$s)
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)

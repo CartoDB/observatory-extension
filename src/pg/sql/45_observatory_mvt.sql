@@ -222,10 +222,16 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(z INTEGER, x INTEGER, 
 geography_level TEXT,
 do_measurements TEXT[],
 mastercard_measurements TEXT[],
+shoreline_clipped BOOLEAN DEFAULT True,
+optimize_clipping BOOLEAN DEFAULT False,
+simplify_geometries BOOLEAN DEFAULT False,
 area_normalized BOOLEAN DEFAULT False,
 mastercard_category TEXT DEFAULT 'Total Retail',
 extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT True)
-RETURNS TABLE (mvt BYTEA)
+RETURNS TABLE (
+  mvtgeom GEOMETRY,
+  mvtdata JSON
+)
 AS $$
 DECLARE
   state_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.state';
@@ -252,6 +258,7 @@ DECLARE
   numer_tablenames_do_outer TEXT DEFAULT '';
   numer_tablenames_mc TEXT;
   numer_colnames_do TEXT;
+  numer_colnames_do_qualified TEXT;
   numer_colnames_do_normalized TEXT;
   numer_colnames_mc TEXT;
   numer_colnames_mc_normalized TEXT;
@@ -262,7 +269,7 @@ DECLARE
   geom_relations_do TEXT[];
   geom_relations_mc TEXT;
 
-  simplification_tolerance NUMERIC DEFAULT 0.0001;
+  simplification_tolerance NUMERIC DEFAULT 0;
   area_normalization TEXT DEFAULT '';
   i INTEGER DEFAULT 0;
   clipped TEXT default '';
@@ -271,24 +278,31 @@ BEGIN
     area_normalization := '/area_ratio';
   END IF;
 
+  IF shoreline_clipped THEN
+    clipped := '_clipped';
+  END IF;
+
   CASE
     WHEN geography_level = state_geoname THEN
       simplification_tolerance := 0.1;
+      IF optimize_clipping THEN
+        clipped := '';
+      END IF;
     WHEN geography_level = county_geoname THEN
-      clipped := '_clipped';
       simplification_tolerance := 0.01;
     WHEN geography_level = tract_geoname THEN
-      clipped := '_clipped';
       simplification_tolerance := 0.001;
     WHEN geography_level = blockgroup_geoname THEN
-      clipped := '_clipped';
       simplification_tolerance := 0.0001;
     WHEN geography_level = block_geoname THEN
-      clipped := '_clipped';
       simplification_tolerance := 0.0001;
     ELSE
       RETURN;
   END CASE;
+
+  IF NOT simplify_geometries THEN
+    simplification_tolerance := 0;
+  END IF;
 
   bounds := cdb_observatory.OBS_GetTileBounds(z, x, y);
   geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
@@ -308,14 +322,15 @@ BEGIN
   END IF;
 
   SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
-          string_agg(distinct numer_tablename||'.'||numer_colname, ',') numer_colnames,
+          string_agg(distinct numer_colname, ',') numer_colnames,
+          string_agg(distinct numer_tablename||'.'||numer_colname, ',') numer_colnames_qualified,
           string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',') numer_colnames_normalized,
           (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
           (array_agg(distinct geom_colname))[1] geom_colnames,
           (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
           (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
           array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
-    INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
+    INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
          geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
     FROM json_to_recordset(meta)
       AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
@@ -323,8 +338,9 @@ BEGIN
            denom_type TEXT, denom_reltype TEXT, geom_id TEXT, geom_colname TEXT, geom_geomref_colname TEXT, geom_tablename TEXT,
            geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
 
-  IF numer_tablenames_do IS NULL OR numer_colnames_do IS NULL OR numer_colnames_do_normalized IS NULL OR geom_tablenames IS NULL OR
-     geom_colnames IS NULL OR geom_geomref_colnames IS NULL OR geom_geomref_colnames_qualified IS NULL OR geom_relations_do IS NULL THEN
+  IF numer_tablenames_do IS NULL OR numer_colnames_do IS NULL OR numer_colnames_do_qualified IS NULL OR numer_colnames_do_normalized IS NULL
+     OR geom_tablenames IS NULL OR geom_colnames IS NULL OR geom_geomref_colnames IS NULL OR geom_geomref_colnames_qualified IS NULL
+     OR geom_relations_do IS NULL THEN
     RETURN;
   END IF;
 
@@ -350,36 +366,17 @@ BEGIN
   numer_tablenames_mc := '"'||mastercard_schema||'".'||mastercard_table;
   geom_relations_mc := mastercard_table||'.'||mastercard_geoid||'='||geom_geomref_colnames_qualified;
 
-  IF numer_colnames_mc IS NULL OR numer_colnames_mc_normalized IS NULL OR numer_tablenames_mc IS NULL OR geom_relations_mc IS NULL THEN
+  IF numer_colnames_mc IS NULL OR numer_colnames_mc_normalized IS NULL
+    OR numer_tablenames_mc IS NULL OR geom_relations_mc IS NULL THEN
     RETURN;
   END IF;
 
   ---------Query build and execution---------
-    /*
-      %1$s: geom_colnames
-      %2$s: numer_colnames_do (DO measurements)
-      %3$s: numer_colnames_mc (MasterCard measurements)
-      %4$s: numer_tablenames_mc (MasterCard measurements)
-      %5$s: geom_tablenames
-      %6$s: geom_relations_do (DO measurements)
-      %7$s: geom_relations_mc (MasterCard measurements)
-      %8$s: numer_tablenames_do (DO measurements)
-      %9$s: mastercard_table
-      %10$s: mastercard_category_column
-      %11$s: numer_colnames_do_normalized (Area normalized DO measurements)
-      %12$s: numer_colnames_mc_normalized (Area normalized MasterCard measurements)
-      %13$s: geom_geomref_colnames
-
-      $1: ext (BOX2D)
-      $2: extent
-      $3: buf
-      $4: clip_geom
-      $5: geom
-      $6: mastercard_category
-    */
   RETURN QUERY EXECUTE format(
     $query$
-    SELECT ST_AsMVT(q, 'data', $2) FROM (
+    SELECT  mvtgeom,
+            (select row_to_json(_) from (select id, %13$s, %3$s, area_ratio) as _) as mvtdata
+          FROM (
       SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s, %11$s, area_ratio FROM (
         SELECT  %1$s the_geom,  %12$s, %2$s, %3$s,
                 CASE  WHEN ST_Within($5, %1$s)
@@ -395,9 +392,9 @@ BEGIN
       ) p
     ) q
     $query$,
-    geom_colnames, numer_colnames_do, numer_colnames_mc, numer_tablenames_do_outer, numer_tablenames_mc,
-    geom_tablenames, geom_relations_mc, mastercard_table, mastercard_category_column,
-    numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames)
+    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, numer_tablenames_mc,
+    geom_tablenames, geom_relations_mc, mastercard_table, mastercard_category_column, numer_colnames_do_normalized,
+    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do)
   USING ext, extent, buf, clip_geom, geom, mastercard_category, simplification_tolerance
   RETURN;
 END

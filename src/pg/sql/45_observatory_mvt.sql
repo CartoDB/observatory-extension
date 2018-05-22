@@ -253,20 +253,20 @@ DECLARE
   getmeta_parameters TEXT;
   meta JSON;
 
-  numer_tablename_do TEXT;
-  numer_tablenames_do TEXT[];
+  numer_tablename_do TEXT DEFAULT '';
+  numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
   numer_tablenames_do_outer TEXT DEFAULT '';
   numer_tablenames_mc TEXT;
-  numer_colnames_do TEXT;
-  numer_colnames_do_qualified TEXT;
-  numer_colnames_do_normalized TEXT;
+  numer_colnames_do TEXT DEFAULT '';
+  numer_colnames_do_qualified TEXT DEFAULT '';
+  numer_colnames_do_normalized TEXT DEFAULT '';
   numer_colnames_mc TEXT;
   numer_colnames_mc_normalized TEXT;
   geom_tablenames TEXT;
   geom_colnames TEXT;
   geom_geomref_colnames TEXT;
   geom_geomref_colnames_qualified TEXT;
-  geom_relations_do TEXT[];
+  geom_relations_do TEXT[] DEFAULT ARRAY['']::TEXT[];
   geom_relations_mc TEXT;
 
   simplification_tolerance NUMERIC DEFAULT 0;
@@ -317,38 +317,54 @@ BEGIN
 
   meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
 
-  IF meta IS NULL THEN
-    RETURN;
+  IF meta IS NOT NULL THEN
+    SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
+            string_agg(distinct numer_colname, ',')||',' numer_colnames,
+            string_agg(distinct numer_tablename||'.'||numer_colname, ',')||',' numer_colnames_qualified,
+            string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',')||',' numer_colnames_normalized,
+            (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
+            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
+            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
+            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
+      INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
+          geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
+      FROM json_to_recordset(meta)
+        AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
+            numer_type TEXT, denom_id TEXT, denom_aggregate TEXT, denom_colname TEXT, denom_geomref_colname TEXT, denom_tablename TEXT,
+            denom_type TEXT, denom_reltype TEXT, geom_id TEXT, geom_colname TEXT, geom_geomref_colname TEXT, geom_tablename TEXT,
+            geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
+
+    IF numer_tablenames_do IS NULL OR numer_colnames_do IS NULL OR numer_colnames_do_qualified IS NULL OR numer_colnames_do_normalized IS NULL
+      OR geom_tablenames IS NULL OR geom_colnames IS NULL OR geom_geomref_colnames IS NULL OR geom_geomref_colnames_qualified IS NULL
+      OR geom_relations_do IS NULL THEN
+      RETURN;
+    END IF;
+
+    i := 0;
+    FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
+      i := i + 1;
+      numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+    END LOOP;
+  ELSE
+    getmeta_parameters := '[{"geom_id":"' || geography_level || clipped ||'"}]';
+    meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+
+    IF meta IS NULL THEN
+      RETURN;
+    END IF;
+
+    SELECT  (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
+            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
+            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
+      FROM json_to_recordset(meta)
+      INTO geom_tablenames, geom_colnames, geom_geomref_colnames, geom_geomref_colnames_qualified
+        AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
+            numer_type TEXT, denom_id TEXT, denom_aggregate TEXT, denom_colname TEXT, denom_geomref_colname TEXT, denom_tablename TEXT,
+            denom_type TEXT, denom_reltype TEXT, geom_id TEXT, geom_colname TEXT, geom_geomref_colname TEXT, geom_tablename TEXT,
+            geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
   END IF;
-
-  SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
-          string_agg(distinct numer_colname, ',') numer_colnames,
-          string_agg(distinct numer_tablename||'.'||numer_colname, ',') numer_colnames_qualified,
-          string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',') numer_colnames_normalized,
-          (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-          (array_agg(distinct geom_colname))[1] geom_colnames,
-          (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-          (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
-          array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
-    INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
-         geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
-    FROM json_to_recordset(meta)
-      AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
-           numer_type TEXT, denom_id TEXT, denom_aggregate TEXT, denom_colname TEXT, denom_geomref_colname TEXT, denom_tablename TEXT,
-           denom_type TEXT, denom_reltype TEXT, geom_id TEXT, geom_colname TEXT, geom_geomref_colname TEXT, geom_tablename TEXT,
-           geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
-
-  IF numer_tablenames_do IS NULL OR numer_colnames_do IS NULL OR numer_colnames_do_qualified IS NULL OR numer_colnames_do_normalized IS NULL
-     OR geom_tablenames IS NULL OR geom_colnames IS NULL OR geom_geomref_colnames IS NULL OR geom_geomref_colnames_qualified IS NULL
-     OR geom_relations_do IS NULL THEN
-    RETURN;
-  END IF;
-
-  i := 0;
-  FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
-    i := i + 1;
-    numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
-  END LOOP;
 
   ---------MasterCard---------
   SELECT tablename from pg_tables
@@ -375,10 +391,10 @@ BEGIN
   RETURN QUERY EXECUTE format(
     $query$
     SELECT  mvtgeom,
-            (select row_to_json(_) from (select id, %13$s, %3$s, area_ratio) as _) as mvtdata
+            (select row_to_json(_) from (select id, %13$s %3$s, area_ratio) as _) as mvtdata
           FROM (
-      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s, %11$s, area_ratio FROM (
-        SELECT  %1$s the_geom,  %12$s, %2$s, %3$s,
+      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s %11$s, area_ratio FROM (
+        SELECT  %1$s the_geom, %12$s, %2$s %3$s,
                 CASE  WHEN ST_Within($5, %1$s)
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
                       WHEN ST_Within(%1$s, $5)

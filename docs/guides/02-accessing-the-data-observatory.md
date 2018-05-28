@@ -101,7 +101,7 @@ The following usage notes are recommended when using the Data Observatory functi
 
 	**Exception:** [Discovery Functions]({{ site.dataobservatory_docs }}/guides/overview/#discovery-functions) are the exception. You can use SELECT as these functions are not actually retrieving data, they are retrieving ids that you can use for other functions.
 
-- You can reduce storage space for unneeded geometries and optimize query optimizations by applying the PostGIS [`ST_Simplify`](http://www.postgis.org/docs/ST_Simplify.html) function. For example, you can simplify the `the_geom` for a large table of polygons and reduce the size of them for quicker rendering. For other tips, see the [most commonly used PostGIS functions]({{ site.baseurl }}/faqs/postgresql-and-postgis/#what-are-the-most-common-postgis-functions) that you can apply with CARTO
+- You can reduce storage space for unneeded geometries and optimize query optimizations by applying the PostGIS [`ST_Simplify`](http://www.postgis.org/docs/ST_Simplify.html) function. For example, you can simplify the `the_geom` for a large table of polygons and reduce the size of them for quicker rendering. For other tips, see the [most commonly used PostGIS functions](https://carto.com/docs/faqs/postgresql-and-postgis/#what-are-the-most-common-postgis-functions) that you can apply with CARTO
 
 - Only point or polygon geometries are supported for OBS functions. If you attempt to apply Measures or Boundary results to line geometries, an error appears
 
@@ -118,4 +118,4 @@ The following usage notes are recommended when using the Data Observatory functi
 
 ### Examples
 
-View our [CARTO Blogs](https://carto.com/blog/categories/data-observatory/) for examples that highlight the benefits of using the Data Observatory.
+View our [CARTO Blogs](https://carto.com/blog/categories/product/) for examples that highlight the benefits of using the Data Observatory.

@@ -252,6 +252,7 @@ DECLARE
   measurement TEXT;
   getmeta_parameters TEXT;
   meta JSON;
+  mc_geography_level TEXT;
 
   numer_tablename_do TEXT DEFAULT '';
   numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
@@ -310,7 +311,7 @@ BEGIN
 
   ---------DO---------
   getmeta_parameters := '[ ';
-  FOREACH measurement IN ARRAY do_measurements LOOP 
+  FOREACH measurement IN ARRAY do_measurements LOOP
     getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || clipped ||'"},';
   END LOOP;
   getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
@@ -367,10 +368,16 @@ BEGIN
   END IF;
 
   ---------MasterCard---------
+  IF geography_level = 'us.census.tiger.census_tract' THEN
+    mc_geography_level := 'tract';
+  ELSE
+    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
+  END IF;
+
   SELECT tablename from pg_tables
     INTO mastercard_table
    WHERE schemaname = mastercard_schema
-     AND tablename LIKE '%'||(string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)]||'%';
+     AND tablename LIKE '%'||mc_geography_level||'%';
 
   SELECT string_agg(column_name, ','), string_agg(distinct column_name||area_normalization||' '||column_name, ',')
     INTO numer_colnames_mc, numer_colnames_mc_normalized

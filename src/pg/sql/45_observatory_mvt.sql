@@ -230,7 +230,7 @@ mastercard_category TEXT DEFAULT 'Total Retail',
 extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT True)
 RETURNS TABLE (
   mvtgeom GEOMETRY,
-  mvtdata JSON
+  mvtdata JSONB
 )
 AS $$
 DECLARE
@@ -398,7 +398,7 @@ BEGIN
   RETURN QUERY EXECUTE format(
     $query$
     SELECT  mvtgeom,
-            (select row_to_json(_) from (select id, %13$s %3$s, area_ratio) as _) as mvtdata
+            (select row_to_json(_)::jsonb from (select id, %13$s %3$s, area_ratio) as _) as mvtdata
           FROM (
       SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s %11$s, area_ratio FROM (
         SELECT  %1$s the_geom, %12$s, %2$s %3$s,

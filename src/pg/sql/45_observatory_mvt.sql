@@ -307,7 +307,8 @@ BEGIN
 
   bounds := cdb_observatory.OBS_GetTileBounds(z, x, y);
   geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
-  ext := ST_MakeBox2D(ST_Point(bounds[1], bounds[2]), ST_Point(bounds[3], bounds[4]));
+  ext := ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(bounds[1], bounds[2]), 4326), 3857),
+                      ST_Transform(ST_SetSRID(ST_Point(bounds[3], bounds[4]), 4326), 3857));
 
   ---------DO---------
   getmeta_parameters := '[ ';
@@ -400,7 +401,7 @@ BEGIN
     SELECT  mvtgeom,
             (select row_to_json(_)::jsonb from (select id, %13$s %3$s, area_ratio) as _) as mvtdata
           FROM (
-      SELECT ST_AsMVTGeom(the_geom, $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s %11$s, area_ratio FROM (
+      SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s %11$s, area_ratio FROM (
         SELECT  %1$s the_geom, %12$s, %2$s %3$s,
                 CASE  WHEN ST_Within($5, %1$s)
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)

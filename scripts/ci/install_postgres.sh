@@ -32,7 +32,7 @@ apt-get -y install postgresql-${PGSQL_VERSION} postgresql-${PGSQL_VERSION}-postg
 # Configure it to accept local connections from postgres
 echo -e "# TYPE  DATABASE        USER            ADDRESS                 METHOD \nlocal   all             postgres                                trust\nlocal   all             all                                     trust\nhost    all             all             127.0.0.1/32            trust" > /etc/postgresql/${PGSQL_VERSION}/main/pg_hba.conf
 
-psql -c  "CREATE LANGUAGE plpythonu;"
+psql -U postgres -c  "CREATE LANGUAGE plpythonu;"
 
 # Restart PostgreSQL
 /etc/init.d/postgresql restart ${PGSQL_VERSION}

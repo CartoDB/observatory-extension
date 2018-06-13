@@ -218,16 +218,65 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(z INTEGER, x INTEGER, y INTEGER,
-geography_level TEXT,
-do_measurements TEXT[],
-mastercard_measurements TEXT[],
-shoreline_clipped BOOLEAN DEFAULT True,
-optimize_clipping BOOLEAN DEFAULT False,
-simplify_geometries BOOLEAN DEFAULT False,
-area_normalized BOOLEAN DEFAULT False,
-mastercard_category TEXT DEFAULT 'Total Retail',
-extent INTEGER DEFAULT 4096, buf INTEGER DEFAULT 256, clip_geom BOOLEAN DEFAULT True)
+DROP TABLE IF EXISTS cdb_observatory.OBS_CachedMeta;
+CREATE TABLE cdb_observatory.OBS_CachedMeta(
+  z INTEGER,
+  parameters TEXT,
+  num_timespans INTEGER,
+  num_scores INTEGER,
+  num_target_geoms INTEGER,
+  result JSON,
+  PRIMARY KEY (z, parameters, num_timespans, num_scores, num_target_geoms)
+);
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_RetrieveMeta(
+  zoom INTEGER,
+  geom geometry(Geometry, 4326),
+  getmeta_parameters JSON,
+  num_timespan_options INTEGER DEFAULT NULL,
+  num_score_options INTEGER DEFAULT NULL,
+  target_geoms INTEGER DEFAULT NULL)
+RETURNS JSON
+AS $$
+DECLARE
+  result JSON;
+BEGIN
+  SELECT c.result
+    INTO result
+    FROM cdb_observatory.OBS_CachedMeta c
+   WHERE c.z = zoom
+     AND c.parameters = getmeta_parameters::TEXT
+     AND c.num_timespans = num_timespan_options
+     AND c.num_scores = num_score_options
+     AND c.num_target_geoms = target_geoms;
+
+  IF result IS NULL THEN
+    result := cdb_observatory.obs_getmeta(geom, getmeta_parameters, num_timespan_options, num_score_options, target_geoms);
+
+    INSERT INTO cdb_observatory.OBS_CachedMeta(z, parameters, num_timespans, num_scores, num_target_geoms, result)
+    SELECT zoom, getmeta_parameters::TEXT, num_timespan_options, num_score_options, target_geoms, result
+    ON CONFLICT (z, parameters, num_timespans, num_scores, num_target_geoms) 
+    DO UPDATE SET result = EXCLUDED.result;
+  END IF;
+
+  return result;
+END
+$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
+  z INTEGER, x INTEGER, y INTEGER,
+  geography_level TEXT,
+  do_measurements TEXT[],
+  mastercard_measurements TEXT[],
+  use_meta_cache BOOLEAN DEFAULT True,
+  shoreline_clipped BOOLEAN DEFAULT True,
+  optimize_clipping BOOLEAN DEFAULT False,
+  simplify_geometries BOOLEAN DEFAULT False,
+  area_normalized BOOLEAN DEFAULT False,
+  mastercard_category TEXT DEFAULT 'Total Retail',
+  extent INTEGER DEFAULT 4096,
+  buf INTEGER DEFAULT 256,
+  clip_geom BOOLEAN DEFAULT True)
 RETURNS TABLE (
   mvtgeom GEOMETRY,
   mvtdata JSONB
@@ -317,7 +366,11 @@ BEGIN
   END LOOP;
   getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
 
-  meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+  IF use_meta_cache THEN
+    meta := cdb_observatory.OBS_RetrieveMeta(z, geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+  ELSE
+    meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+  END IF;
 
   IF meta IS NOT NULL THEN
     SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,

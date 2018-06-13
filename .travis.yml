@@ -14,6 +14,7 @@ matrix:
 
 before_install:
   - sudo bash $TRAVIS_BUILD_DIR/scripts/ci/install_postgres.sh
+  - sudo make clean-all
 
 install:
   - sudo make install

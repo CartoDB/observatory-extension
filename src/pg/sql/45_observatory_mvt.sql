@@ -267,11 +267,11 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_DecodeCategory(category TEXT)
 RETURNS TEXT
 AS $$
 categories = {
-    'NEP': 'non_eating_places',
-	  'EP': 'eating_places',
+    'NEP': 'non eating places',
+	  'EP': 'eating places',
 	  'APP': 'apparel',
-	  'SB': 'small_business',
-	  'TR': 'total_retail',
+	  'SB': 'small business',
+	  'TR': 'total retail',
 }
 return categories.get(category)
 $$ LANGUAGE plpythonu;

@@ -282,6 +282,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   do_measurements TEXT[],
   mc_measurements TEXT[],
   mc_categories TEXT[] DEFAULT ARRAY['TR']::TEXT[],
+  mc_months TEXT[] DEFAULT ARRAY['2018-02-01']::TEXT[],
   use_meta_cache BOOLEAN DEFAULT True,
   shoreline_clipped BOOLEAN DEFAULT True,
   optimize_clipping BOOLEAN DEFAULT False,
@@ -305,9 +306,12 @@ DECLARE
   mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
+  mc_month_column CONSTANT TEXT DEFAULT 'month';
   mc_table TEXT;
   mc_category TEXT;
   mc_table_categories TEXT;
+  mc_month TEXT;
+  mc_month_slug TEXT;
 
   bounds NUMERIC[];
   geom GEOMETRY;
@@ -454,28 +458,33 @@ BEGIN
      AND tablename LIKE '%'||mc_geography_level||'%';
 
   FOREACH mc_category IN ARRAY mc_categories LOOP
-    SELECT string_agg(column_name||'_'||mc_category, ','),
-           string_agg(mc_table||'_'||mc_category||'.'||column_name||' '||column_name||'_'||mc_category, ','),
-           string_agg(distinct column_name||'_'||mc_category||area_normalization||' '||column_name||'_'||mc_category, ',')
-      INTO numer_colnames_mc_current, numer_colnames_mc_qualified_current, numer_colnames_mc_normalized_current
-      FROM information_schema.columns
-    WHERE table_schema = mc_schema
-      AND table_name = mc_table
-      AND column_name = ANY(mc_measurements);
+    FOREACH mc_month IN ARRAY mc_months LOOP
+      mc_month_slug := replace(mc_month, '-', '');
 
-    IF numer_colnames_mc_current IS NULL OR numer_colnames_mc_qualified_current IS NULL OR numer_colnames_mc_normalized_current IS NULL THEN
-      RETURN;
-    END IF;
+      SELECT string_agg(column_name||'_'||mc_category||'_'||mc_month_slug, ','),
+            string_agg(mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ','),
+            string_agg(distinct column_name||'_'||mc_category||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ',')
+        INTO numer_colnames_mc_current, numer_colnames_mc_qualified_current, numer_colnames_mc_normalized_current
+        FROM information_schema.columns
+      WHERE table_schema = mc_schema
+        AND table_name = mc_table
+        AND column_name = ANY(mc_measurements);
 
-    numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
-    numer_colnames_mc_qualified := coalesce(numer_colnames_mc_qualified, '')||numer_colnames_mc_qualified_current||',';
-    numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
+      IF numer_colnames_mc_current IS NULL OR numer_colnames_mc_qualified_current IS NULL OR numer_colnames_mc_normalized_current IS NULL THEN
+        RETURN;
+      END IF;
 
-    numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category;
-    geom_relations_mc := mc_table||'_'||mc_category||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
-    mc_table_categories := mc_table||'_'||mc_category||'.'||mc_category_column||'='''||cdb_observatory.OBS_DecodeCategory(mc_category)||'''';
+      numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
+      numer_colnames_mc_qualified := coalesce(numer_colnames_mc_qualified, '')||numer_colnames_mc_qualified_current||',';
+      numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
 
-    geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+      numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
+      geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
+      mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||cdb_observatory.OBS_DecodeCategory(mc_category)||''''||
+                             ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
+
+      geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+    END LOOP;
   END LOOP;
 
   ---------Query build and execution---------

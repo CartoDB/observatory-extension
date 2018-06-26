@@ -263,7 +263,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql PARALLEL RESTRICTED;
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_DecodeCategory(category TEXT)
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_DecodeMCCategory(category TEXT)
 RETURNS TEXT
 AS $$
 categories = {
@@ -275,6 +275,54 @@ categories = {
 }
 return categories.get(category)
 $$ LANGUAGE plpythonu;
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDates(
+  mc_schema TEXT,
+  geo_level TEXT,
+  month_no TEXT DEFAULT NULL)
+RETURNS TEXT[]
+AS $$
+DECLARE
+  mc_table TEXT;
+  where_clause TEXT DEFAULT '';
+  dates TEXT[];
+BEGIN
+  mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, geo_level);
+
+  IF month_no IS NOT NULL THEN
+    where_clause := format(
+      $query$
+      WHERE month LIKE '____-%1$s-__'
+      $query$, LPAD(month_no, 2, '0'));
+  END IF;
+
+  EXECUTE
+  format(
+    $query$
+    SELECT ARRAY_AGG(DISTINCT month) dates
+      FROM "%1$s".%2$s
+      %3$s
+    $query$, mc_schema, mc_table, where_clause)
+  INTO dates;
+
+  RETURN dates;
+END
+$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCTable(mc_schema TEXT, geo_level TEXT)
+RETURNS TEXT
+AS $$
+DECLARE
+  mc_table TEXT;
+BEGIN
+  SELECT tablename from pg_tables
+    INTO mc_table
+   WHERE schemaname = mc_schema
+     AND tablename LIKE '%'||geo_level||'%';
+
+  RETURN mc_table;
+END
+$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   z INTEGER, x INTEGER, y INTEGER,
@@ -452,10 +500,7 @@ BEGIN
     mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
   END IF;
 
-  SELECT tablename from pg_tables
-    INTO mc_table
-   WHERE schemaname = mc_schema
-     AND tablename LIKE '%'||mc_geography_level||'%';
+  mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
 
   FOREACH mc_category IN ARRAY mc_categories LOOP
     FOREACH mc_month IN ARRAY mc_months LOOP
@@ -480,7 +525,7 @@ BEGIN
 
       numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
       geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
-      mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||cdb_observatory.OBS_DecodeCategory(mc_category)||''''||
+      mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||cdb_observatory.OBS_DecodeMCCategory(mc_category)||''''||
                              ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
 
       geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;

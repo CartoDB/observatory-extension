@@ -357,7 +357,7 @@ DECLARE
   mc_month_column CONSTANT TEXT DEFAULT 'month';
   mc_table TEXT;
   mc_category TEXT;
-  mc_table_categories TEXT;
+  mc_table_categories TEXT DEFAULT '';
   mc_month TEXT;
   mc_month_slug TEXT;
 
@@ -373,23 +373,23 @@ DECLARE
   numer_tablename_do TEXT DEFAULT '';
   numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
   numer_tablenames_do_outer TEXT DEFAULT '';
-  numer_tablenames_mc TEXT;
+  numer_tablenames_mc TEXT DEFAULT '';
   numer_colnames_do TEXT DEFAULT '';
   numer_colnames_do_qualified TEXT DEFAULT '';
   numer_colnames_do_normalized TEXT DEFAULT '';
-  numer_colnames_mc TEXT;
-  numer_colnames_mc_current TEXT;
-  numer_colnames_mc_qualified TEXT;
-  numer_colnames_mc_qualified_current TEXT;
-  numer_colnames_mc_normalized TEXT;
-  numer_colnames_mc_normalized_current TEXT;
+  numer_colnames_mc TEXT DEFAULT '';
+  numer_colnames_mc_current TEXT DEFAULT '';
+  numer_colnames_mc_qualified TEXT DEFAULT '';
+  numer_colnames_mc_qualified_current TEXT DEFAULT '';
+  numer_colnames_mc_normalized TEXT DEFAULT '';
+  numer_colnames_mc_normalized_current TEXT DEFAULT '';
   geom_tablenames TEXT;
   geom_colnames TEXT;
   geom_geomref_colnames TEXT;
   geom_geomref_colnames_qualified TEXT;
   geom_relations_do TEXT[] DEFAULT ARRAY['']::TEXT[];
-  geom_relations_mc TEXT;
-  geom_mc_outerjoins TEXT;
+  geom_relations_mc TEXT DEFAULT '';
+  geom_mc_outerjoins TEXT DEFAULT '';
 
   simplification_tolerance NUMERIC DEFAULT 0;
   area_normalization TEXT DEFAULT '';
@@ -419,7 +419,7 @@ BEGIN
     WHEN geography_level = block_geoname THEN
       simplification_tolerance := 0.0001;
     ELSE
-      RETURN;
+      simplification_tolerance := 0;
   END CASE;
 
   IF NOT simplify_geometries THEN
@@ -515,20 +515,24 @@ BEGIN
         AND table_name = mc_table
         AND column_name = ANY(mc_measurements);
 
-      IF numer_colnames_mc_current IS NULL OR numer_colnames_mc_qualified_current IS NULL OR numer_colnames_mc_normalized_current IS NULL THEN
-        RETURN;
+      IF numer_colnames_mc_current IS NOT NULL THEN
+        numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
+      END IF;
+      IF numer_colnames_mc_qualified_current IS NOT NULL THEN
+        numer_colnames_mc_qualified := coalesce(numer_colnames_mc_qualified, '')||numer_colnames_mc_qualified_current||',';
+      END IF;
+      IF numer_colnames_mc_normalized_current IS NOT NULL THEN
+        numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
       END IF;
 
-      numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
-      numer_colnames_mc_qualified := coalesce(numer_colnames_mc_qualified, '')||numer_colnames_mc_qualified_current||',';
-      numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
+      IF mc_table IS NOT NULL THEN
+        numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
+        geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
+        mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||cdb_observatory.OBS_DecodeMCCategory(mc_category)||''''||
+                              ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
 
-      numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
-      geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
-      mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||cdb_observatory.OBS_DecodeMCCategory(mc_category)||''''||
-                             ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
-
-      geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+        geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+      END IF;
     END LOOP;
   END LOOP;
 
@@ -536,16 +540,17 @@ BEGIN
   RETURN QUERY EXECUTE format(
     $query$
     SELECT  mvtgeom,
-            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio) as _) as mvtdata
+            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio, area) as _) as mvtdata
           FROM (
-      SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio FROM (
+      SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
         SELECT  %1$s the_geom, %8$s, %2$s %10$s
                 CASE  WHEN ST_Within($5, %1$s)
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
                       WHEN ST_Within(%1$s, $5)
                         THEN 1
                       ELSE ST_Area(cdb_observatory.safe_intersection(st_simplifyvw(%1$s, $6), $5)) / Nullif(ST_Area(%1$s), 0)
-                END area_ratio
+                END area_ratio,
+                ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area
           FROM %5$s
                %4$s
                %11$s

@@ -263,19 +263,6 @@ BEGIN
 END
 $$ LANGUAGE plpgsql PARALLEL RESTRICTED;
 
-CREATE OR REPLACE FUNCTION cdb_observatory.OBS_DecodeMCCategory(category TEXT)
-RETURNS TEXT
-AS $$
-categories = {
-    'NEP': 'non eating places',
-	  'EP': 'eating places',
-	  'APP': 'apparel',
-	  'SB': 'small business',
-	  'TR': 'total retail',
-}
-return categories.get(category)
-$$ LANGUAGE plpythonu;
-
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDates(
   mc_schema TEXT,
   geo_level TEXT,
@@ -357,6 +344,7 @@ DECLARE
   mc_month_column CONSTANT TEXT DEFAULT 'month';
   mc_table TEXT;
   mc_category TEXT;
+  mc_category_name TEXT;
   mc_table_categories TEXT DEFAULT '';
   mc_month TEXT;
   mc_month_slug TEXT;
@@ -506,6 +494,14 @@ BEGIN
     FOREACH mc_month IN ARRAY mc_months LOOP
       mc_month_slug := replace(mc_month, '-', '');
 
+      SELECT CASE
+        WHEN mc_category = 'NEP' THEN 'non eating places'
+	      WHEN mc_category = 'EP'  THEN 'eating places'
+	      WHEN mc_category = 'APP' THEN 'apparel'
+	      WHEN mc_category = 'SB'  THEN 'small business'
+	      WHEN mc_category = 'TR'  THEN 'total retail'
+        END INTO mc_category_name;
+
       SELECT string_agg(column_name||'_'||mc_category||'_'||mc_month_slug, ','),
             string_agg(mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ','),
             string_agg(distinct column_name||'_'||mc_category||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ',')
@@ -528,7 +524,7 @@ BEGIN
       IF mc_table IS NOT NULL THEN
         numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
         geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
-        mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||cdb_observatory.OBS_DecodeMCCategory(mc_category)||''''||
+        mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||mc_category_name||''''||
                               ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
 
         geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;

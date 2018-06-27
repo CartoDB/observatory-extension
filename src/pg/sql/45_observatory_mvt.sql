@@ -263,17 +263,66 @@ BEGIN
 END
 $$ LANGUAGE plpgsql PARALLEL RESTRICTED;
 
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDates(
+  mc_schema TEXT,
+  geo_level TEXT,
+  month_no TEXT DEFAULT NULL)
+RETURNS TEXT[]
+AS $$
+DECLARE
+  mc_table TEXT;
+  where_clause TEXT DEFAULT '';
+  dates TEXT[];
+BEGIN
+  mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, geo_level);
+
+  IF month_no IS NOT NULL THEN
+    where_clause := format(
+      $query$
+      WHERE month LIKE '____-%1$s-__'
+      $query$, LPAD(month_no, 2, '0'));
+  END IF;
+
+  EXECUTE
+  format(
+    $query$
+    SELECT ARRAY_AGG(DISTINCT month) dates
+      FROM "%1$s".%2$s
+      %3$s
+    $query$, mc_schema, mc_table, where_clause)
+  INTO dates;
+
+  RETURN dates;
+END
+$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCTable(mc_schema TEXT, geo_level TEXT)
+RETURNS TEXT
+AS $$
+DECLARE
+  mc_table TEXT;
+BEGIN
+  SELECT tablename from pg_tables
+    INTO mc_table
+   WHERE schemaname = mc_schema
+     AND tablename LIKE '%'||geo_level||'%';
+
+  RETURN mc_table;
+END
+$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   z INTEGER, x INTEGER, y INTEGER,
   geography_level TEXT,
   do_measurements TEXT[],
-  mastercard_measurements TEXT[],
+  mc_measurements TEXT[],
+  mc_categories TEXT[] DEFAULT ARRAY['TR']::TEXT[],
+  mc_months TEXT[] DEFAULT ARRAY['2018-02-01']::TEXT[],
   use_meta_cache BOOLEAN DEFAULT True,
   shoreline_clipped BOOLEAN DEFAULT True,
   optimize_clipping BOOLEAN DEFAULT False,
   simplify_geometries BOOLEAN DEFAULT False,
   area_normalized BOOLEAN DEFAULT False,
-  mastercard_category TEXT DEFAULT 'Total Retail',
   extent INTEGER DEFAULT 4096,
   buf INTEGER DEFAULT 256,
   clip_geom BOOLEAN DEFAULT True)
@@ -289,10 +338,16 @@ DECLARE
   blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
   block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
 
-  mastercard_schema CONSTANT TEXT DEFAULT 'us.mastercard';
-  mastercard_geoid CONSTANT TEXT DEFAULT 'region_id';
-  mastercard_category_column CONSTANT TEXT DEFAULT 'category';
-  mastercard_table TEXT;
+  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
+  mc_geoid CONSTANT TEXT DEFAULT 'region_id';
+  mc_category_column CONSTANT TEXT DEFAULT 'category';
+  mc_month_column CONSTANT TEXT DEFAULT 'month';
+  mc_table TEXT;
+  mc_category TEXT;
+  mc_category_name TEXT;
+  mc_table_categories TEXT DEFAULT '';
+  mc_month TEXT;
+  mc_month_slug TEXT;
 
   bounds NUMERIC[];
   geom GEOMETRY;
@@ -306,18 +361,23 @@ DECLARE
   numer_tablename_do TEXT DEFAULT '';
   numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
   numer_tablenames_do_outer TEXT DEFAULT '';
-  numer_tablenames_mc TEXT;
+  numer_tablenames_mc TEXT DEFAULT '';
   numer_colnames_do TEXT DEFAULT '';
   numer_colnames_do_qualified TEXT DEFAULT '';
   numer_colnames_do_normalized TEXT DEFAULT '';
-  numer_colnames_mc TEXT;
-  numer_colnames_mc_normalized TEXT;
+  numer_colnames_mc TEXT DEFAULT '';
+  numer_colnames_mc_current TEXT DEFAULT '';
+  numer_colnames_mc_qualified TEXT DEFAULT '';
+  numer_colnames_mc_qualified_current TEXT DEFAULT '';
+  numer_colnames_mc_normalized TEXT DEFAULT '';
+  numer_colnames_mc_normalized_current TEXT DEFAULT '';
   geom_tablenames TEXT;
   geom_colnames TEXT;
   geom_geomref_colnames TEXT;
   geom_geomref_colnames_qualified TEXT;
   geom_relations_do TEXT[] DEFAULT ARRAY['']::TEXT[];
-  geom_relations_mc TEXT;
+  geom_relations_mc TEXT DEFAULT '';
+  geom_mc_outerjoins TEXT DEFAULT '';
 
   simplification_tolerance NUMERIC DEFAULT 0;
   area_normalization TEXT DEFAULT '';
@@ -347,7 +407,7 @@ BEGIN
     WHEN geography_level = block_geoname THEN
       simplification_tolerance := 0.0001;
     ELSE
-      RETURN;
+      simplification_tolerance := 0;
   END CASE;
 
   IF NOT simplify_geometries THEN
@@ -421,58 +481,82 @@ BEGIN
             geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
   END IF;
 
-  ---------MasterCard---------
+  ---------MC---------
   IF geography_level = 'us.census.tiger.census_tract' THEN
     mc_geography_level := 'tract';
   ELSE
     mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
   END IF;
 
-  SELECT tablename from pg_tables
-    INTO mastercard_table
-   WHERE schemaname = mastercard_schema
-     AND tablename LIKE '%'||mc_geography_level||'%';
+  mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
 
-  SELECT string_agg(column_name, ','), string_agg(distinct column_name||area_normalization||' '||column_name, ',')
-    INTO numer_colnames_mc, numer_colnames_mc_normalized
-    FROM information_schema.columns
-   WHERE table_schema = mastercard_schema
-     AND table_name = mastercard_table
-     AND column_name = ANY(mastercard_measurements);
+  FOREACH mc_category IN ARRAY mc_categories LOOP
+    FOREACH mc_month IN ARRAY mc_months LOOP
+      mc_month_slug := replace(mc_month, '-', '');
 
-  numer_tablenames_mc := '"'||mastercard_schema||'".'||mastercard_table;
-  geom_relations_mc := mastercard_table||'.'||mastercard_geoid||'='||geom_geomref_colnames_qualified;
+      SELECT CASE
+        WHEN mc_category = 'NEP' THEN 'non eating places'
+	      WHEN mc_category = 'EP'  THEN 'eating places'
+	      WHEN mc_category = 'APP' THEN 'apparel'
+	      WHEN mc_category = 'SB'  THEN 'small business'
+	      WHEN mc_category = 'TR'  THEN 'total retail'
+        END INTO mc_category_name;
 
-  IF numer_colnames_mc IS NULL OR numer_colnames_mc_normalized IS NULL
-    OR numer_tablenames_mc IS NULL OR geom_relations_mc IS NULL THEN
-    RETURN;
-  END IF;
+      SELECT string_agg(column_name||'_'||mc_category||'_'||mc_month_slug, ','),
+            string_agg(mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ','),
+            string_agg(distinct column_name||'_'||mc_category||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ',')
+        INTO numer_colnames_mc_current, numer_colnames_mc_qualified_current, numer_colnames_mc_normalized_current
+        FROM information_schema.columns
+      WHERE table_schema = mc_schema
+        AND table_name = mc_table
+        AND column_name = ANY(mc_measurements);
+
+      IF numer_colnames_mc_current IS NOT NULL THEN
+        numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
+      END IF;
+      IF numer_colnames_mc_qualified_current IS NOT NULL THEN
+        numer_colnames_mc_qualified := coalesce(numer_colnames_mc_qualified, '')||numer_colnames_mc_qualified_current||',';
+      END IF;
+      IF numer_colnames_mc_normalized_current IS NOT NULL THEN
+        numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
+      END IF;
+
+      IF mc_table IS NOT NULL THEN
+        numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
+        geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
+        mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||mc_category_name||''''||
+                              ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
+
+        geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+      END IF;
+    END LOOP;
+  END LOOP;
 
   ---------Query build and execution---------
   RETURN QUERY EXECUTE format(
     $query$
     SELECT  mvtgeom,
-            (select row_to_json(_)::jsonb from (select id, %13$s %3$s, area_ratio) as _) as mvtdata
+            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio, area) as _) as mvtdata
           FROM (
-      SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %12$s as id, %10$s %11$s, area_ratio FROM (
-        SELECT  %1$s the_geom, %12$s, %2$s %3$s,
+      SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
+        SELECT  %1$s the_geom, %8$s, %2$s %10$s
                 CASE  WHEN ST_Within($5, %1$s)
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
                       WHEN ST_Within(%1$s, $5)
                         THEN 1
-                      ELSE ST_Area(cdb_observatory.safe_intersection(st_simplifyvw(%1$s, $7), $5)) / Nullif(ST_Area(%1$s), 0)
-                END area_ratio
-          FROM %6$s
+                      ELSE ST_Area(cdb_observatory.safe_intersection(st_simplifyvw(%1$s, $6), $5)) / Nullif(ST_Area(%1$s), 0)
+                END area_ratio,
+                ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area
+          FROM %5$s
                %4$s
-               LEFT OUTER JOIN %5$s ON %7$s AND %8$s.%9$s=$6
+               %11$s
         WHERE st_intersects(%1$s, $5)
       ) p
     ) q
     $query$,
-    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, numer_tablenames_mc,
-    geom_tablenames, geom_relations_mc, mastercard_table, mastercard_category_column, numer_colnames_do_normalized,
-    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do)
-  USING ext, extent, buf, clip_geom, geom, mastercard_category, simplification_tolerance
+    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
+    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins)
+  USING ext, extent, buf, clip_geom, geom, simplification_tolerance
   RETURN;
 END
 $$ LANGUAGE plpgsql PARALLEL RESTRICTED;

@@ -1,3 +1,11 @@
+1.10.0 (2018-07-??)
+-------------------
+
+__Improvements__
+
+* Added `OBS_GetMVT` function to get DO data as MVT
+* Added `OBS_GetMCDOMVT` function
+
 1.9.0 (2018-04-20)
 ------------------
 

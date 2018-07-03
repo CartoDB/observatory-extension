@@ -544,7 +544,7 @@ BEGIN
                         THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
                       WHEN ST_Within(%1$s, $5)
                         THEN 1
-                      ELSE ST_Area(cdb_observatory.safe_intersection(st_simplifyvw(%1$s, $6), $5)) / Nullif(ST_Area(%1$s), 0)
+                      ELSE ST_Area(ST_Intersection(st_simplifyvw(%1$s, $6), $5)) / Nullif(ST_Area(%1$s), 0)
                 END area_ratio,
                 ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area
           FROM %5$s

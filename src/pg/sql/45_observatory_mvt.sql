@@ -560,3 +560,283 @@ BEGIN
   RETURN;
 END
 $$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+
+CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
+  z INTEGER,
+  geography_level TEXT,
+  do_measurements TEXT[],
+  mc_measurements TEXT[],
+  mc_categories TEXT[] DEFAULT ARRAY['TR']::TEXT[],
+  mc_months TEXT[] DEFAULT ARRAY['2018-02-01']::TEXT[],
+  use_meta_cache BOOLEAN DEFAULT True,
+  shoreline_clipped BOOLEAN DEFAULT True,
+  optimize_clipping BOOLEAN DEFAULT False,
+  simplify_geometries BOOLEAN DEFAULT False,
+  area_normalized BOOLEAN DEFAULT False,
+  extent INTEGER DEFAULT 4096,
+  buf INTEGER DEFAULT 256,
+  clip_geom BOOLEAN DEFAULT True)
+RETURNS TABLE (
+  x INTEGER,
+  y INTEGER,
+  zoom INTEGER,
+  mvtgeom GEOMETRY,
+  mvtdata JSONB
+)
+AS $$
+DECLARE
+  state_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.state';
+  county_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.county';
+  tract_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.census_tract';
+  blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
+  block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
+
+  tiler_table_prefix CONSTANT TEXT DEFAULT 'tiler.xyz_us_mc_tiles_temp_';
+  avg_x INTEGER;
+  avg_y INTEGER;
+
+  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
+  mc_geoid CONSTANT TEXT DEFAULT 'region_id';
+  mc_category_column CONSTANT TEXT DEFAULT 'category';
+  mc_month_column CONSTANT TEXT DEFAULT 'month';
+  mc_table TEXT;
+  mc_category TEXT;
+  mc_category_name TEXT;
+  mc_table_categories TEXT DEFAULT '';
+  mc_month TEXT;
+  mc_month_slug TEXT;
+
+  measurement TEXT;
+  getmeta_parameters TEXT;
+  meta JSON;
+  mc_geography_level TEXT;
+
+  simplification_tolerance NUMERIC DEFAULT 0;
+  area_normalization TEXT DEFAULT '';
+  clipped TEXT default '';
+  i INTEGER DEFAULT 0;
+
+  bounds NUMERIC[];
+  geom GEOMETRY;
+  ext BOX2D;
+
+  numer_tablename_do TEXT DEFAULT '';
+  numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
+  numer_tablenames_do_outer TEXT DEFAULT '';
+  numer_tablenames_mc TEXT DEFAULT '';
+  numer_colnames_do TEXT DEFAULT '';
+  numer_colnames_do_qualified TEXT DEFAULT '';
+  numer_colnames_do_normalized TEXT DEFAULT '';
+  numer_colnames_mc TEXT DEFAULT '';
+  numer_colnames_mc_current TEXT DEFAULT '';
+  numer_colnames_mc_qualified TEXT DEFAULT '';
+  numer_colnames_mc_qualified_current TEXT DEFAULT '';
+  numer_colnames_mc_normalized TEXT DEFAULT '';
+  numer_colnames_mc_normalized_current TEXT DEFAULT '';
+  geom_tablenames TEXT;
+  geom_colnames TEXT;
+  geom_geomref_colnames TEXT;
+  geom_geomref_colnames_qualified TEXT;
+  geom_relations_do TEXT[] DEFAULT ARRAY['']::TEXT[];
+  geom_relations_mc TEXT DEFAULT '';
+  geom_mc_outerjoins TEXT DEFAULT '';
+BEGIN
+  IF geography_level = 'us.census.tiger.census_tract' THEN
+    mc_geography_level := 'tract';
+  ELSE
+    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
+  END IF;
+
+  -- Get the average x and y (in the middle of the BBox)
+  EXECUTE
+  format(
+    $query$
+    SELECT ROUND(AVG(x)) AS x, ROUND(AVG(y)) as y
+    FROM tiler.xyz_us_mc_tiles_temp_%1$s_%2$s
+    $query$, mc_geography_level, z)
+  INTO avg_x, avg_y;
+
+  IF area_normalized THEN
+    area_normalization := '/area_ratio';
+  END IF;
+
+  IF shoreline_clipped THEN
+    clipped := '_clipped';
+  END IF;
+
+  CASE
+    WHEN geography_level = state_geoname THEN
+      simplification_tolerance := 0.1;
+      IF optimize_clipping THEN
+        clipped := '';
+      END IF;
+    WHEN geography_level = county_geoname THEN
+      simplification_tolerance := 0.01;
+    WHEN geography_level = tract_geoname THEN
+      simplification_tolerance := 0.001;
+    WHEN geography_level = blockgroup_geoname THEN
+      simplification_tolerance := 0.0001;
+    WHEN geography_level = block_geoname THEN
+      simplification_tolerance := 0.0001;
+    ELSE
+      simplification_tolerance := 0;
+  END CASE;
+
+  IF NOT simplify_geometries THEN
+    simplification_tolerance := 0;
+  END IF;
+
+  bounds := cdb_observatory.OBS_GetTileBounds(z, avg_x, avg_y);
+  geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
+  ext := ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(bounds[1], bounds[2]), 4326), 3857),
+                      ST_Transform(ST_SetSRID(ST_Point(bounds[3], bounds[4]), 4326), 3857));
+
+  ---------DO---------
+  getmeta_parameters := '[ ';
+  FOREACH measurement IN ARRAY do_measurements LOOP
+    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || clipped ||'"},';
+  END LOOP;
+  getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
+
+  IF use_meta_cache THEN
+    meta := cdb_observatory.OBS_RetrieveMeta(z, geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+  ELSE
+    meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+  END IF;
+
+  IF meta IS NOT NULL THEN
+    SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
+            string_agg(distinct numer_colname, ',')||',' numer_colnames,
+            string_agg(distinct numer_tablename||'.'||numer_colname, ',')||',' numer_colnames_qualified,
+            string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',')||',' numer_colnames_normalized,
+            (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
+            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
+            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
+            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
+      INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
+          geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
+      FROM json_to_recordset(meta)
+        AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
+            numer_type TEXT, denom_id TEXT, denom_aggregate TEXT, denom_colname TEXT, denom_geomref_colname TEXT, denom_tablename TEXT,
+            denom_type TEXT, denom_reltype TEXT, geom_id TEXT, geom_colname TEXT, geom_geomref_colname TEXT, geom_tablename TEXT,
+            geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
+
+    IF numer_tablenames_do IS NULL OR numer_colnames_do IS NULL OR numer_colnames_do_qualified IS NULL OR numer_colnames_do_normalized IS NULL
+      OR geom_tablenames IS NULL OR geom_colnames IS NULL OR geom_geomref_colnames IS NULL OR geom_geomref_colnames_qualified IS NULL
+      OR geom_relations_do IS NULL THEN
+      RETURN;
+    END IF;
+
+    i := 0;
+    FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
+      i := i + 1;
+      numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+    END LOOP;
+  ELSE
+    getmeta_parameters := '[{"geom_id":"' || geography_level || clipped ||'"}]';
+    meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+
+    IF meta IS NULL THEN
+      RETURN;
+    END IF;
+
+    SELECT  (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
+            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
+            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
+      FROM json_to_recordset(meta)
+      INTO geom_tablenames, geom_colnames, geom_geomref_colnames, geom_geomref_colnames_qualified
+        AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
+            numer_type TEXT, denom_id TEXT, denom_aggregate TEXT, denom_colname TEXT, denom_geomref_colname TEXT, denom_tablename TEXT,
+            denom_type TEXT, denom_reltype TEXT, geom_id TEXT, geom_colname TEXT, geom_geomref_colname TEXT, geom_tablename TEXT,
+            geom_type TEXT, numer_timespan TEXT, geom_timespan TEXT, normalization TEXT, api_method TEXT, api_args JSON);
+  END IF;
+
+  ---------MC---------
+  IF geography_level = 'us.census.tiger.census_tract' THEN
+    mc_geography_level := 'tract';
+  ELSE
+    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
+  END IF;
+
+  mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
+
+  FOREACH mc_category IN ARRAY mc_categories LOOP
+    FOREACH mc_month IN ARRAY mc_months LOOP
+      mc_month_slug := replace(mc_month, '/', '');
+
+      SELECT CASE
+        WHEN mc_category = 'NEP' THEN 'non eating places'
+	      WHEN mc_category = 'EP'  THEN 'eating places'
+	      WHEN mc_category = 'APP' THEN 'apparel'
+	      WHEN mc_category = 'SB'  THEN 'small business'
+	      WHEN mc_category = 'TR'  THEN 'total retail'
+        END INTO mc_category_name;
+
+      SELECT string_agg(column_name||'_'||mc_category||'_'||mc_month_slug, ','),
+            string_agg(mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ','),
+            string_agg(distinct column_name||'_'||mc_category||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ',')
+        INTO numer_colnames_mc_current, numer_colnames_mc_qualified_current, numer_colnames_mc_normalized_current
+        FROM information_schema.columns
+      WHERE table_schema = mc_schema
+        AND table_name = mc_table
+        AND column_name = ANY(mc_measurements);
+
+      IF numer_colnames_mc_current IS NOT NULL THEN
+        numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
+      END IF;
+      IF numer_colnames_mc_qualified_current IS NOT NULL THEN
+        numer_colnames_mc_qualified := coalesce(numer_colnames_mc_qualified, '')||numer_colnames_mc_qualified_current||',';
+      END IF;
+      IF numer_colnames_mc_normalized_current IS NOT NULL THEN
+        numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
+      END IF;
+
+      IF mc_table IS NOT NULL THEN
+        numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
+        geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
+        mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||mc_category_name||''''||
+                              ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
+
+        geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+      END IF;
+    END LOOP;
+  END LOOP;
+
+  ---------Query build and execution---------
+  RETURN QUERY EXECUTE format(
+    $query$
+    SELECT  x, y, z,
+            mvtgeom,
+            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio, area) as _) as mvtdata
+          FROM (
+      SELECT x, y, z,
+             ST_AsMVTGeom(ST_Transform(the_geom, 3857),
+                          bbox2d, $1, $2, $3) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
+        SELECT  tx.x, tx.y, tx.z,
+                %1$s the_geom, %8$s, %2$s %10$s
+                CASE  WHEN ST_Within(tx.envelope, %1$s)
+                        THEN ST_Area(tx.envelope) / Nullif(ST_Area(%1$s), 0)
+                      WHEN ST_Within(%1$s, tx.envelope)
+                        THEN 1
+                      ELSE ST_Area(ST_Intersection(st_simplifyvw(%1$s, $4), tx.envelope)) / Nullif(ST_Area(%1$s), 0)
+                END area_ratio,
+                ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area,
+                ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(tx.bounds[1], tx.bounds[2]), 4326), 3857),
+                             ST_Transform(ST_SetSRID(ST_Point(tx.bounds[3], tx.bounds[4]), 4326), 3857)) bbox2d
+          FROM tiler.xyz_us_mc_tiles_temp_%12$s_%13$s tx,
+               %5$s
+               %4$s
+               %11$s
+        WHERE st_intersects(%1$s, tx.envelope)
+      ) p
+    ) q
+    $query$,
+    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
+    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins,
+    mc_geography_level, z)
+  USING extent, buf, clip_geom, simplification_tolerance
+  RETURN;
+END
+$$ LANGUAGE plpgsql PARALLEL RESTRICTED;

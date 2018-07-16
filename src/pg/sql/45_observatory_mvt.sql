@@ -302,11 +302,11 @@ AS $$
 DECLARE
   mc_table TEXT;
 BEGIN
-  SELECT tablename from pg_tables
-    INTO mc_table
-   WHERE schemaname = mc_schema
-     AND tablename LIKE '%'||geo_level||'%';
-
+--  SELECT tablename from pg_tables
+--    INTO mc_table
+--   WHERE schemaname = mc_schema
+--     AND tablename LIKE '%'||geo_level||'%';
+  mc_table := 'mc_' || geo_level;
   RETURN mc_table;
 END
 $$ LANGUAGE plpgsql PARALLEL RESTRICTED;
@@ -338,16 +338,17 @@ DECLARE
   blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
   block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
 
-  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
+  mc_schema CONSTANT TEXT DEFAULT 'tiler';
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
   mc_table TEXT;
   mc_category TEXT;
-  mc_category_name TEXT;
   mc_table_categories TEXT DEFAULT '';
   mc_month TEXT;
   mc_month_slug TEXT;
+  mc_measurements_categories TEXT[];
+  mc_measurement TEXT;
 
   bounds NUMERIC[];
   geom GEOMETRY;
@@ -490,26 +491,24 @@ BEGIN
 
   mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
 
-  FOREACH mc_category IN ARRAY mc_categories LOOP
-    FOREACH mc_month IN ARRAY mc_months LOOP
-      mc_month_slug := replace(mc_month, '-', '');
+  FOREACH mc_month IN ARRAY mc_months LOOP
+    mc_month_slug := replace(mc_month, '/', '');
+    FOREACH mc_category IN ARRAY mc_categories LOOP
+      mc_category := lower(mc_category);
+      mc_measurements_categories := ARRAY['']::TEXT[];
 
-      SELECT CASE
-        WHEN mc_category = 'NEP' THEN 'non eating places'
-	      WHEN mc_category = 'EP'  THEN 'eating places'
-	      WHEN mc_category = 'APP' THEN 'apparel'
-	      WHEN mc_category = 'SB'  THEN 'small business'
-	      WHEN mc_category = 'TR'  THEN 'total retail'
-        END INTO mc_category_name;
+      FOREACH mc_measurement IN ARRAY mc_measurements LOOP
+        mc_measurements_categories := array_append(mc_measurements_categories, mc_measurement||'_'||mc_category);
+      END LOOP;
 
-      SELECT string_agg(column_name||'_'||mc_category||'_'||mc_month_slug, ','),
-            string_agg(mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ','),
-            string_agg(distinct column_name||'_'||mc_category||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ',')
+      SELECT string_agg(column_name||'_'||mc_month_slug, ','),
+            string_agg(mc_table||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_month_slug, ','),
+            string_agg(distinct column_name||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_month_slug, ',')
         INTO numer_colnames_mc_current, numer_colnames_mc_qualified_current, numer_colnames_mc_normalized_current
         FROM information_schema.columns
       WHERE table_schema = mc_schema
         AND table_name = mc_table
-        AND column_name = ANY(mc_measurements);
+        AND column_name = ANY(mc_measurements_categories);
 
       IF numer_colnames_mc_current IS NOT NULL THEN
         numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
@@ -520,16 +519,15 @@ BEGIN
       IF numer_colnames_mc_normalized_current IS NOT NULL THEN
         numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
       END IF;
-
-      IF mc_table IS NOT NULL THEN
-        numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
-        geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
-        mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||mc_category_name||''''||
-                              ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
-
-        geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
-      END IF;
     END LOOP;
+
+    IF mc_table IS NOT NULL THEN
+      numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_month_slug;
+      geom_relations_mc := mc_table||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
+      mc_table_categories := mc_table||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
+
+      geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+    END IF;
   END LOOP;
 
   ---------Query build and execution---------
@@ -595,7 +593,7 @@ DECLARE
   avg_x INTEGER;
   avg_y INTEGER;
 
-  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
+  mc_schema CONSTANT TEXT DEFAULT 'tiler';
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
@@ -605,6 +603,8 @@ DECLARE
   mc_table_categories TEXT DEFAULT '';
   mc_month TEXT;
   mc_month_slug TEXT;
+  mc_measurements_categories TEXT[];
+  mc_measurement TEXT;
 
   measurement TEXT;
   getmeta_parameters TEXT;
@@ -762,26 +762,24 @@ BEGIN
 
   mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
 
-  FOREACH mc_category IN ARRAY mc_categories LOOP
-    FOREACH mc_month IN ARRAY mc_months LOOP
-      mc_month_slug := replace(mc_month, '/', '');
+  FOREACH mc_month IN ARRAY mc_months LOOP
+    mc_month_slug := replace(mc_month, '/', '');
+    FOREACH mc_category IN ARRAY mc_categories LOOP
+      mc_category := lower(mc_category);
+      mc_measurements_categories := ARRAY['']::TEXT[];
 
-      SELECT CASE
-        WHEN mc_category = 'NEP' THEN 'non eating places'
-	      WHEN mc_category = 'EP'  THEN 'eating places'
-	      WHEN mc_category = 'APP' THEN 'apparel'
-	      WHEN mc_category = 'SB'  THEN 'small business'
-	      WHEN mc_category = 'TR'  THEN 'total retail'
-        END INTO mc_category_name;
+      FOREACH mc_measurement IN ARRAY mc_measurements LOOP
+        mc_measurements_categories := array_append(mc_measurements_categories, mc_measurement||'_'||mc_category);
+      END LOOP;
 
-      SELECT string_agg(column_name||'_'||mc_category||'_'||mc_month_slug, ','),
-            string_agg(mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ','),
-            string_agg(distinct column_name||'_'||mc_category||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_category||'_'||mc_month_slug, ',')
+      SELECT string_agg(column_name||'_'||mc_month_slug, ','),
+            string_agg(mc_table||'_'||mc_month_slug||'.'||column_name||' '||column_name||'_'||mc_month_slug, ','),
+            string_agg(distinct column_name||'_'||mc_month_slug||area_normalization||' '||column_name||'_'||mc_month_slug, ',')
         INTO numer_colnames_mc_current, numer_colnames_mc_qualified_current, numer_colnames_mc_normalized_current
         FROM information_schema.columns
       WHERE table_schema = mc_schema
         AND table_name = mc_table
-        AND column_name = ANY(mc_measurements);
+        AND column_name = ANY(mc_measurements_categories);
 
       IF numer_colnames_mc_current IS NOT NULL THEN
         numer_colnames_mc := coalesce(numer_colnames_mc, '')||numer_colnames_mc_current||',';
@@ -792,16 +790,15 @@ BEGIN
       IF numer_colnames_mc_normalized_current IS NOT NULL THEN
         numer_colnames_mc_normalized := coalesce(numer_colnames_mc_normalized, '')||numer_colnames_mc_normalized_current||',';
       END IF;
-
-      IF mc_table IS NOT NULL THEN
-        numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_category||'_'||mc_month_slug;
-        geom_relations_mc := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
-        mc_table_categories := mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_category_column||'='''||mc_category_name||''''||
-                              ' AND '||mc_table||'_'||mc_category||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
-
-        geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
-      END IF;
     END LOOP;
+
+    IF mc_table IS NOT NULL THEN
+      numer_tablenames_mc := '"'||mc_schema||'".'||mc_table||' '||mc_table||'_'||mc_month_slug;
+      geom_relations_mc := mc_table||'_'||mc_month_slug||'.'||mc_geoid||'='||geom_geomref_colnames_qualified;
+      mc_table_categories := mc_table||'_'||mc_month_slug||'.'||mc_month_column||'='''||mc_month||'''';
+
+      geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
+    END IF;
   END LOOP;
 
   ---------Query build and execution---------

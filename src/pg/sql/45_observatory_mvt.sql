@@ -652,7 +652,7 @@ BEGIN
   format(
     $query$
     SELECT ROUND(AVG(x)) AS x, ROUND(AVG(y)) as y
-    FROM %3$s_%1$s_%2$s
+    FROM %3$s%1$s_%2$s
     $query$, mc_geography_level, z, tiler_table_prefix)
   INTO avg_x, avg_y;
 

@@ -279,7 +279,7 @@ BEGIN
   IF month_no IS NOT NULL THEN
     where_clause := format(
       $query$
-      WHERE month LIKE '____-%1$s-__'
+      WHERE month LIKE '%1$s/__/____'
       $query$, LPAD(month_no, 2, '0'));
   END IF;
 

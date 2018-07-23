@@ -652,8 +652,8 @@ BEGIN
   format(
     $query$
     SELECT ROUND(AVG(x)) AS x, ROUND(AVG(y)) as y
-    FROM tiler.xyz_us_mc_tiles_temp_%1$s_%2$s
-    $query$, mc_geography_level, z)
+    FROM %3$s_%1$s_%2$s
+    $query$, mc_geography_level, z, tiler_table_prefix)
   INTO avg_x, avg_y;
 
   IF area_normalized THEN

@@ -589,7 +589,7 @@ DECLARE
   blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
   block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
 
-  tiler_table_prefix CONSTANT TEXT DEFAULT 'tiler.xyz_us_mc_tiles_temp_';
+  tiler_table_prefix CONSTANT TEXT DEFAULT 'tiler.xyz_us_do_geoms_tiles_temp_';
   avg_x INTEGER;
   avg_y INTEGER;
 

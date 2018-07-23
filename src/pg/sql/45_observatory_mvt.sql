@@ -338,7 +338,7 @@ DECLARE
   blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
   block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
 
-  mc_schema CONSTANT TEXT DEFAULT 'tiler';
+  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
@@ -593,7 +593,7 @@ DECLARE
   avg_x INTEGER;
   avg_y INTEGER;
 
-  mc_schema CONSTANT TEXT DEFAULT 'tiler';
+  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';

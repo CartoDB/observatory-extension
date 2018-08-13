@@ -1,7 +1,7 @@
 from nose.tools import assert_equal, assert_is_not_none
 from nose_parameterized import parameterized
 
-from itertools import izip_longest
+from itertools import zip_longest
 from util import query
 from collections import OrderedDict
 import json
@@ -11,78 +11,78 @@ def grouper(iterable, n, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue=fillvalue, *args)
+    return zip_longest(fillvalue=fillvalue, *args)
 
 
 USE_SCHEMA = True
 
 SKIP_COLUMNS = set([
-    u'mx.inegi_columns.INDI18',
-    u'mx.inegi_columns.ECO40',
-    u'mx.inegi_columns.POB34',
-    u'mx.inegi_columns.POB63',
-    u'mx.inegi_columns.INDI7',
-    u'mx.inegi_columns.EDU28',
-    u'mx.inegi_columns.SCONY10',
-    u'mx.inegi_columns.EDU31',
-    u'mx.inegi_columns.POB7',
-    u'mx.inegi_columns.VIV30',
-    u'mx.inegi_columns.INDI12',
-    u'mx.inegi_columns.EDU13',
-    u'mx.inegi_columns.ECO43',
-    u'mx.inegi_columns.VIV9',
-    u'mx.inegi_columns.HOGAR25',
-    u'mx.inegi_columns.POB32',
-    u'mx.inegi_columns.ECO7',
-    u'mx.inegi_columns.INDI19',
-    u'mx.inegi_columns.INDI16',
-    u'mx.inegi_columns.POB65',
-    u'mx.inegi_columns.INDI3',
-    u'mx.inegi_columns.INDI9',
-    u'mx.inegi_columns.POB36',
-    u'mx.inegi_columns.POB33',
-    u'mx.inegi_columns.POB58',
-    u'mx.inegi_columns.DISC4',
-    u'mx.inegi_columns.VIV41',
-    u'mx.inegi_columns.VIV40',
-    u'mx.inegi_columns.VIV17',
-    u'mx.inegi_columns.VIV25',
-    u'mx.inegi_columns.EDU10',
-    u'whosonfirst.wof_disputed_name',
-    u'us.census.tiger.fullname',
-    u'whosonfirst.wof_marinearea_name',
-    u'us.census.tiger.mtfcc',
-    u'whosonfirst.wof_county_name',
-    u'whosonfirst.wof_region_name',
-    u'fr.insee.P12_RP_CHOS',
-    u'fr.insee.P12_RP_HABFOR',
-    u'fr.insee.P12_RP_EAUCH',
-    u'fr.insee.P12_RP_BDWC',
-    u'fr.insee.P12_RP_MIDUR',
-    u'fr.insee.P12_RP_CLIM',
-    u'fr.insee.P12_RP_MIBOIS',
-    u'fr.insee.P12_RP_CASE',
-    u'fr.insee.P12_RP_TTEGOU',
-    u'fr.insee.P12_RP_ELEC',
-    u'fr.insee.P12_ACTOCC15P_ILT45D',
-    u'fr.insee.P12_RP_CHOS',
-    u'fr.insee.P12_RP_HABFOR',
-    u'fr.insee.P12_RP_EAUCH',
-    u'fr.insee.P12_RP_BDWC',
-    u'fr.insee.P12_RP_MIDUR',
-    u'fr.insee.P12_RP_CLIM',
-    u'fr.insee.P12_RP_MIBOIS',
-    u'fr.insee.P12_RP_CASE',
-    u'fr.insee.P12_RP_TTEGOU',
-    u'fr.insee.P12_RP_ELEC',
-    u'fr.insee.P12_ACTOCC15P_ILT45D',
-    u'uk.ons.LC3202WA0007',
-    u'uk.ons.LC3202WA0010',
-    u'uk.ons.LC3202WA0004',
-    u'uk.ons.LC3204WA0004',
-    u'uk.ons.LC3204WA0007',
-    u'uk.ons.LC3204WA0010',
-    u'br.geo.subdistritos_name'
+    'mx.inegi_columns.INDI18',
+    'mx.inegi_columns.ECO40',
+    'mx.inegi_columns.POB34',
+    'mx.inegi_columns.POB63',
+    'mx.inegi_columns.INDI7',
+    'mx.inegi_columns.EDU28',
+    'mx.inegi_columns.SCONY10',
+    'mx.inegi_columns.EDU31',
+    'mx.inegi_columns.POB7',
+    'mx.inegi_columns.VIV30',
+    'mx.inegi_columns.INDI12',
+    'mx.inegi_columns.EDU13',
+    'mx.inegi_columns.ECO43',
+    'mx.inegi_columns.VIV9',
+    'mx.inegi_columns.HOGAR25',
+    'mx.inegi_columns.POB32',
+    'mx.inegi_columns.ECO7',
+    'mx.inegi_columns.INDI19',
+    'mx.inegi_columns.INDI16',
+    'mx.inegi_columns.POB65',
+    'mx.inegi_columns.INDI3',
+    'mx.inegi_columns.INDI9',
+    'mx.inegi_columns.POB36',
+    'mx.inegi_columns.POB33',
+    'mx.inegi_columns.POB58',
+    'mx.inegi_columns.DISC4',
+    'mx.inegi_columns.VIV41',
+    'mx.inegi_columns.VIV40',
+    'mx.inegi_columns.VIV17',
+    'mx.inegi_columns.VIV25',
+    'mx.inegi_columns.EDU10',
+    'whosonfirst.wof_disputed_name',
+    'us.census.tiger.fullname',
+    'whosonfirst.wof_marinearea_name',
+    'us.census.tiger.mtfcc',
+    'whosonfirst.wof_county_name',
+    'whosonfirst.wof_region_name',
+    'fr.insee.P12_RP_CHOS',
+    'fr.insee.P12_RP_HABFOR',
+    'fr.insee.P12_RP_EAUCH',
+    'fr.insee.P12_RP_BDWC',
+    'fr.insee.P12_RP_MIDUR',
+    'fr.insee.P12_RP_CLIM',
+    'fr.insee.P12_RP_MIBOIS',
+    'fr.insee.P12_RP_CASE',
+    'fr.insee.P12_RP_TTEGOU',
+    'fr.insee.P12_RP_ELEC',
+    'fr.insee.P12_ACTOCC15P_ILT45D',
+    'fr.insee.P12_RP_CHOS',
+    'fr.insee.P12_RP_HABFOR',
+    'fr.insee.P12_RP_EAUCH',
+    'fr.insee.P12_RP_BDWC',
+    'fr.insee.P12_RP_MIDUR',
+    'fr.insee.P12_RP_CLIM',
+    'fr.insee.P12_RP_MIBOIS',
+    'fr.insee.P12_RP_CASE',
+    'fr.insee.P12_RP_TTEGOU',
+    'fr.insee.P12_RP_ELEC',
+    'fr.insee.P12_ACTOCC15P_ILT45D',
+    'uk.ons.LC3202WA0007',
+    'uk.ons.LC3202WA0010',
+    'uk.ons.LC3202WA0004',
+    'uk.ons.LC3204WA0004',
+    'uk.ons.LC3204WA0007',
+    'uk.ons.LC3204WA0010',
+    'br.geo.subdistritos_name'
 ])
 
 MEASURE_COLUMNS = query('''
@@ -192,7 +192,7 @@ def grouped_measure_columns(filtered_columns):
         else:
             groupbypoint[point] = [numer_ids]
 
-    for point, numer_ids in groupbypoint.iteritems():
+    for point, numer_ids in groupbypoint.items():
         for colgroup in grouper(numer_ids, 50):
             yield point, [c for c in colgroup if c]
 
@@ -215,7 +215,7 @@ def _test_measures(numer_ids, geom):
             'normalization': 'predenominated'
         })
 
-    params = query(u'''
+    params = query('''
         SELECT {schema}OBS_GetMeta({geom}, '{in_params}')
     '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
                geom=geom,
@@ -223,15 +223,15 @@ def _test_measures(numer_ids, geom):
 
     # We can get duplicate IDs from multi-denominators, so for now we
     # compress those measures into a single
-    params = OrderedDict([(p['id'], p) for p in params]).values()
+    params = list(OrderedDict([(p['id'], p) for p in params]).values())
     assert_equal(len(params), len(in_params),
                  'Inconsistent out and in params for {}'.format(in_params))
 
-    q = u'''
+    q = '''
     SELECT * FROM {schema}OBS_GetData(ARRAY[({geom}, 1)::geomval], '{params}')
     '''.format(schema='cdb_observatory.' if USE_SCHEMA else '',
                geom=geom,
-               params=json.dumps(params).replace(u"'", "''"))
+               params=json.dumps(params).replace("'", "''"))
     resp = query(q).fetchone()
     assert_is_not_none(resp, 'NULL returned for {}'.format(in_params))
     rawvals = resp[1]

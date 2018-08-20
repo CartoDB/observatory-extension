@@ -3,7 +3,7 @@
   "current_version": {
     "requires": {
       "postgresql": "^10.0.0",
-      "postgis": "^2.4"
+      "postgis": "^2.4.0.0"
     }
   }
 }

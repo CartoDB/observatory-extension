@@ -665,7 +665,9 @@ BEGIN
     i := 0;
     FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
       i := i + 1;
-      numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+      IF numer_tablename_do <> geom_tablenames THEN
+        numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+      END IF;
     END LOOP;
   ELSE
     getmeta_parameters := '[{"geom_id":"' || geography_level || table_postfix ||'"}]';

@@ -318,11 +318,10 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   mc_measurements TEXT[],
   mc_categories TEXT[] DEFAULT ARRAY['TR']::TEXT[],
   mc_months TEXT[] DEFAULT ARRAY['2018-02-01']::TEXT[],
-  country TEXT default 'us',
+  country TEXT,
   simplification_tolerance NUMERIC DEFAULT 0,
   table_postfix TEXT DEFAULT '',
   mc_geography_level TEXT DEFAULT NULL,
-  mc_geoid TEXT DEFAULT 'region_id',
   area_normalized BOOLEAN DEFAULT False,
   use_meta_cache BOOLEAN DEFAULT True,
   extent INTEGER DEFAULT 4096,
@@ -334,6 +333,7 @@ RETURNS TABLE (
 )
 AS $$
 DECLARE
+  mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
   mc_schema TEXT DEFAULT '.mastercard';
@@ -533,11 +533,10 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   mc_measurements TEXT[],
   mc_categories TEXT[] DEFAULT ARRAY['TR']::TEXT[],
   mc_months TEXT[] DEFAULT ARRAY['2018-02-01']::TEXT[],
-  country TEXT default 'us',
+  country TEXT,
   simplification_tolerance NUMERIC DEFAULT 0,
   table_postfix TEXT DEFAULT '',
   mc_geography_level TEXT DEFAULT NULL,
-  mc_geoid TEXT DEFAULT 'region_id',
   area_normalized BOOLEAN DEFAULT False,
   use_meta_cache BOOLEAN DEFAULT True,
   extent INTEGER DEFAULT 4096,
@@ -556,6 +555,7 @@ DECLARE
   avg_x INTEGER;
   avg_y INTEGER;
 
+  mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
   mc_schema TEXT DEFAULT '.mastercard';

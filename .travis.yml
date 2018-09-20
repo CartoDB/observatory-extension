@@ -8,7 +8,6 @@ env:
 
 matrix:
   include:
-    - env: PGSQL_VERSION=9.6 POSTGIS_VERSION=2.3
     - env: PGSQL_VERSION=10 POSTGIS_VERSION=2.4
 
 before_install:

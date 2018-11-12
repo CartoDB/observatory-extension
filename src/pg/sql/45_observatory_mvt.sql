@@ -740,7 +740,7 @@ BEGIN
           FROM (
       SELECT x, y, z,
              ST_AsMVTGeom(ST_Transform(the_geom, 3857),
-                          bbox2d, $1, $2, $3) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
+                          bbox2d, $1, $2, $3) AS mvtgeom, %15$s as id, %6$s %7$s area_ratio, area FROM (
         SELECT  tx.x, tx.y, tx.z,
                 %1$s the_geom, %8$s, %2$s %10$s
                 CASE  WHEN ST_Within(tx.envelope, %1$s)
@@ -762,7 +762,7 @@ BEGIN
     $query$,
     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
     numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins,
-    mc_geography_level, z, country)
+    mc_geography_level, z, country, geom_geomref_colnames_qualified)
   USING extent, buf, clip_geom, simplification_tolerance
   RETURN;
 END

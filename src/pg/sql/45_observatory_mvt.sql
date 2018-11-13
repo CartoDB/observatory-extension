@@ -740,9 +740,9 @@ BEGIN
           FROM (
       SELECT x, y, z,
              ST_AsMVTGeom(ST_Transform(the_geom, 3857),
-                          bbox2d, $1, $2, $3) AS mvtgeom, %15$s as id, %6$s %7$s area_ratio, area FROM (
+                          bbox2d, $1, $2, $3) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
         SELECT  tx.x, tx.y, tx.z,
-                %1$s the_geom, %8$s, %2$s %10$s
+                %1$s the_geom, %15$s, %2$s %10$s
                 CASE  WHEN ST_Within(tx.envelope, %1$s)
                         THEN ST_Area(tx.envelope) / Nullif(ST_Area(%1$s), 0)
                       WHEN ST_Within(%1$s, tx.envelope)

@@ -526,7 +526,7 @@ BEGIN
   USING ext, extent, buf, clip_geom, geom, simplification_tolerance
   RETURN;
 END
-$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+$$ LANGUAGE plpgsql PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   z INTEGER,
@@ -768,4 +768,4 @@ BEGIN
   USING extent, buf, clip_geom, simplification_tolerance
   RETURN;
 END
-$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+$$ LANGUAGE plpgsql PARALLEL SAFE;

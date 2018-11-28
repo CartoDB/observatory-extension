@@ -507,18 +507,19 @@ BEGIN
           FROM (
       SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
         SELECT  %1$s the_geom, %8$s, %2$s %10$s
-                CASE  WHEN ST_Within($5, %1$s)
-                        THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
-                      WHEN ST_Within(%1$s, $5)
+                CASE  WHEN ST_Within(%1$s, $5)
                         THEN 1
-                      ELSE ST_Area(ST_Intersection(st_makevalid(st_simplifyvw(%1$s, $6)), $5)) / Nullif(ST_Area(%1$s), 0)
+                      WHEN ST_Within($5, %1$s)
+                        THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
+                      ELSE ST_Area(ST_Intersection(%1$s, $5)) / Nullif(ST_Area(%1$s), 0)
                 END area_ratio,
                 ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area
           FROM %5$s
                %4$s
                %11$s
-        WHERE st_intersects(%1$s, $5)
+        WHERE %1$s && $5
       ) p
+      WHERE area_ratio > 0
     ) q
     $query$,
     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
@@ -745,11 +746,11 @@ BEGIN
                           bbox2d, $1, $2, $3) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
         SELECT  tx.x, tx.y, tx.z,
                 %1$s the_geom, %15$s, %2$s %10$s
-                CASE  WHEN ST_Within(tx.envelope, %1$s)
-                        THEN ST_Area(tx.envelope) / Nullif(ST_Area(%1$s), 0)
-                      WHEN ST_Within(%1$s, tx.envelope)
+                CASE  WHEN ST_Within(%1$s, tx.envelope)
                         THEN 1
-                      ELSE ST_Area(ST_Intersection(st_makevalid(st_simplifyvw(%1$s, $4)), tx.envelope)) / Nullif(ST_Area(%1$s), 0)
+                      WHEN ST_Within(tx.envelope, %1$s)
+                        THEN ST_Area(tx.envelope) / Nullif(ST_Area(%1$s), 0)
+                      ELSE ST_Area(ST_Intersection(%1$s, tx.envelope)) / Nullif(ST_Area(%1$s), 0)
                 END area_ratio,
                 ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area,
                 ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(tx.bounds[1], tx.bounds[2]), 4326), 3857),
@@ -758,8 +759,9 @@ BEGIN
                %5$s
                %4$s
                %11$s
-        WHERE st_intersects(%1$s, tx.envelope)
+        WHERE %1$s && tx.envelope
       ) p
+      WHERE area_ratio > 0
     ) q
     $query$,
     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,

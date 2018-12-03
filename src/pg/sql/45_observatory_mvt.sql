@@ -518,6 +518,7 @@ BEGIN
                %4$s
                %11$s
         WHERE %1$s && $5
+        -- TODO: move this where intersection to an explicit join
       ) p
       WHERE area_ratio > 0
     ) q
@@ -545,13 +546,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   extent INTEGER DEFAULT 4096,
   buf INTEGER DEFAULT 256,
   clip_geom BOOLEAN DEFAULT True)
-RETURNS TABLE (
-  x INTEGER,
-  y INTEGER,
-  zoom INTEGER,
-  mvtgeom GEOMETRY,
-  mvtdata JSONB
-)
+RETURNS SETOF record
 AS $$
 DECLARE
   tiler_table_prefix TEXT DEFAULT 'tiler.xyz_<country>_do_geoms_tiles_temp_';
@@ -739,7 +734,7 @@ BEGIN
     $query$
     SELECT  x, y, z,
             mvtgeom,
-            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio, area) as _) as mvtdata
+            id, %9$s %3$s area_ratio::float, area::float
           FROM (
       SELECT x, y, z,
              ST_AsMVTGeom(ST_Transform(the_geom, 3857),
@@ -755,11 +750,10 @@ BEGIN
                 ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area,
                 ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(tx.bounds[1], tx.bounds[2]), 4326), 3857),
                              ST_Transform(ST_SetSRID(ST_Point(tx.bounds[3], tx.bounds[4]), 4326), 3857)) bbox2d
-          FROM tiler.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx,
-               %5$s
+          FROM tiler.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
+          INNER JOIN %5$s ON %1$s && tx.envelope
                %4$s
                %11$s
-        WHERE %1$s && tx.envelope
       ) p
       WHERE area_ratio > 0
     ) q

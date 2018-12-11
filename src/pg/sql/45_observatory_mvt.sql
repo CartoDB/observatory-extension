@@ -545,7 +545,8 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   use_meta_cache BOOLEAN DEFAULT True,
   extent INTEGER DEFAULT 4096,
   buf INTEGER DEFAULT 256,
-  clip_geom BOOLEAN DEFAULT True)
+  clip_geom BOOLEAN DEFAULT True,
+  geom_tablename_suffix TEXT DEFAULT NULL)
 RETURNS SETOF record
 AS $$
 DECLARE
@@ -636,16 +637,20 @@ BEGIN
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
   END IF;
 
+  IF geom_tablename_suffix IS NULL THEN
+    geom_tablename_suffix := '';
+  END IF;
+
   IF meta IS NOT NULL THEN
     SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
             string_agg(distinct numer_colname, ',')||',' numer_colnames,
             string_agg(distinct numer_tablename||'.'||numer_colname, ',')||',' numer_colnames_qualified,
             string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',')||',' numer_colnames_normalized,
-            (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
-            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
+            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname) geom_relations
       INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
           geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
       FROM json_to_recordset(meta)
@@ -675,10 +680,10 @@ BEGIN
       RETURN;
     END IF;
 
-    SELECT  (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+    SELECT  (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
       FROM json_to_recordset(meta)
       INTO geom_tablenames, geom_colnames, geom_geomref_colnames, geom_geomref_colnames_qualified
         AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
@@ -734,10 +739,10 @@ BEGIN
     $query$
     SELECT  x, y, z,
             mvtgeom,
-            id, %9$s %3$s area_ratio::float, area::float
+            id::text, %9$s %3$s area_ratio::float, area::float
           FROM (
       SELECT x, y, z,
-             ST_AsMVTGeom(ST_Transform(the_geom, 3857),
+             ST_AsMVTGeom(ST_Transform(p.the_geom, 3857),
                           bbox2d, $1, $2, $3) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
         SELECT  tx.x, tx.y, tx.z,
                 %1$s the_geom, %15$s, %2$s %10$s
@@ -747,7 +752,7 @@ BEGIN
                         THEN ST_Area(tx.envelope) / Nullif(ST_Area(%1$s), 0)
                       ELSE ST_Area(ST_Intersection(%1$s, tx.envelope)) / Nullif(ST_Area(%1$s), 0)
                 END area_ratio,
-                ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area,
+                ROUND(ST_Area(ST_Transform(%1$s,3857))::NUMERIC, 2) area,
                 ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(tx.bounds[1], tx.bounds[2]), 4326), 3857),
                              ST_Transform(ST_SetSRID(ST_Point(tx.bounds[3], tx.bounds[4]), 4326), 3857)) bbox2d
           FROM tiler.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
@@ -758,9 +763,10 @@ BEGIN
       WHERE area_ratio > 0
     ) q
     $query$,
-    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
-    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins,
-    mc_geography_level, z, country, geom_geomref_colnames_qualified)
+    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+    geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+    numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+    z, country, geom_geomref_colnames_qualified)
   USING extent, buf, clip_geom, simplification_tolerance
   RETURN;
 END

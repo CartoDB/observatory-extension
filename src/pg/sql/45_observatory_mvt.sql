@@ -650,7 +650,7 @@ BEGIN
             (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
             (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
-            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname) geom_relations
+            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'=_outer_query.'||geom_geomref_colname) geom_relations
       INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
           geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
       FROM json_to_recordset(meta)
@@ -668,7 +668,7 @@ BEGIN
     i := 0;
     FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
       i := i + 1;
-      IF numer_tablename_do <> geom_tablenames THEN
+      IF numer_tablename_do||geom_tablename_suffix <> geom_tablenames THEN
         numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
       END IF;
     END LOOP;
@@ -738,30 +738,43 @@ BEGIN
   RETURN QUERY EXECUTE format(
     $query$
     SELECT  x, y, z,
-            mvtgeom,
-            id::text, %9$s %3$s area_ratio::float, area::float
-          FROM (
-      SELECT x, y, z,
-             ST_AsMVTGeom(ST_Transform(p.the_geom, 3857),
-                          bbox2d, $1, $2, $3) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
+             ST_AsMVTGeom(_outer_query.the_geom_3857, bbox2d_3857, $1, $2, $3) AS mvtgeom,
+            _outer_query.%8$s::text as id,
+            ---
+            %9$s -- Using 2 (numer_colnames_do_qualified) adds a table without the optional suffix
+            ----
+            %3$s
+            -----
+            area_ratio::float,
+            area::float
+    FROM (
+      SELECT _inner_query.*,
+             CASE -- Check if the tile contains the bounding box of the geometry
+                  WHEN _inner_query.bbox2d_3857 ~ _inner_query.the_geom_3857
+                    THEN 1.0
+                  ELSE ST_Area(ST_ClipByBox2d(_inner_query.the_geom_3857, _inner_query.bbox2d_3857)) / _inner_query.area
+             END AS area_ratio
+      FROM (
         SELECT  tx.x, tx.y, tx.z,
-                %1$s the_geom, %15$s, %2$s %10$s
-                CASE  WHEN ST_Within(%1$s, tx.envelope)
-                        THEN 1
-                      WHEN ST_Within(tx.envelope, %1$s)
-                        THEN ST_Area(tx.envelope) / Nullif(ST_Area(%1$s), 0)
-                      ELSE ST_Area(ST_Intersection(%1$s, tx.envelope)) / Nullif(ST_Area(%1$s), 0)
-                END area_ratio,
-                ROUND(ST_Area(ST_Transform(%1$s,3857))::NUMERIC, 2) area,
-                ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(tx.bounds[1], tx.bounds[2]), 4326), 3857),
-                             ST_Transform(ST_SetSRID(ST_Point(tx.bounds[3], tx.bounds[4]), 4326), 3857)) bbox2d
-          FROM tiler.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
-          INNER JOIN %5$s ON %1$s && tx.envelope
-               %4$s
-               %11$s
-      ) p
-      WHERE area_ratio > 0
-    ) q
+                geom_name::text, -- Not sure if this is generic enough. It's read at top level by 9 (numer_colnames_do),
+                                 -- but it's at the geom table (5, geom_tablenames), so adding this removes one join.
+                ST_Transform(tx.envelope, 3857) bbox2d_3857,
+                %1$s the_geom,
+                --
+                %15$s,
+                ---
+                %10$s
+                ----
+                ST_Transform(%1$s, 3857) the_geom_3857,
+                ST_Area(ST_Transform(%1$s, 3857)) area
+        FROM tiler.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
+        INNER JOIN %5$s ON %1$s && tx.envelope
+      ) _inner_query
+      WHERE area > 0
+    ) _outer_query
+    %4$s
+    %11$s
+    WHERE area_ratio > 0
     $query$,
     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
     geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,

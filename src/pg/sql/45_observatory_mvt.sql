@@ -550,7 +550,7 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
 RETURNS SETOF record
 AS $$
 DECLARE
-  tiler_table_prefix TEXT DEFAULT 'tiler.xyz_<country>_do_geoms_tiles_temp_';
+  tiler_table_prefix TEXT DEFAULT 'tiler_tmp.xyz_<country>_do_geoms_tiles_temp_';
   avg_x INTEGER;
   avg_y INTEGER;
 
@@ -637,13 +637,15 @@ BEGIN
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
   END IF;
 
+--   RAISE EXCEPTION '% -- % -- %', geom, getmeta_parameters, meta;
+
   IF geom_tablename_suffix IS NULL THEN
     geom_tablename_suffix := '';
   END IF;
 
   IF meta IS NOT NULL THEN
     SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
-            string_agg(distinct numer_colname, ',')||',' numer_colnames,
+            string_agg(numer_colname, ',')||',' numer_colnames,
             string_agg(distinct numer_tablename||'.'||numer_colname, ',')||',' numer_colnames_qualified,
             string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',')||',' numer_colnames_normalized,
             (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
@@ -734,6 +736,12 @@ BEGIN
     END IF;
   END LOOP;
 
+--   RAISE EXCEPTION '--1- % --2- % --3- % --4- % --5- % --6- % --7- % --8- % --9- % --10- % --11- % --12- % --13- % --14- % --15- %',
+--     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+--     geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+--     numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+--     z, country, geom_geomref_colnames_qualified;
+
   ---------Query build and execution---------
   RETURN QUERY EXECUTE format(
     $query$
@@ -756,8 +764,6 @@ BEGIN
              END AS area_ratio
       FROM (
         SELECT  tx.x, tx.y, tx.z,
-                geom_name::text, -- Not sure if this is generic enough. It's read at top level by 9 (numer_colnames_do),
-                                 -- but it's at the geom table (5, geom_tablenames), so adding this removes one join.
                 ST_Transform(tx.envelope, 3857) bbox2d_3857,
                 %1$s the_geom,
                 --
@@ -767,13 +773,14 @@ BEGIN
                 ----
                 ST_Transform(%1$s, 3857) the_geom_3857,
                 ST_Area(ST_Transform(%1$s, 3857)) area
-        FROM tiler.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
+        FROM tiler_tmp.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
         INNER JOIN %5$s ON %1$s && tx.envelope
       ) _inner_query
       WHERE area > 0
     ) _outer_query
     %4$s
     %11$s
+    INNER JOIN %5$s ON _outer_query.%8$s = %15$s
     WHERE area_ratio > 0
     $query$,
     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,

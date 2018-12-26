@@ -326,13 +326,13 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   use_meta_cache BOOLEAN DEFAULT True,
   extent INTEGER DEFAULT 4096,
   buf INTEGER DEFAULT 256,
-  clip_geom BOOLEAN DEFAULT True)
-RETURNS TABLE (
-  mvtgeom GEOMETRY,
-  mvtdata JSONB
-)
+  clip_geom BOOLEAN DEFAULT True,
+  geom_tablename_suffix TEXT DEFAULT NULL)
+RETURNS SETOF record
 AS $$
 DECLARE
+  tiler_table_prefix TEXT DEFAULT 'tiler_tmp.xyz_<country>_do_geoms_tiles_temp_';
+
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
@@ -374,11 +374,14 @@ DECLARE
   geom_relations_mc TEXT DEFAULT '';
   geom_mc_outerjoins TEXT DEFAULT '';
 
-  simplification_tolerance NUMERIC DEFAULT 0;
   area_normalization TEXT DEFAULT '';
   i INTEGER DEFAULT 0;
 BEGIN
   mc_schema = country || mc_schema;
+
+  IF mc_geography_level IS NULL THEN
+    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
+  END IF;
 
   IF area_normalized THEN
     area_normalization := '/area_ratio';
@@ -402,16 +405,20 @@ BEGIN
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
   END IF;
 
+  IF geom_tablename_suffix IS NULL THEN
+    geom_tablename_suffix := '';
+  END IF;
+
   IF meta IS NOT NULL THEN
     SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
-            string_agg(distinct numer_colname, ',')||',' numer_colnames,
+            string_agg(numer_colname, ',')||',' numer_colnames,
             string_agg(distinct numer_tablename||'.'||numer_colname, ',')||',' numer_colnames_qualified,
             string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',')||',' numer_colnames_normalized,
-            (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
-            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
+            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'=_outer_query.'||geom_geomref_colname) geom_relations
       INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
           geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
       FROM json_to_recordset(meta)
@@ -441,10 +448,10 @@ BEGIN
       RETURN;
     END IF;
 
-    SELECT  (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+    SELECT  (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
       FROM json_to_recordset(meta)
       INTO geom_tablenames, geom_colnames, geom_geomref_colnames, geom_geomref_colnames_qualified
         AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
@@ -454,10 +461,6 @@ BEGIN
   END IF;
 
   ---------MC---------
-  IF mc_geography_level IS NULL THEN
-    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
-  END IF;
-
   mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
 
   FOREACH mc_month IN ARRAY mc_months LOOP
@@ -502,30 +505,50 @@ BEGIN
   ---------Query build and execution---------
   RETURN QUERY EXECUTE format(
     $query$
-    SELECT  mvtgeom,
-            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio, area) as _) as mvtdata
-          FROM (
-      SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
-        SELECT  %1$s the_geom, %8$s, %2$s %10$s
-                CASE  WHEN ST_Within(%1$s, $5)
-                        THEN 1
-                      WHEN ST_Within($5, %1$s)
-                        THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
-                      ELSE ST_Area(ST_Intersection(%1$s, $5)) / Nullif(ST_Area(%1$s), 0)
-                END area_ratio,
-                ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area
-          FROM %5$s
-               %4$s
-               %11$s
-        WHERE %1$s && $5
-        -- TODO: move this where intersection to an explicit join
-      ) p
-      WHERE area_ratio > 0
-    ) q
+    SELECT  x, y, z,
+             ST_AsMVTGeom(_outer_query.the_geom_3857, bbox2d_3857, $1, $2, $3) AS mvtgeom,
+            _outer_query.%8$s::text as id,
+            ---
+            %9$s -- Using 2 (numer_colnames_do_qualified) adds a table without the optional suffix
+            ----
+            %3$s
+            -----
+            area_ratio::float,
+            area::float
+    FROM (
+      SELECT _inner_query.*,
+             CASE -- Check if the tile contains the bounding box of the geometry
+                  WHEN _inner_query.bbox2d_3857 ~ _inner_query.the_geom_3857
+                    THEN 1.0
+                  ELSE ST_Area(ST_ClipByBox2d(_inner_query.the_geom_3857, _inner_query.bbox2d_3857)) / _inner_query.area
+             END AS area_ratio
+      FROM (
+        SELECT  tx.x, tx.y, tx.z,
+                ST_Transform(tx.envelope, 3857) bbox2d_3857,
+                %1$s the_geom,
+                --
+                %15$s,
+                ---
+                %10$s
+                ----
+                ST_Transform(%1$s, 3857) the_geom_3857,
+                ST_Area(ST_Transform(%1$s, 3857)) area
+        FROM tiler_tmp.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
+        INNER JOIN %5$s ON %1$s && tx.envelope
+        AND tx.x = $5 AND tx.y = $6 AND tx.z = $7
+      ) _inner_query
+      WHERE area > 0
+    ) _outer_query
+    %4$s
+    %11$s
+    INNER JOIN %5$s ON _outer_query.%8$s = %15$s
+    WHERE area_ratio > 0
     $query$,
-    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
-    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins)
-  USING ext, extent, buf, clip_geom, geom, simplification_tolerance
+    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+    geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+    numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+    z, country, geom_geomref_colnames_qualified)
+  USING extent, buf, clip_geom, simplification_tolerance, x, y, z
   RETURN;
 END
 $$ LANGUAGE plpgsql PARALLEL SAFE;
@@ -560,23 +583,19 @@ DECLARE
   mc_schema TEXT DEFAULT '.mastercard';
   mc_table TEXT;
   mc_category TEXT;
-  mc_category_name TEXT;
   mc_table_categories TEXT DEFAULT '';
   mc_month TEXT;
   mc_month_slug TEXT;
   mc_measurements_categories TEXT[];
   mc_measurement TEXT;
 
-  measurement TEXT;
-  getmeta_parameters TEXT;
-  meta JSON;
-
-  area_normalization TEXT DEFAULT '';
-  i INTEGER DEFAULT 0;
-
   bounds NUMERIC[];
   geom GEOMETRY;
   ext BOX2D;
+
+  measurement TEXT;
+  getmeta_parameters TEXT;
+  meta JSON;
 
   numer_tablename_do TEXT DEFAULT '';
   numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
@@ -598,6 +617,9 @@ DECLARE
   geom_relations_do TEXT[] DEFAULT ARRAY['']::TEXT[];
   geom_relations_mc TEXT DEFAULT '';
   geom_mc_outerjoins TEXT DEFAULT '';
+
+  area_normalization TEXT DEFAULT '';
+  i INTEGER DEFAULT 0;
 BEGIN
   mc_schema := country || mc_schema;
   tiler_table_prefix := replace(tiler_table_prefix, '<country>', country);

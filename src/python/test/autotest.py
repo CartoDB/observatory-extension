@@ -122,12 +122,8 @@ def default_lonlat(column_id):
         return (48.860875144709475, 2.3613739013671875)
     elif column_id.startswith('ca.'):
         return (43.65594991256823, -79.37965393066406)
-    elif column_id in ('us.census.tiger.school_district_elementary',
-                       'us.census.tiger.school_district_secondary',
-                       'us.census.tiger.school_district_elementary_clipped',
-                       'us.census.tiger.school_district_secondary_clipped',
-                       'us.census.tiger.school_district_elementary_geoname',
-                       'us.census.tiger.school_district_secondary_geoname'):
+    elif (column_id.startswith('us.census.tiger.school_district_elementary') or
+          column_id.startswith('us.census.tiger.school_district_secondary')):
         return (40.7025, -73.7067)
     elif column_id.startswith('us.census.'):
         return (28.3305906291771, -81.3544048197256)

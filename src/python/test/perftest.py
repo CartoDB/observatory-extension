@@ -25,7 +25,7 @@ for q in (
            FROM (SELECT * FROM {schema}OBS_GetBoundariesByGeometry(
                  st_makeenvelope(-74.1, 40.5,
                                  -73.8, 40.9, 4326),
-                 'us.census.tiger.census_tract_clipped')) foo
+                 'us.census.tiger.census_tract_2015_clipped')) foo
            ORDER BY ST_NPoints(the_geom) ASC
            LIMIT 1000''',
         'DROP TABLE IF EXISTS obs_perftest_complex',
@@ -42,7 +42,7 @@ for q in (
            FROM (SELECT * FROM {schema}OBS_GetBoundariesByGeometry(
                  st_makeenvelope(-75.05437469482422,40.66319159533881,
                                  -73.81885528564453,41.745696344339564, 4326),
-                 'us.census.tiger.county_clipped')) foo
+                 'us.census.tiger.county_2015_clipped')) foo
            ORDER BY ST_NPoints(the_geom) DESC
            LIMIT 50;'''):
     q_formatted = q.format(

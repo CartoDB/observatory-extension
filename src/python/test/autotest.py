@@ -82,7 +82,40 @@ SKIP_COLUMNS = set([
     'uk.ons.LC3204WA0004',
     'uk.ons.LC3204WA0007',
     'uk.ons.LC3204WA0010',
-    'br.geo.subdistritos_name'
+    'br.geo.subdistritos_name',
+    # Problems with universe (denominator is zero in test area)
+    'ca.statcan.census2016.cols_census.c0058_t',
+    'ca.statcan.census2016.cols_census.c1878_f',
+    'ca.statcan.census2016.cols_census.c1878_m',
+    'ca.statcan.census2016.cols_census.c1674_t',
+    'ca.statcan.census2016.cols_census.c1675_t',
+    'ca.statcan.census2016.cols_census.c1676_t',
+    'ca.statcan.census2016.cols_census.c1677_t',
+    'ca.statcan.census2016.cols_census.c0801_t',
+    'ca.statcan.census2016.cols_census.c0802_t',
+    'ca.statcan.census2016.cols_census.c0803_t',
+    'ca.statcan.census2016.cols_census.c0805_t',
+    'ca.statcan.census2016.cols_census.c0806_t',
+    'ca.statcan.census2016.cols_census.c0807_t',
+    'ca.statcan.census2016.cols_census.c0809_t',
+    'ca.statcan.census2016.cols_census.c0810_t',
+    'ca.statcan.census2016.cols_census.c0811_t',
+    'ca.statcan.census2016.cols_census.c0813_t',
+    'ca.statcan.census2016.cols_census.c0814_t',
+    'ca.statcan.census2016.cols_census.c0815_t',
+    'ca.statcan.census2016.cols_census.c0817_t',
+    'ca.statcan.census2016.cols_census.c0818_t',
+    'ca.statcan.census2016.cols_census.c0820_t',
+    'ca.statcan.census2016.cols_census.c0821_t',
+    'ca.statcan.census2016.cols_census.c0821_t',
+    'ca.statcan.census2016.cols_census.c0823_t',
+    'ca.statcan.census2016.cols_census.c0824_t',
+    'ca.statcan.census2016.cols_census.c0826_t',
+    'ca.statcan.census2016.cols_census.c0827_t',
+    'ca.statcan.census2016.cols_census.c0829_t',
+    'ca.statcan.census2016.cols_census.c0830_t',
+    'ca.statcan.census2016.cols_census.c0832_t',
+    'ca.statcan.census2016.cols_census.c0833_t'
 ])
 
 MEASURE_COLUMNS = query('''
@@ -122,12 +155,8 @@ def default_lonlat(column_id):
         return (48.860875144709475, 2.3613739013671875)
     elif column_id.startswith('ca.'):
         return (43.65594991256823, -79.37965393066406)
-    elif column_id in ('us.census.tiger.school_district_elementary',
-                       'us.census.tiger.school_district_secondary',
-                       'us.census.tiger.school_district_elementary_clipped',
-                       'us.census.tiger.school_district_secondary_clipped',
-                       'us.census.tiger.school_district_elementary_geoname',
-                       'us.census.tiger.school_district_secondary_geoname'):
+    elif (column_id.startswith('us.census.tiger.school_district_elementary') or
+          column_id.startswith('us.census.tiger.school_district_secondary')):
         return (40.7025, -73.7067)
     elif column_id.startswith('us.census.'):
         return (28.3305906291771, -81.3544048197256)

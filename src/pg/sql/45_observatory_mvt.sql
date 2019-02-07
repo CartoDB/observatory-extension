@@ -255,7 +255,7 @@ BEGIN
 
     INSERT INTO cdb_observatory.OBS_CachedMeta(z, parameters, num_timespans, num_scores, num_target_geoms, result)
     SELECT zoom, getmeta_parameters::TEXT, num_timespan_options, num_score_options, target_geoms, result
-    ON CONFLICT (z, parameters, num_timespans, num_scores, num_target_geoms) 
+    ON CONFLICT (z, parameters, num_timespans, num_scores, num_target_geoms)
     DO UPDATE SET result = EXCLUDED.result;
   END IF;
 
@@ -657,6 +657,11 @@ BEGIN
     meta := cdb_observatory.OBS_RetrieveMeta(z, geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
   ELSE
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
+  END IF;
+
+  IF json_array_length(getmeta_parameters::json) != json_array_length(meta) THEN
+    RAISE EXCEPTION 'Mismatch between expected (%) and returned (%) meta parameters: %, %',
+      json_array_length(getmeta_parameters::json), json_array_length(meta), getmeta_parameters, meta;
   END IF;
 
 --   RAISE EXCEPTION '% -- % -- %', geom, getmeta_parameters, meta;

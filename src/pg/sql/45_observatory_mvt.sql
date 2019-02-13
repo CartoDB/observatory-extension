@@ -405,6 +405,8 @@ BEGIN
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
   END IF;
 
+--   RAISE EXCEPTION '% -- % -- %', geom, getmeta_parameters, meta;
+
   IF geom_tablename_suffix IS NULL THEN
     geom_tablename_suffix := '';
   END IF;
@@ -501,6 +503,12 @@ BEGIN
       geom_mc_outerjoins := coalesce(geom_mc_outerjoins, '')||' LEFT OUTER JOIN '||numer_tablenames_mc||' ON '||geom_relations_mc||' AND '||mc_table_categories;
     END IF;
   END LOOP;
+
+--   RAISE EXCEPTION '--1- % --2- % --3- % --4- % --5- % --6- % --7- % --8- % --9- % --10- % --11- % --12- % --13- % --14- % --15- %',
+--     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+--     geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+--     numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+--     z, country, geom_geomref_colnames_qualified;
 
   ---------Query build and execution---------
   RETURN QUERY EXECUTE format(

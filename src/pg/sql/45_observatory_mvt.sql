@@ -255,7 +255,7 @@ BEGIN
 
     INSERT INTO cdb_observatory.OBS_CachedMeta(z, parameters, num_timespans, num_scores, num_target_geoms, result)
     SELECT zoom, getmeta_parameters::TEXT, num_timespan_options, num_score_options, target_geoms, result
-    ON CONFLICT (z, parameters, num_timespans, num_scores, num_target_geoms) 
+    ON CONFLICT (z, parameters, num_timespans, num_scores, num_target_geoms)
     DO UPDATE SET result = EXCLUDED.result;
   END IF;
 
@@ -316,32 +316,27 @@ CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   geography_level TEXT,
   do_measurements TEXT[],
   mc_measurements TEXT[],
+  country TEXT DEFAULT '',
   mc_categories TEXT[] DEFAULT ARRAY['TR']::TEXT[],
   mc_months TEXT[] DEFAULT ARRAY['2018-02-01']::TEXT[],
-  use_meta_cache BOOLEAN DEFAULT True,
-  shoreline_clipped BOOLEAN DEFAULT True,
-  optimize_clipping BOOLEAN DEFAULT False,
-  simplify_geometries BOOLEAN DEFAULT False,
+  simplification_tolerance NUMERIC DEFAULT 0,
+  table_postfix TEXT DEFAULT '',
+  mc_geography_level TEXT DEFAULT NULL,
   area_normalized BOOLEAN DEFAULT False,
+  use_meta_cache BOOLEAN DEFAULT True,
   extent INTEGER DEFAULT 4096,
   buf INTEGER DEFAULT 256,
-  clip_geom BOOLEAN DEFAULT True)
-RETURNS TABLE (
-  mvtgeom GEOMETRY,
-  mvtdata JSONB
-)
+  clip_geom BOOLEAN DEFAULT True,
+  geom_tablename_suffix TEXT DEFAULT NULL)
+RETURNS SETOF record
 AS $$
 DECLARE
-  state_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.state';
-  county_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.county';
-  tract_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.census_tract';
-  blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
-  block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
+  tiler_table_prefix TEXT DEFAULT 'tiler_tmp.xyz_<country>_do_geoms_tiles_temp_';
 
-  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
+  mc_schema TEXT DEFAULT '.mastercard';
   mc_table TEXT;
   mc_category TEXT;
   mc_table_categories TEXT DEFAULT '';
@@ -357,7 +352,6 @@ DECLARE
   measurement TEXT;
   getmeta_parameters TEXT;
   meta JSON;
-  mc_geography_level TEXT;
 
   numer_tablename_do TEXT DEFAULT '';
   numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
@@ -380,39 +374,17 @@ DECLARE
   geom_relations_mc TEXT DEFAULT '';
   geom_mc_outerjoins TEXT DEFAULT '';
 
-  simplification_tolerance NUMERIC DEFAULT 0;
   area_normalization TEXT DEFAULT '';
   i INTEGER DEFAULT 0;
-  clipped TEXT default '';
 BEGIN
+  mc_schema = country || mc_schema;
+
+  IF mc_geography_level IS NULL THEN
+    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
+  END IF;
+
   IF area_normalized THEN
     area_normalization := '/area_ratio';
-  END IF;
-
-  IF shoreline_clipped THEN
-    clipped := '_clipped';
-  END IF;
-
-  CASE
-    WHEN geography_level = state_geoname THEN
-      simplification_tolerance := 0.1;
-      IF optimize_clipping THEN
-        clipped := '';
-      END IF;
-    WHEN geography_level = county_geoname THEN
-      simplification_tolerance := 0.01;
-    WHEN geography_level = tract_geoname THEN
-      simplification_tolerance := 0.001;
-    WHEN geography_level = blockgroup_geoname THEN
-      simplification_tolerance := 0.0001;
-    WHEN geography_level = block_geoname THEN
-      simplification_tolerance := 0.0001;
-    ELSE
-      simplification_tolerance := 0;
-  END CASE;
-
-  IF NOT simplify_geometries THEN
-    simplification_tolerance := 0;
   END IF;
 
   bounds := cdb_observatory.OBS_GetTileBounds(z, x, y);
@@ -423,7 +395,7 @@ BEGIN
   ---------DO---------
   getmeta_parameters := '[ ';
   FOREACH measurement IN ARRAY do_measurements LOOP
-    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || clipped ||'"},';
+    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || table_postfix ||'"},';
   END LOOP;
   getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
 
@@ -433,16 +405,22 @@ BEGIN
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
   END IF;
 
+--   RAISE EXCEPTION '% -- % -- %', geom, getmeta_parameters, meta;
+
+  IF geom_tablename_suffix IS NULL THEN
+    geom_tablename_suffix := '';
+  END IF;
+
   IF meta IS NOT NULL THEN
     SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
-            string_agg(distinct numer_colname, ',')||',' numer_colnames,
+            string_agg(numer_colname, ',')||',' numer_colnames,
             string_agg(distinct numer_tablename||'.'||numer_colname, ',')||',' numer_colnames_qualified,
             string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',')||',' numer_colnames_normalized,
-            (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
-            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
+            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'=_outer_query.'||geom_geomref_colname) geom_relations
       INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
           geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
       FROM json_to_recordset(meta)
@@ -460,20 +438,22 @@ BEGIN
     i := 0;
     FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
       i := i + 1;
-      numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+      IF numer_tablename_do <> geom_tablenames THEN
+        numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+      END IF;
     END LOOP;
   ELSE
-    getmeta_parameters := '[{"geom_id":"' || geography_level || clipped ||'"}]';
+    getmeta_parameters := '[{"geom_id":"' || geography_level || table_postfix ||'"}]';
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
 
     IF meta IS NULL THEN
       RETURN;
     END IF;
 
-    SELECT  (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+    SELECT  (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
       FROM json_to_recordset(meta)
       INTO geom_tablenames, geom_colnames, geom_geomref_colnames, geom_geomref_colnames_qualified
         AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
@@ -483,12 +463,6 @@ BEGIN
   END IF;
 
   ---------MC---------
-  IF geography_level = 'us.census.tiger.census_tract' THEN
-    mc_geography_level := 'tract';
-  ELSE
-    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
-  END IF;
-
   mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
 
   FOREACH mc_month IN ARRAY mc_months LOOP
@@ -530,95 +504,106 @@ BEGIN
     END IF;
   END LOOP;
 
+--   RAISE EXCEPTION '--1- % --2- % --3- % --4- % --5- % --6- % --7- % --8- % --9- % --10- % --11- % --12- % --13- % --14- % --15- %',
+--     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+--     geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+--     numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+--     z, country, geom_geomref_colnames_qualified;
+
   ---------Query build and execution---------
   RETURN QUERY EXECUTE format(
     $query$
-    SELECT  mvtgeom,
-            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio, area) as _) as mvtdata
-          FROM (
-      SELECT ST_AsMVTGeom(ST_Transform(the_geom, 3857), $1, $2, $3, $4) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
-        SELECT  %1$s the_geom, %8$s, %2$s %10$s
-                CASE  WHEN ST_Within($5, %1$s)
-                        THEN ST_Area($5) / Nullif(ST_Area(%1$s), 0)
-                      WHEN ST_Within(%1$s, $5)
-                        THEN 1
-                      ELSE ST_Area(ST_Intersection(st_simplifyvw(%1$s, $6), $5)) / Nullif(ST_Area(%1$s), 0)
-                END area_ratio,
-                ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area
-          FROM %5$s
-               %4$s
-               %11$s
-        WHERE st_intersects(%1$s, $5)
-      ) p
-    ) q
+    SELECT  x, y, z,
+             ST_AsMVTGeom(_outer_query.the_geom_3857, bbox2d_3857, $1, $2, $3) AS mvtgeom,
+            _outer_query.%8$s::text as id,
+            ---
+            %9$s -- Using 2 (numer_colnames_do_qualified) adds a table without the optional suffix
+            ----
+            %3$s
+            -----
+            area_ratio::float,
+            area::float
+    FROM (
+      SELECT _inner_query.*,
+             CASE -- Check if the tile contains the bounding box of the geometry
+                  WHEN _inner_query.bbox2d_3857 ~ _inner_query.the_geom_3857
+                    THEN 1.0
+                  ELSE ST_Area(ST_ClipByBox2d(_inner_query.the_geom_3857, _inner_query.bbox2d_3857)) / _inner_query.area
+             END AS area_ratio
+      FROM (
+        SELECT  tx.x, tx.y, tx.z,
+                ST_Transform(tx.envelope, 3857) bbox2d_3857,
+                %1$s the_geom,
+                --
+                %15$s,
+                ---
+                %10$s
+                ----
+                ST_Transform(%1$s, 3857) the_geom_3857,
+                ST_Area(ST_Transform(%1$s, 3857)) area
+        FROM tiler_tmp.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
+        INNER JOIN %5$s ON %1$s && tx.envelope
+        AND tx.x = $5 AND tx.y = $6 AND tx.z = $7
+      ) _inner_query
+      WHERE area > 0
+    ) _outer_query
+    %4$s
+    %11$s
+    INNER JOIN %5$s ON _outer_query.%8$s = %15$s
+    WHERE area_ratio > 0
     $query$,
-    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
-    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins)
-  USING ext, extent, buf, clip_geom, geom, simplification_tolerance
+    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+    geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+    numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+    z, country, geom_geomref_colnames_qualified)
+  USING extent, buf, clip_geom, simplification_tolerance, x, y, z
   RETURN;
 END
-$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+$$ LANGUAGE plpgsql PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION cdb_observatory.OBS_GetMCDOMVT(
   z INTEGER,
   geography_level TEXT,
   do_measurements TEXT[],
   mc_measurements TEXT[],
+  country TEXT DEFAULT '',
   mc_categories TEXT[] DEFAULT ARRAY['TR']::TEXT[],
   mc_months TEXT[] DEFAULT ARRAY['2018-02-01']::TEXT[],
-  use_meta_cache BOOLEAN DEFAULT True,
-  shoreline_clipped BOOLEAN DEFAULT True,
-  optimize_clipping BOOLEAN DEFAULT False,
-  simplify_geometries BOOLEAN DEFAULT False,
+  simplification_tolerance NUMERIC DEFAULT 0,
+  table_postfix TEXT DEFAULT '',
+  mc_geography_level TEXT DEFAULT NULL,
   area_normalized BOOLEAN DEFAULT False,
+  use_meta_cache BOOLEAN DEFAULT True,
   extent INTEGER DEFAULT 4096,
   buf INTEGER DEFAULT 256,
-  clip_geom BOOLEAN DEFAULT True)
-RETURNS TABLE (
-  x INTEGER,
-  y INTEGER,
-  zoom INTEGER,
-  mvtgeom GEOMETRY,
-  mvtdata JSONB
-)
+  clip_geom BOOLEAN DEFAULT True,
+  geom_tablename_suffix TEXT DEFAULT NULL)
+RETURNS SETOF record
 AS $$
 DECLARE
-  state_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.state';
-  county_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.county';
-  tract_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.census_tract';
-  blockgroup_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block_group';
-  block_geoname CONSTANT TEXT DEFAULT 'us.census.tiger.block';
-
-  tiler_table_prefix CONSTANT TEXT DEFAULT 'tiler.xyz_us_do_geoms_tiles_temp_';
+  tiler_table_prefix TEXT DEFAULT 'tiler_tmp.xyz_<country>_do_geoms_tiles_temp_';
   avg_x INTEGER;
   avg_y INTEGER;
 
-  mc_schema CONSTANT TEXT DEFAULT 'us.mastercard';
   mc_geoid CONSTANT TEXT DEFAULT 'region_id';
   mc_category_column CONSTANT TEXT DEFAULT 'category';
   mc_month_column CONSTANT TEXT DEFAULT 'month';
+  mc_schema TEXT DEFAULT '.mastercard';
   mc_table TEXT;
   mc_category TEXT;
-  mc_category_name TEXT;
   mc_table_categories TEXT DEFAULT '';
   mc_month TEXT;
   mc_month_slug TEXT;
   mc_measurements_categories TEXT[];
   mc_measurement TEXT;
 
-  measurement TEXT;
-  getmeta_parameters TEXT;
-  meta JSON;
-  mc_geography_level TEXT;
-
-  simplification_tolerance NUMERIC DEFAULT 0;
-  area_normalization TEXT DEFAULT '';
-  clipped TEXT default '';
-  i INTEGER DEFAULT 0;
-
   bounds NUMERIC[];
   geom GEOMETRY;
   ext BOX2D;
+
+  measurement TEXT;
+  getmeta_parameters TEXT;
+  meta JSON;
 
   numer_tablename_do TEXT DEFAULT '';
   numer_tablenames_do TEXT[] DEFAULT ARRAY['']::TEXT[];
@@ -640,10 +625,14 @@ DECLARE
   geom_relations_do TEXT[] DEFAULT ARRAY['']::TEXT[];
   geom_relations_mc TEXT DEFAULT '';
   geom_mc_outerjoins TEXT DEFAULT '';
+
+  area_normalization TEXT DEFAULT '';
+  i INTEGER DEFAULT 0;
 BEGIN
-  IF geography_level = 'us.census.tiger.census_tract' THEN
-    mc_geography_level := 'tract';
-  ELSE
+  mc_schema := country || mc_schema;
+  tiler_table_prefix := replace(tiler_table_prefix, '<country>', country);
+
+  IF mc_geography_level IS NULL THEN
     mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
   END IF;
 
@@ -660,32 +649,6 @@ BEGIN
     area_normalization := '/area_ratio';
   END IF;
 
-  IF shoreline_clipped THEN
-    clipped := '_clipped';
-  END IF;
-
-  CASE
-    WHEN geography_level = state_geoname THEN
-      simplification_tolerance := 0.1;
-      IF optimize_clipping THEN
-        clipped := '';
-      END IF;
-    WHEN geography_level = county_geoname THEN
-      simplification_tolerance := 0.01;
-    WHEN geography_level = tract_geoname THEN
-      simplification_tolerance := 0.001;
-    WHEN geography_level = blockgroup_geoname THEN
-      simplification_tolerance := 0.0001;
-    WHEN geography_level = block_geoname THEN
-      simplification_tolerance := 0.0001;
-    ELSE
-      simplification_tolerance := 0;
-  END CASE;
-
-  IF NOT simplify_geometries THEN
-    simplification_tolerance := 0;
-  END IF;
-
   bounds := cdb_observatory.OBS_GetTileBounds(z, avg_x, avg_y);
   geom := ST_MakeEnvelope(bounds[1], bounds[2], bounds[3], bounds[4], 4326);
   ext := ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(bounds[1], bounds[2]), 4326), 3857),
@@ -694,7 +657,7 @@ BEGIN
   ---------DO---------
   getmeta_parameters := '[ ';
   FOREACH measurement IN ARRAY do_measurements LOOP
-    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || clipped ||'"},';
+    getmeta_parameters := getmeta_parameters || '{"numer_id":"' || measurement || '","geom_id":"' || geography_level || table_postfix ||'"},';
   END LOOP;
   getmeta_parameters := substring(getmeta_parameters from 1 for length(getmeta_parameters) - 1) || ' ]';
 
@@ -704,16 +667,27 @@ BEGIN
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
   END IF;
 
+  IF json_array_length(getmeta_parameters::json) != json_array_length(meta) THEN
+    RAISE EXCEPTION 'Mismatch between expected (%) and returned (%) meta parameters: %, %',
+      json_array_length(getmeta_parameters::json), json_array_length(meta), getmeta_parameters, meta;
+  END IF;
+
+--   RAISE EXCEPTION '% -- % -- %', geom, getmeta_parameters, meta;
+
+  IF geom_tablename_suffix IS NULL THEN
+    geom_tablename_suffix := '';
+  END IF;
+
   IF meta IS NOT NULL THEN
     SELECT  array_agg(distinct 'observatory.'||numer_tablename) numer_tablenames,
-            string_agg(distinct numer_colname, ',')||',' numer_colnames,
+            string_agg(numer_colname, ',')||',' numer_colnames,
             string_agg(distinct numer_tablename||'.'||numer_colname, ',')||',' numer_colnames_qualified,
             string_agg(distinct numer_colname||area_normalization||' '||numer_colname, ',')||',' numer_colnames_normalized,
-            (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+            (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
-            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'='||geom_tablename||'.'||geom_geomref_colname) geom_relations
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified,
+            array_agg(distinct numer_tablename||'.'||numer_geomref_colname||'=_outer_query.'||geom_geomref_colname) geom_relations
       INTO numer_tablenames_do, numer_colnames_do, numer_colnames_do_qualified, numer_colnames_do_normalized, geom_tablenames, geom_colnames,
           geom_geomref_colnames, geom_geomref_colnames_qualified, geom_relations_do
       FROM json_to_recordset(meta)
@@ -731,20 +705,22 @@ BEGIN
     i := 0;
     FOREACH numer_tablename_do IN ARRAY numer_tablenames_do LOOP
       i := i + 1;
-      numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+      IF numer_tablename_do||geom_tablename_suffix <> geom_tablenames THEN
+        numer_tablenames_do_outer := numer_tablenames_do_outer || 'LEFT OUTER JOIN ' || numer_tablename_do || ' ON ' || geom_relations_do[i] || ' ';
+      END IF;
     END LOOP;
   ELSE
-    getmeta_parameters := '[{"geom_id":"' || geography_level || clipped ||'"}]';
+    getmeta_parameters := '[{"geom_id":"' || geography_level || table_postfix ||'"}]';
     meta := cdb_observatory.obs_getmeta(geom, getmeta_parameters::json, 1::integer, 1::integer, 1::integer);
 
     IF meta IS NULL THEN
       RETURN;
     END IF;
 
-    SELECT  (array_agg(distinct 'observatory.'||geom_tablename))[1] geom_tablenames,
-            (array_agg(distinct geom_colname))[1] geom_colnames,
+    SELECT  (array_agg(distinct 'observatory.'||geom_tablename||geom_tablename_suffix))[1] geom_tablenames,
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_colname))[1] geom_colnames,
             (array_agg(distinct geom_geomref_colname))[1] geom_geomref_colnames,
-            (array_agg(distinct geom_tablename||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
+            (array_agg(distinct geom_tablename||geom_tablename_suffix||'.'||geom_geomref_colname))[1] geom_geomref_colnames_qualified
       FROM json_to_recordset(meta)
       INTO geom_tablenames, geom_colnames, geom_geomref_colnames, geom_geomref_colnames_qualified
         AS x(id TEXT, numer_id TEXT, numer_aggregate TEXT, numer_colname TEXT, numer_geomref_colname TEXT, numer_tablename TEXT,
@@ -754,12 +730,6 @@ BEGIN
   END IF;
 
   ---------MC---------
-  IF geography_level = 'us.census.tiger.census_tract' THEN
-    mc_geography_level := 'tract';
-  ELSE
-    mc_geography_level := (string_to_array(geography_level, '.'))[array_length(string_to_array(geography_level, '.'), 1)];
-  END IF;
-
   mc_table := cdb_observatory.OBS_GetMCTable(mc_schema, mc_geography_level);
 
   FOREACH mc_month IN ARRAY mc_months LOOP
@@ -801,39 +771,58 @@ BEGIN
     END IF;
   END LOOP;
 
+--   RAISE EXCEPTION '--1- % --2- % --3- % --4- % --5- % --6- % --7- % --8- % --9- % --10- % --11- % --12- % --13- % --14- % --15- %',
+--     geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+--     geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+--     numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+--     z, country, geom_geomref_colnames_qualified;
+
   ---------Query build and execution---------
   RETURN QUERY EXECUTE format(
     $query$
     SELECT  x, y, z,
-            mvtgeom,
-            (select row_to_json(_)::jsonb from (select id, %9$s %3$s area_ratio, area) as _) as mvtdata
-          FROM (
-      SELECT x, y, z,
-             ST_AsMVTGeom(ST_Transform(the_geom, 3857),
-                          bbox2d, $1, $2, $3) AS mvtgeom, %8$s as id, %6$s %7$s area_ratio, area FROM (
+             ST_AsMVTGeom(_outer_query.the_geom_3857, bbox2d_3857, $1, $2, $3) AS mvtgeom,
+            _outer_query.%8$s::text as id,
+            ---
+            %9$s -- Using 2 (numer_colnames_do_qualified) adds a table without the optional suffix
+            ----
+            %3$s
+            -----
+            area_ratio::float,
+            area::float
+    FROM (
+      SELECT _inner_query.*,
+             CASE -- Check if the tile contains the bounding box of the geometry
+                  WHEN _inner_query.bbox2d_3857 ~ _inner_query.the_geom_3857
+                    THEN 1.0
+                  ELSE ST_Area(ST_ClipByBox2d(_inner_query.the_geom_3857, _inner_query.bbox2d_3857)) / _inner_query.area
+             END AS area_ratio
+      FROM (
         SELECT  tx.x, tx.y, tx.z,
-                %1$s the_geom, %8$s, %2$s %10$s
-                CASE  WHEN ST_Within(tx.envelope, %1$s)
-                        THEN ST_Area(tx.envelope) / Nullif(ST_Area(%1$s), 0)
-                      WHEN ST_Within(%1$s, tx.envelope)
-                        THEN 1
-                      ELSE ST_Area(ST_Intersection(st_simplifyvw(%1$s, $4), tx.envelope)) / Nullif(ST_Area(%1$s), 0)
-                END area_ratio,
-                ROUND(ST_Area(ST_Transform(the_geom,3857))::NUMERIC, 2) area,
-                ST_MakeBox2D(ST_Transform(ST_SetSRID(ST_Point(tx.bounds[1], tx.bounds[2]), 4326), 3857),
-                             ST_Transform(ST_SetSRID(ST_Point(tx.bounds[3], tx.bounds[4]), 4326), 3857)) bbox2d
-          FROM tiler.xyz_us_mc_tiles_temp_%12$s_%13$s tx,
-               %5$s
-               %4$s
-               %11$s
-        WHERE st_intersects(%1$s, tx.envelope)
-      ) p
-    ) q
+                ST_Transform(tx.envelope, 3857) bbox2d_3857,
+                %1$s the_geom,
+                --
+                %15$s,
+                ---
+                %10$s
+                ----
+                ST_Transform(%1$s, 3857) the_geom_3857,
+                ST_Area(ST_Transform(%1$s, 3857)) area
+        FROM tiler_tmp.xyz_%14$s_mc_tiles_temp_%12$s_%13$s tx
+        INNER JOIN %5$s ON %1$s && tx.envelope
+      ) _inner_query
+      WHERE area > 0
+    ) _outer_query
+    %4$s
+    %11$s
+    INNER JOIN %5$s ON _outer_query.%8$s = %15$s
+    WHERE area_ratio > 0
     $query$,
-    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer, geom_tablenames, numer_colnames_do_normalized,
-    numer_colnames_mc_normalized, geom_geomref_colnames, numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins,
-    mc_geography_level, z)
+    geom_colnames, numer_colnames_do_qualified, numer_colnames_mc, numer_tablenames_do_outer,
+    geom_tablenames, numer_colnames_do_normalized, numer_colnames_mc_normalized, geom_geomref_colnames,
+    numer_colnames_do, numer_colnames_mc_qualified, geom_mc_outerjoins, mc_geography_level,
+    z, country, geom_geomref_colnames_qualified)
   USING extent, buf, clip_geom, simplification_tolerance
   RETURN;
 END
-$$ LANGUAGE plpgsql PARALLEL RESTRICTED;
+$$ LANGUAGE plpgsql PARALLEL SAFE;

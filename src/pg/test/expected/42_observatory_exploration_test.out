@@ -246,7 +246,7 @@ us.census.tiger.county|295
 column_id|_obs_geometryscores_numgeoms_2500km_buffer
 us.census.tiger.block_group|165852
 us.census.tiger.census_tract|55283
-us.census.tiger.zcta5|27046
+us.census.tiger.zcta5|26529
 us.census.tiger.county|2551
 (4 rows)
 _obs_geometryscores_500km_buffer_50_geoms

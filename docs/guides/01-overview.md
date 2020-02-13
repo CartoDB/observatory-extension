@@ -85,4 +85,4 @@ Many geometries come with various degrees of water accuracy (how closely they fo
 
 **Note:** While high clip water levels may be better for some kinds of maps and analysis, this type of data consumes more account storage space and may be subject to quota limitations.
 
-For details about how to access any of this data, see [Accessing the Data Observatory]({{ site.dataobservatory_docs }}/guides/accesssing-the-data-observatory/).
+For details about how to access any of this data, see [Accessing the Data Observatory]({{ site.dataobservatory_docs }}/guides/accessing-the-data-observatory/).

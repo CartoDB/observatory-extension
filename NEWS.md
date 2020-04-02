@@ -3,8 +3,7 @@
 
 __Improvements__
 
-* Added `OBS_GetMVT` function to get DO data as MVT
-* Added `OBS_GetMCDOMVT` function
+* Updated for PostgreSQL 12 and PostGIS 3.0 compatibility.
 
 1.9.0 (2018-04-20)
 ------------------

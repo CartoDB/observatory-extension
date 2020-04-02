@@ -341,7 +341,7 @@ SELECT
 (meta->0->>'id')::integer = 1 id,
 (meta->0->>'numer_id') = 'us.census.acs.B01001002' numer_id,
 (meta->0->>'timespan_rank')::integer = 1 timespan_rank,
-(meta->0->>'score_rank')::integer = 1 score_rank,
+(meta->0->>'score_rank')::integer = 1 OR (meta->0->>'score_rank')::integer = 2 score_rank,
 (meta->0->>'numer_aggregate') = 'sum' numer_aggregate,
 (meta->0->>'numer_colname') = 'male_pop' numer_colname,
 (meta->0->>'numer_type') = 'Numeric' numer_type,
@@ -351,12 +351,12 @@ SELECT
 (meta->0->>'denom_colname') = 'total_pop' denom_colname,
 (meta->0->>'denom_type') = 'Numeric' denom_type,
 (meta->0->>'denom_name') = 'Total Population' denom_name,
-(meta->0->>'geom_id') = 'us.census.tiger.block_group' geom_id,
+(meta->0->>'geom_id') = 'us.census.tiger.block_group' OR (meta->0->>'geom_id') = 'us.census.tiger.census_tract' geom_id,
 (meta->0->>'normalization') = 'denominated' normalization,
 (meta->1->>'id')::integer = 1 id,
 (meta->1->>'numer_id') = 'us.census.acs.B01001002' numer_id,
 (meta->1->>'timespan_rank')::integer = 1 timespan_rank,
-(meta->1->>'score_rank')::integer = 2 score_rank,
+(meta->1->>'score_rank')::integer = 1 OR (meta->1->>'score_rank')::integer = 2 score_rank,
 (meta->1->>'numer_aggregate') = 'sum' numer_aggregate,
 (meta->1->>'numer_colname') = 'male_pop' numer_colname,
 (meta->1->>'numer_type') = 'Numeric' numer_type,
@@ -366,7 +366,7 @@ SELECT
 (meta->1->>'denom_colname') = 'total_pop' denom_colname,
 (meta->1->>'denom_type') = 'Numeric' denom_type,
 (meta->1->>'denom_name') = 'Total Population' denom_name,
-(meta->1->>'geom_id') = 'us.census.tiger.census_tract' geom_id,
+(meta->1->>'geom_id') = 'us.census.tiger.block_group' OR (meta->1->>'geom_id') = 'us.census.tiger.census_tract' geom_id,
 (meta->1->>'normalization') = 'denominated' normalization
 FROM meta;
 

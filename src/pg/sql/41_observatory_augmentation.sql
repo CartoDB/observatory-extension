@@ -516,8 +516,8 @@ BEGIN
         WHEN numer_id IS NULL THEN
           '''geomref'', ' || 'cdb_observatory.FIRST(' || geom_tablename ||
             '.' || geom_geomref_colname || '), ' ||
-          '''value'', ' || 'cdb_observatory.FIRST(' || geom_tablename ||
-              '.' || geom_colname || ')'
+          '''value'', ' || '(cdb_observatory.FIRST(' || geom_tablename ||
+              '.' || geom_colname || '))::TEXT' -- Needed to force text output in Postgis 3+, later parsed automagically by ::Geometry. Otherwise we'd get geojson output
         ELSE ''
         END || ')', ', ')
         AS colspecs,

@@ -1,3 +1,16 @@
+-- In Postgis 3+, geomval is part of postgis_raster
+-- Trying to workaround it by creating the type ourselves leads to other issues:
+-- - If we create it under public, then if we try to create postgis_raster afterwards it will fail (ERROR:  type "geomval" already exists).
+-- - If we create it under cdb_observatory, then things work until we install postgis_raster. At that moment depending on how
+-- the search_path is set (per call, function, user...) we start getting random errors since it's mixing public.geomval and 
+-- cdb_observatory.geomval (function cdb_observatory.obs_getdata(geomval[], json) does not exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'geomval') THEN
+        RAISE EXCEPTION 'Missing `geomval` type. Use `CREATE EXTENSION postgis_raster` to enable it.';
+    END IF;
+END$$;
+
 
 -- Returns the table name with geoms for the given geometry_id
 -- TODO probably needs to take in the column_id array to get the relevant

@@ -121,14 +121,16 @@ SKIP_COLUMNS = set([
 MEASURE_COLUMNS = query('''
 SELECT cdb_observatory.FIRST(distinct numer_id) numer_ids,
        numer_aggregate,
-       denom_reltype
+       denom_reltype,
+       numer_timespan,
+       geom_id
 FROM observatory.obs_meta
 WHERE numer_weight > 0
   AND numer_id NOT IN ('{skip}')
   AND numer_id NOT LIKE 'eu.%' --Skipping Eurostat
   AND section_tags IS NOT NULL
   AND subsection_tags IS NOT NULL
-GROUP BY numer_id, numer_aggregate, denom_reltype
+GROUP BY numer_id, numer_aggregate, denom_reltype, numer_timespan, geom_id
 '''.format(skip="', '".join(SKIP_COLUMNS))).fetchall()
 
 
@@ -200,13 +202,13 @@ def filter_points():
 
 def filter_areas():
     filtered = []
-    for numer_ids, numer_aggregate, denom_reltype in MEASURE_COLUMNS:
+    for numer_ids, numer_aggregate, denom_reltype, numer_timespan, geom_id in MEASURE_COLUMNS:
         if numer_aggregate is None or numer_aggregate.lower() not in ('sum', 'median', 'average'):
             continue
         if numer_aggregate.lower() in ('median', 'average') \
                 and (denom_reltype is None or denom_reltype.lower() != 'universe'):
             continue
-        filtered.append((numer_ids, numer_aggregate, denom_reltype))
+        filtered.append((numer_ids, numer_aggregate, denom_reltype, numer_timespan, geom_id))
 
     return filtered
 
@@ -214,12 +216,12 @@ def filter_areas():
 def grouped_measure_columns(filtered_columns):
     groupbypoint = dict()
     for row in filtered_columns:
-        numer_ids = row[0]
+        numer_ids, numer_aggregate, denom_reltype, numer_timespan, geom_id = row
         point = default_lonlat(numer_ids)
         if point in groupbypoint:
-            groupbypoint[point].append(numer_ids)
+            groupbypoint[point].append((numer_ids, numer_timespan, geom_id))
         else:
-            groupbypoint[point] = [numer_ids]
+            groupbypoint[point] = [(numer_ids, numer_timespan, geom_id)]
 
     for point, numer_ids in groupbypoint.items():
         for colgroup in grouper(numer_ids, 50):
@@ -227,20 +229,22 @@ def grouped_measure_columns(filtered_columns):
 
 
 @parameterized(grouped_measure_columns(filter_points()))
-def test_get_measure_points(point, numer_ids):
-    _test_measures(numer_ids, default_point(point))
+def test_get_measure_points(point, parameters):
+    _test_measures(parameters, default_point(point))
 
 
 @parameterized(grouped_measure_columns(filter_areas()))
-def test_get_measure_areas(point, numer_ids):
-    _test_measures(numer_ids, default_area(point))
+def test_get_measure_areas(point, parameters):
+    _test_measures(parameters, default_area(point))
 
 
-def _test_measures(numer_ids, geom):
+def _test_measures(parameters, geom):
     in_params = []
-    for numer_id in numer_ids:
+    for p in parameters:
         in_params.append({
-            'numer_id': numer_id,
+            'numer_id': p[0],
+            'numer_timespan': p[1],
+            'geom_id': p[2],
             'normalization': 'predenominated'
         })
 
